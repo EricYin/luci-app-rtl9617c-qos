@@ -1,0 +1,545 @@
+#!/usr/bin/ucode
+// SPDX-License-Identifier: GPL-2.0-or-later
+'use strict';
+
+import { access, chmod, glob, open, popen, readfile, rename, unlink, writefile } from 'fs';
+import { cursor } from 'uci';
+import * as qos from 'rtl9617c.qos';
+
+function log_warn(msg) {
+	warn('rtl9617c-qos: ' + msg + '\n');
+	if (!getenv('RTL9617C_NO_SYSLOG'))
+		system(['logger', '-t', 'rtl9617c-qos', '' + msg]);
+}
+
+function write_debugfs_cmd(path, cmd) {
+	if (!access(path, 'w'))
+		return { ok: false, error: `cannot write ${path}` };
+	let fd = open(path, 'a');
+	if (!fd)
+		return { ok: false, error: `open failed: ${path}` };
+	let n = fd.write(cmd + '\n');
+	fd.close();
+	if (n == null || n < 0)
+		return { ok: false, error: `write '${cmd}' to ${path} failed` };
+	return { ok: true };
+}
+
+function run_cmd(argv, ignore_err) {
+	if (getenv('RTL9617C_DRY_RUN')) {
+		print('DRYRUN: ' + join(' ', argv) + '\n');
+		return 0;
+	}
+	let rc = system(argv);
+	if (rc != 0 && !ignore_err)
+		log_warn(`command failed (${rc}): ${join(' ', argv)}`);
+	return rc;
+}
+
+function tc_bin() {
+	if (getenv('RTL9617C_DRY_RUN'))
+		return 'tc';
+	for (let p in ['/usr/libexec/tc-tiny', '/usr/libexec/tc-full', '/usr/libexec/tc-bpf', '/sbin/tc', '/usr/sbin/tc']) {
+		if (access(p, 'x'))
+			return p;
+	}
+	return 'tc';
+}
+
+function tc_with_bin(argv) {
+	let res = [tc_bin()];
+	for (let i = 1; i < length(argv); i++)
+		push(res, argv[i]);
+	return res;
+}
+
+function read_tc_qdisc(dev) {
+	if (getenv('RTL9617C_DRY_RUN'))
+		return '';
+	let p = popen(`${tc_bin()} qdisc show dev ${dev} 2>/dev/null`, 'r');
+	if (!p)
+		return '';
+	let txt = p.read('all') || '';
+	p.close();
+	return txt;
+}
+
+function apply_hostpol(enabled, host_sections) {
+	let path = qos.te_file('hostpol');
+	let cur_txt = readfile(path);
+	if (cur_txt == null) {
+		if (length(host_sections) > 0)
+			log_warn(`hostpol debugfs unavailable at ${path}`);
+		return 0;
+	}
+
+	let parsed = qos.parse_hostpol(cur_txt);
+	let plan = enabled
+		? qos.build_host_desired(host_sections)
+		: { desired: {}, ordered: [], warnings: [], vmeters_used: 0 };
+
+	for (let w in plan.warnings)
+		log_warn(w);
+
+	let cmds = qos.diff_hostpol_commands(parsed.items, plan.desired, plan.ordered);
+	let errors = 0;
+	for (let cmd in cmds) {
+		if (getenv('RTL9617C_DRY_RUN')) {
+			print(`HOSTPOL: ${cmd}\n`);
+			continue;
+		}
+		let res = write_debugfs_cmd(path, cmd);
+		if (!res.ok) {
+			log_warn(res.error);
+			errors++;
+		}
+	}
+	return errors;
+}
+
+function apply_dos(enabled, global_sec) {
+	let te_path = qos.te_file('te_flow');
+	let dos_path = qos.te_file('dos');
+	let cur = readfile(te_path);
+	if (cur == null)
+		return 0;
+	let parsed = qos.parse_te_flow(cur);
+	if (!parsed.available)
+		return 0;
+
+	let plan = qos.build_dos_plan(enabled, global_sec);
+	let errors = 0;
+
+	if (parsed.dos_enabled != plan.dos_enabled) {
+		if (getenv('RTL9617C_DRY_RUN')) {
+			print(`TE_FLOW: ${plan.te_flow_cmd}\n`);
+		} else {
+			let res = write_debugfs_cmd(te_path, plan.te_flow_cmd);
+			if (!res.ok) {
+				log_warn(res.error);
+				errors++;
+			}
+		}
+	}
+
+	if (plan.dos_enabled && length(plan.dos_cmds) > 0 && (getenv('RTL9617C_DRY_RUN') || access(dos_path, 'w'))) {
+		for (let cmd in plan.dos_cmds) {
+			if (getenv('RTL9617C_DRY_RUN')) {
+				print(`DOS: ${cmd}\n`);
+				continue;
+			}
+			let res = write_debugfs_cmd(dos_path, cmd);
+			if (!res.ok) {
+				log_warn(res.error);
+				errors++;
+			}
+		}
+	}
+
+	return errors;
+}
+
+function apply_policers_and_wred(enabled, global_sec, flow_policers, group_policers) {
+	let te_path = qos.te_file('te_flow');
+	let cur = readfile(te_path);
+	if (cur == null)
+		return 0;
+	let parsed = qos.parse_te_flow(cur);
+	if (!parsed.available)
+		return 0;
+
+	let flow_plan = qos.diff_policer_commands(parsed.flow_policers, enabled ? flow_policers : [], false);
+	let grp_plan = qos.diff_policer_commands(parsed.group_policers, enabled ? group_policers : [], true);
+	for (let w in flow_plan.warnings)
+		log_warn(w);
+	for (let w in grp_plan.warnings)
+		log_warn(w);
+
+	let cmds = [];
+	for (let c in flow_plan.cmds)
+		push(cmds, c);
+	for (let c in grp_plan.cmds)
+		push(cmds, c);
+
+	let had_wred = length(parsed.wred_queues || []) > 0 || parsed.wred_hw_en;
+	let want_wred = enabled && qos.is_truthy((global_sec || {}).wred_enabled ?? '0');
+	if (want_wred || had_wred) {
+		for (let c in qos.build_wred_commands(enabled, global_sec))
+			push(cmds, c);
+	}
+
+	let errors = 0;
+	for (let cmd in cmds) {
+		if (getenv('RTL9617C_DRY_RUN')) {
+			print(`TE_FLOW: ${cmd}\n`);
+			continue;
+		}
+		let res = write_debugfs_cmd(te_path, cmd);
+		if (!res.ok) {
+			log_warn(res.error);
+			errors++;
+		}
+	}
+	return errors;
+}
+
+function apply_mirror(enabled, global_sec) {
+	let candidates = glob('/sys/kernel/debug/*.ethernet/mirror');
+	let path = length(candidates) ? candidates[0] : '/sys/kernel/debug/4f4300000.ethernet/mirror';
+	let cur_txt = readfile(path);
+	if (cur_txt == null && !getenv('RTL9617C_DRY_RUN'))
+		return 0;
+	let cur = qos.parse_mirror(cur_txt);
+	let want_en = enabled && qos.is_truthy((global_sec || {}).mirror_enabled ?? '0');
+	if (!want_en && !cur.enabled)
+		return 0;
+
+	let cmds = qos.build_mirror_commands(enabled, global_sec);
+	let errors = 0;
+	for (let cmd in cmds) {
+		if (getenv('RTL9617C_DRY_RUN')) {
+			print(`MIRROR: ${cmd}\n`);
+			continue;
+		}
+		let res = write_debugfs_cmd(path, cmd);
+		if (!res.ok) {
+			log_warn(res.error);
+			errors++;
+		}
+	}
+	return errors;
+}
+
+function apply_tx_offload(enabled, global_sec) {
+	global_sec = global_sec || {};
+	let base = '/sys/module/rtl9617c_ni/parameters';
+	let errors = 0;
+	for (let key in ['tx_csum', 'tso', 'tso_v6', 'rx_zerocopy', 'mcast_hw', 'napt6', 'dual_hdr', 'vpn_offload']) {
+		if (global_sec[key] == null)
+			continue;
+		let path = `${base}/${key}`;
+		let active = (key == 'vpn_offload' || key == 'rx_zerocopy')
+			? qos.is_truthy(global_sec[key])
+			: (enabled && qos.is_truthy(global_sec[key]));
+		let val = active ? 'Y' : 'N';
+		if (getenv('RTL9617C_DRY_RUN')) {
+			print(`NI_PARAM: ${key}=${val}\n`);
+			continue;
+		}
+		if (!access(path, 'w'))
+			continue;
+		let cur = trim(readfile(path) || '');
+		if (cur == val)
+			continue;
+		let res = write_debugfs_cmd(path, val);
+		if (!res.ok) {
+			log_warn(res.error);
+			errors++;
+		}
+	}
+
+	let eee_on = qos.is_truthy(global_sec.ge_eee ?? '0');
+	let ethtool = access('/usr/sbin/ethtool', 'x') ? '/usr/sbin/ethtool'
+		: (access('/sbin/ethtool', 'x') ? '/sbin/ethtool' : null);
+	for (let dev in ['lan2', 'lan3', 'lan4']) {
+		if (getenv('RTL9617C_DRY_RUN')) {
+			if (global_sec.ge_eee != null)
+				print(`EEE: ${dev}=${eee_on ? 'on' : 'off'}\n`);
+			continue;
+		}
+		if (!ethtool || !access(`/sys/class/net/${dev}`, 'r'))
+			continue;
+		let p = popen(`${ethtool} --show-eee ${dev} 2>/dev/null`, 'r');
+		let cur_eee = p ? (p.read('all') || '') : '';
+		if (p)
+			p.close();
+		if (cur_eee == '' || index(cur_eee, 'EEE status:') < 0 || index(cur_eee, 'not supported') >= 0)
+			continue;
+		let cur_on = index(cur_eee, 'EEE status: enabled') >= 0;
+		let cur_lpi = index(cur_eee, 'Tx LPI: enabled') >= 0 || match(cur_eee, /Tx LPI:\s*[0-9]+\s*\(us\)/) != null;
+		if (cur_on == eee_on && (!eee_on || cur_lpi))
+			continue;
+		let state = eee_on ? 'on' : 'off';
+		let cmd = eee_on
+			? `${ethtool} --set-eee ${dev} eee on tx-lpi on 2>/dev/null`
+			: `${ethtool} --set-eee ${dev} eee off tx-lpi off 2>/dev/null`;
+		let rc = system(['/bin/sh', '-c', cmd]);
+		if (rc != 0)
+			log_warn(`ethtool --set-eee ${dev} ${state} exited ${rc}`);
+	}
+	return errors;
+}
+
+function read_live_nft_chain() {
+	if (getenv('RTL9617C_DRY_RUN') || !access('/usr/sbin/nft', 'x'))
+		return '';
+	let p = popen('/usr/sbin/nft list chain inet fw4 rtl9617c_qos_mangle 2>/dev/null', 'r');
+	if (!p)
+		return '';
+	let txt = p.read('all') || '';
+	p.close();
+	return txt;
+}
+
+function apply_dnsmasq_nftset(dnsmasq_conf) {
+	if (getenv('RTL9617C_DRY_RUN')) {
+		if (dnsmasq_conf != '')
+			print(`DNSMASQ_NFTSET_BYTES: ${length(dnsmasq_conf)}\n`);
+		return 0;
+	}
+	let dirs = glob('/tmp/dnsmasq.*.d');
+	if (!length(dirs))
+		return 0;
+
+	let changed = false;
+	for (let dir in dirs) {
+		let target = dir + '/90-rtl9617c-qos-apps.conf';
+		if (dnsmasq_conf == '') {
+			if (access(target, 'r')) {
+				unlink(target);
+				changed = true;
+			}
+			continue;
+		}
+		let cur = readfile(target);
+		if (cur == dnsmasq_conf)
+			continue;
+		let tmp = target + '.tmp';
+		if (writefile(tmp, dnsmasq_conf) == null) {
+			log_warn(`failed to write ${tmp}`);
+			continue;
+		}
+		chmod(tmp, 0644);
+		if (!rename(tmp, target)) {
+			unlink(tmp);
+			log_warn(`failed to replace ${target}`);
+			continue;
+		}
+		changed = true;
+	}
+
+	if (changed && !getenv('RTL9617C_SKIP_FW_RELOAD') && access('/etc/init.d/dnsmasq', 'x'))
+		system(['/etc/init.d/dnsmasq', 'restart']);
+
+	return 0;
+}
+
+function apply_nftables(enabled, classify_sections, global_sec, app_sections) {
+	let nft_out_path = getenv('RTL9617C_NFT_OUT') || qos.NFT_INCLUDE_PATH;
+	let catalog = (enabled && length(app_sections || []) > 0) ? qos.load_app_catalog() : null;
+	let gen = qos.build_nft_rules(enabled, classify_sections, global_sec, app_sections, catalog);
+	for (let w in gen.warnings)
+		log_warn(w);
+
+	let existing = readfile(nft_out_path);
+	let live_chain = read_live_nft_chain();
+	let live_ready = gen.rule_count > 0
+		? (index(live_chain, 'type filter hook forward') >= 0 && index(live_chain, 'rtl9617c-qos:') >= 0)
+		: (live_chain == '' || index(live_chain, 'rtl9617c-qos:') < 0);
+
+	if (existing == gen.content && (getenv('RTL9617C_DRY_RUN') || live_ready)) {
+		apply_dnsmasq_nftset(gen.dnsmasq_conf);
+		return 0;
+	}
+
+	/* Validate generated sets + chain inside a throwaway inet table before touching fw4. */
+	if (gen.rule_count > 0 && !getenv('RTL9617C_DRY_RUN') && access('/usr/sbin/nft', 'x')) {
+		let check_path = '/tmp/.rtl9617c-qos-nft-check';
+		let check_doc = 'table inet rtl9617c_qos_syntax_check {\n' + gen.content + '}\n';
+		if (writefile(check_path, check_doc) != null) {
+			let rc = system(['/usr/sbin/nft', '-c', '-f', check_path]);
+			unlink(check_path);
+			if (rc != 0) {
+				log_warn('generated nftables rules failed syntax check; skipping fw4 update');
+				return 1;
+			}
+		}
+	}
+
+	let tmp_path = nft_out_path + '.tmp';
+	if (writefile(tmp_path, gen.content) == null) {
+		log_warn(`failed to write ${tmp_path}`);
+		return 1;
+	}
+	if (!rename(tmp_path, nft_out_path)) {
+		unlink(tmp_path);
+		log_warn(`failed to replace ${nft_out_path}`);
+		return 1;
+	}
+
+	if (!getenv('RTL9617C_SKIP_FW_RELOAD') && !getenv('RTL9617C_DRY_RUN') && access('/usr/sbin/nft', 'x')) {
+		/* Apply directly into table inet fw4 in <10ms without triggering full fw4/OpenClash reload hooks. */
+		system(['/usr/sbin/nft', 'add', 'table', 'inet', 'fw4']);
+		system(['/usr/sbin/nft', 'flush', 'chain', 'inet', 'fw4', 'rtl9617c_qos_mangle']);
+		system(['/usr/sbin/nft', 'delete', 'chain', 'inet', 'fw4', 'rtl9617c_qos_mangle']);
+		if (gen.rule_count > 0) {
+			let apply_path = '/tmp/.rtl9617c-qos-nft-apply';
+			let apply_doc = 'table inet fw4 {\n' + gen.content + '}\n';
+			if (writefile(apply_path, apply_doc) != null) {
+				let rc = system(['/usr/sbin/nft', '-f', apply_path]);
+				unlink(apply_path);
+				if (rc != 0) {
+					log_warn('failed to load rtl9617c_qos_mangle into table inet fw4');
+					return 1;
+				}
+			}
+		}
+		/* Clean up unused app nftsets while keeping active sets (and cached DNS IPs) intact. */
+		let active_map = {};
+		for (let c in (gen.active_cos_sets || []))
+			active_map['' + c] = true;
+		for (let c = 0; c <= qos.COS_MAX; c++) {
+			if (exists(active_map, '' + c))
+				continue;
+			system(['/usr/sbin/nft', 'destroy', 'set', 'inet', 'fw4', `rtl9617c_qos_app_c${c}_v4`]);
+			system(['/usr/sbin/nft', 'destroy', 'set', 'inet', 'fw4', `rtl9617c_qos_app_c${c}_v6`]);
+		}
+	}
+	apply_dnsmasq_nftset(gen.dnsmasq_conf);
+	return 0;
+}
+
+function apply_single_port(sec, live_only) {
+	let plan = qos.build_port_tc_plan(sec);
+	if (plan.error) {
+		log_warn(plan.error);
+		return 1;
+	}
+	let dev = plan.device;
+	if (!getenv('RTL9617C_DRY_RUN') && !access(qos.sys_net_dir() + '/' + dev, 'r')) {
+		if (!live_only)
+			log_warn(`netdev ${dev} not present; skipping tc setup`);
+		return 0;
+	}
+
+	let is_pon = match(dev, /^pon/) != null;
+	if (is_pon && sec && qos.is_truthy(sec.enabled ?? '1')) {
+		if (sec.egress_mode == 'tbf')
+			log_warn(`port ${dev}: PON hardware PUC offload supports sp/ets scheduling only; tbf shapes CPU traffic only`);
+		if (qos.is_truthy(sec.ingress_enable ?? '0'))
+			log_warn(`port ${dev}: PON port ingress tc policing applies to non-offloaded CPU traffic only`);
+	}
+
+	let qdisc_out = read_tc_qdisc(dev);
+	let has_managed_root = match(qdisc_out, /qdisc (tbf|ets|mqprio) /) != null;
+	let has_clsact = match(qdisc_out, /qdisc clsact /) != null;
+	let errors = 0;
+
+	if (plan.root_cmd != null) {
+		if (has_managed_root)
+			run_cmd(tc_with_bin(['tc', 'qdisc', 'del', 'dev', dev, 'root']), true);
+		if (run_cmd(tc_with_bin(plan.root_cmd), false) != 0) {
+			if (is_pon && (sec.egress_mode == 'sp' || sec.egress_mode == 'ets'))
+				log_warn(`port ${dev}: failed to apply ETS qdisc; check kernel pon/epon/data.c ETS offload support`);
+			errors++;
+		}
+	} else if (has_managed_root) {
+		run_cmd(tc_with_bin(['tc', 'qdisc', 'del', 'dev', dev, 'root']), true);
+	}
+
+	if (plan.ingress_enable) {
+		if (has_clsact)
+			run_cmd(tc_with_bin(['tc', 'filter', 'del', 'dev', dev, 'ingress', 'pref', '10']), true);
+		for (let argv in plan.ingress_cmds) {
+			if (run_cmd(tc_with_bin(argv), false) != 0)
+				errors++;
+		}
+	} else if (has_clsact) {
+		run_cmd(tc_with_bin(['tc', 'filter', 'del', 'dev', dev, 'ingress', 'pref', '10']), true);
+		run_cmd(tc_with_bin(['tc', 'qdisc', 'del', 'dev', dev, 'clsact']), true);
+	}
+
+	return errors;
+}
+
+function apply_ports(enabled, port_sections, target_iface) {
+	let configured = {};
+	let errors = 0;
+
+	for (let sec in port_sections) {
+		let dev = trim('' + (sec.device ?? ''));
+		if (!qos.valid_netdev_name(dev))
+			continue;
+		if (target_iface != null && dev != target_iface)
+			continue;
+		configured[dev] = true;
+		let effective = enabled ? sec : { device: dev, enabled: '0' };
+		errors += apply_single_port(effective, false);
+	}
+
+	/* Reset NI ports removed from UCI so stale root/ingress shapers are cleaned up. */
+	for (let ni in qos.discover_ni_ports()) {
+		if (target_iface != null && ni.device != target_iface)
+			continue;
+		if (exists(configured, ni.device))
+			continue;
+		errors += apply_single_port({ device: ni.device, enabled: '0' }, true);
+	}
+
+	return errors;
+}
+
+function load_config() {
+	let dir = getenv('RTL9617C_UCI_DIR');
+	let ctx = dir ? cursor(dir) : cursor();
+	let global_sec = ctx.get_all('rtl9617c_qos', 'global') || {};
+	let hosts = [];
+	let classifies = [];
+	let app_rules = [];
+	let ports = [];
+	let flow_policers = [];
+	let group_policers = [];
+
+	ctx.foreach('rtl9617c_qos', 'host', (s) => push(hosts, s));
+	ctx.foreach('rtl9617c_qos', 'classify', (s) => push(classifies, s));
+	ctx.foreach('rtl9617c_qos', 'app_rule', (s) => push(app_rules, s));
+	ctx.foreach('rtl9617c_qos', 'port', (s) => push(ports, s));
+	ctx.foreach('rtl9617c_qos', 'flow_policer', (s) => push(flow_policers, s));
+	ctx.foreach('rtl9617c_qos', 'group_policer', (s) => push(group_policers, s));
+
+	return {
+		enabled: qos.is_truthy(global_sec.enabled ?? '1'),
+		dos_enabled: qos.is_truthy(global_sec.dos_enabled ?? '0'),
+		global_sec,
+		hosts,
+		classifies,
+		app_rules,
+		ports,
+		flow_policers,
+		group_policers
+	};
+}
+
+let mode = ARGV[0] || 'apply';
+let target_dev = ARGV[1] || null;
+let cfg = load_config();
+let rc = 0;
+
+if (mode == 'apply') {
+	rc += apply_hostpol(cfg.enabled, cfg.hosts);
+	rc += apply_dos(cfg.enabled, cfg.global_sec);
+	rc += apply_policers_and_wred(cfg.enabled, cfg.global_sec, cfg.flow_policers, cfg.group_policers);
+	rc += apply_mirror(cfg.enabled, cfg.global_sec);
+	rc += apply_tx_offload(cfg.enabled, cfg.global_sec);
+	rc += apply_nftables(cfg.enabled, cfg.classifies, cfg.global_sec, cfg.app_rules);
+	rc += apply_ports(cfg.enabled, cfg.ports, null);
+} else if (mode == 'stop') {
+	rc += apply_hostpol(false, []);
+	rc += apply_dos(false, {});
+	rc += apply_policers_and_wred(false, {}, [], []);
+	rc += apply_mirror(false, {});
+	rc += apply_tx_offload(false, cfg.global_sec);
+	rc += apply_nftables(false, [], {}, []);
+	rc += apply_ports(false, [], null);
+} else if (mode == 'iface') {
+	if (!target_dev || !qos.valid_netdev_name(target_dev)) {
+		log_warn('invalid interface argument to rtl9617c-qos-apply');
+		exit(1);
+	}
+	rc += apply_ports(cfg.enabled, cfg.ports, target_dev);
+} else {
+	warn(`usage: ${ARGV[0] || 'rtl9617c-qos-apply'} [apply|stop|iface <dev>]\n`);
+	exit(2);
+}
+
+exit(rc > 0 ? 1 : 0);

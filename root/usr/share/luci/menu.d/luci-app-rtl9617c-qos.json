@@ -1,0 +1,100 @@
+{
+	"admin/network/rtl9617c_qos": {
+		"title": "智能流控与限速",
+		"order": 58,
+		"action": {
+			"type": "firstchild"
+		},
+		"depends": {
+			"acl": [ "luci-app-rtl9617c-qos" ]
+		}
+	},
+	"admin/network/rtl9617c_qos/hosts": {
+		"title": "单设备限速",
+		"order": 10,
+		"action": {
+			"type": "view",
+			"path": "rtl9617c-qos/hosts"
+		},
+		"depends": {
+			"acl": [ "luci-app-rtl9617c-qos" ]
+		}
+	},
+	"admin/network/rtl9617c_qos/classify": {
+		"title": "应用与游戏优先",
+		"order": 20,
+		"action": {
+			"type": "view",
+			"path": "rtl9617c-qos/classify"
+		},
+		"depends": {
+			"acl": [ "luci-app-rtl9617c-qos" ]
+		}
+	},
+	"admin/network/rtl9617c_qos/ports": {
+		"title": "网口总限速与排队",
+		"order": 30,
+		"action": {
+			"type": "view",
+			"path": "rtl9617c-qos/ports"
+		},
+		"depends": {
+			"acl": [ "luci-app-rtl9617c-qos" ]
+		}
+	},
+	"admin/network/rtl9617c_qos/te": {
+		"title": "限速通道与共享组",
+		"order": 40,
+		"action": {
+			"type": "view",
+			"path": "rtl9617c-qos/te"
+		},
+		"depends": {
+			"acl": [ "luci-app-rtl9617c-qos" ]
+		}
+	},
+	"admin/network/rtl9617c_offload": {
+		"title": "硬件加速与卸载",
+		"order": 59,
+		"action": {
+			"type": "view",
+			"path": "rtl9617c-qos/offload"
+		},
+		"depends": {
+			"acl": [ "luci-app-rtl9617c-qos" ]
+		}
+	},
+	"admin/network/rtl9617c_vpn": {
+		"title": "VPN 硬件加速",
+		"order": 60,
+		"action": {
+			"type": "view",
+			"path": "rtl9617c-qos/vpn"
+		},
+		"depends": {
+			"acl": [ "luci-app-rtl9617c-qos" ]
+		}
+	},
+	"admin/network/rtl9617c_dos": {
+		"title": "硬件网络攻击防护",
+		"order": 61,
+		"action": {
+			"type": "view",
+			"path": "rtl9617c-qos/dos"
+		},
+		"depends": {
+			"acl": [ "luci-app-rtl9617c-qos" ]
+		}
+	},
+	"admin/network/rtl9617c_mirror": {
+		"title": "硬件流量镜像抓包",
+		"order": 62,
+		"action": {
+			"type": "view",
+			"path": "rtl9617c-qos/mirror"
+		},
+		"depends": {
+			"acl": [ "luci-app-rtl9617c-qos" ]
+		}
+	}
+}

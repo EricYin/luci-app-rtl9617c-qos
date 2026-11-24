@@ -1,0 +1,17 @@
+#!/bin/sh
+# Fix permissions on NTFS build hosts before rpcd/init loads ucode scripts.
+for f in /usr/share/rpcd/ucode/luci.rtl9617c-qos \
+	 /usr/libexec/rtl9617c-qos-apply \
+	 /etc/init.d/rtl9617c-qos; do
+	[ -f "$f" ] && chmod 0755 "$f"
+done
+[ -f /usr/share/ucode/rtl9617c/qos.uc ] && chmod 0644 /usr/share/ucode/rtl9617c/qos.uc
+if [ -f /usr/share/ucode/luci/version.uc ] && [ -f /www/luci-static/resources/view/rtl9617c-qos/hosts.js ]; then
+	qlen="$(wc -c < /www/luci-static/resources/view/rtl9617c-qos/hosts.js | tr -d ' ')"
+	sed -i "s/\(export const revision = '[^']*\)';/\1-q$qlen';/; s/\(export const revision = '[^']*\)'/\1-q$qlen'/" /usr/share/ucode/luci/version.uc 2>/dev/null || true
+fi
+rm -f /tmp/luci-indexcache.*
+rm -rf /tmp/luci-modulecache/
+/etc/init.d/rpcd reload >/dev/null 2>&1
+/etc/init.d/rtl9617c-qos enable >/dev/null 2>&1
+exit 0

@@ -1,0 +1,18 @@
+{
+	"luci-app-rtl9617c-qos": {
+		"description": "Manage RTL9617C hardware QoS, Host Policing, 8-VoQ ports, and DoS status",
+		"read": {
+			"uci": [ "rtl9617c_qos" ],
+			"ubus": {
+				"luci.rtl9617c-qos": [ "status", "app_catalog" ],
+				"luci-rpc": [ "getHostHints", "getNetworkDevices" ]
+			}
+		},
+		"write": {
+			"uci": [ "rtl9617c_qos" ],
+			"ubus": {
+				"luci.rtl9617c-qos": [ "clear_host_mib", "clear_dos_flood", "apply", "apply_preset" ]
+			}
+		}
+	}
+}

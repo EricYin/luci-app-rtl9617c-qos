@@ -1,0 +1,14 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+[ "$ACTION" = "ifup" ] || [ "$ACTION" = "ifupdate" ] || exit 0
+[ -n "$DEVICE" ] || exit 0
+[ -d "/sys/class/net/$DEVICE" ] || exit 0
+
+case "$(readlink "/sys/class/net/$DEVICE/device/driver" 2>/dev/null)" in
+	*/rtl9617c-ni)
+		/usr/libexec/rtl9617c-qos-apply iface "$DEVICE"
+		;;
+esac
+
+exit 0

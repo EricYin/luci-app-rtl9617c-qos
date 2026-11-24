@@ -1,0 +1,810 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+'use strict';
+
+import { access, glob, open, popen, readfile } from 'fs';
+import { cursor } from 'uci';
+import * as qos from 'rtl9617c.qos';
+
+function uptime_ms() {
+	let raw = readfile('/proc/uptime');
+	if (raw == null)
+		return null;
+	let secs = split(trim(raw), /\s+/)[0];
+	if (secs == null)
+		return null;
+	return int(+secs * 1000);
+}
+
+function write_debugfs_cmd(path, cmd) {
+	if (!access(path, 'w'))
+		return false;
+	let fd = open(path, 'a');
+	if (!fd)
+		return false;
+	let n = fd.write(cmd + '\n');
+	fd.close();
+	return n != null && n >= 0;
+}
+
+function read_hostpol_fresh() {
+	let path = qos.te_file('hostpol');
+	let initial = readfile(path);
+	if (initial == null)
+		return qos.parse_hostpol(null);
+
+	let pre = qos.parse_hostpol(initial);
+	for (let item in pre.items)
+		write_debugfs_cmd(path, 'mib ' + item.idx);
+
+	return qos.parse_hostpol(readfile(path));
+}
+
+function read_cmd_output(cmd) {
+	let p = popen(cmd + ' 2>/dev/null', 'r');
+	if (!p)
+		return '';
+	let txt = p.read('all') || '';
+	p.close();
+	return txt;
+}
+
+function tc_bin() {
+	for (let p in ['/usr/libexec/tc-tiny', '/usr/libexec/tc-full', '/usr/libexec/tc-bpf', '/sbin/tc', '/usr/sbin/tc']) {
+		if (access(p, 'x'))
+			return p;
+	}
+	return null;
+}
+
+function ethtool_bin() {
+	if (access('/usr/sbin/ethtool', 'x'))
+		return '/usr/sbin/ethtool';
+	if (access('/sbin/ethtool', 'x'))
+		return '/sbin/ethtool';
+	return null;
+}
+
+function read_port_eee(ethtool, dev) {
+	if (ethtool == null || substr(dev, 0, 3) != 'lan')
+		return null;
+	let raw = read_cmd_output(`${ethtool} --show-eee ${dev}`);
+	if (raw == '' || index(raw, 'EEE status:') < 0)
+		return { supported: false };
+	let enabled = index(raw, 'EEE status: enabled') >= 0;
+	let active = index(raw, 'enabled - active') >= 0;
+	let tx_lpi = index(raw, 'Tx LPI: enabled') >= 0;
+	let tm = match(raw, /Tx LPI:\s*([0-9]+)\s*\(us\)/);
+	return {
+		supported: true,
+		enabled,
+		active,
+		tx_lpi: tx_lpi || (tm != null),
+		tx_lpi_us: tm != null ? +tm[1] : null
+	};
+}
+
+function inspect_ni_ports() {
+	let ports = qos.discover_ni_ports();
+	let tc = tc_bin();
+	let ethtool = ethtool_bin();
+
+	for (let port in ports) {
+		port.eee = read_port_eee(ethtool, port.device);
+		if (tc == null) {
+			port.qdisc_raw = '';
+			port.ingress_raw = '';
+			port.egress_summary = '未安装 tc';
+			port.ingress_summary = '未安装 tc';
+			continue;
+		}
+		let qdisc = trim(read_cmd_output(`${tc} -s qdisc show dev ${port.device}`));
+		let flt = trim(read_cmd_output(`${tc} -s filter show dev ${port.device} ingress`));
+		port.qdisc_raw = qdisc;
+		port.ingress_raw = flt;
+
+		let tbf_m = match(qdisc, /qdisc tbf [^\n]+rate ([^ \t\n]+) burst ([^ \t\n]+)/);
+		let ets_m = match(qdisc, /qdisc ets [^\n]*bands ([0-9]+)[^\n]*(strict ([0-9]+))?/);
+		if (tbf_m != null)
+			port.egress_summary = `整口下载限速 ${tbf_m[1]}（缓冲 ${tbf_m[2]}）`;
+		else if (ets_m != null)
+			port.egress_summary = ets_m[3] == '8'
+				? '按优先级严格排队（8 级优先通道）'
+				: (ets_m[3] != null
+					? `高低优先级混合排队（前 ${ets_m[3]} 级绝对优先 + 其余按比重分配）`
+					: `多级优先级排队（${ets_m[1]} 级通道）`);
+		else if (match(qdisc, /qdisc mqprio /) != null)
+			port.egress_summary = '按优先级严格排队（8 级优先通道）';
+		else
+			port.egress_summary = '默认（不限制网口下载速度）';
+
+		let pol_m = match(flt, /police [^\n]*rate ([^ \t\n]+)[^\n]*burst ([^ \t\n]+)/);
+		if (pol_m != null) {
+			let hw = index(flt, 'in_hw') >= 0 ? ' · 硬件加速已生效' : '';
+			port.ingress_summary = `整口上传限速 ${pol_m[1]}（缓冲 ${pol_m[2]}${hw}）`;
+		} else {
+			port.ingress_summary = '默认（不限制网口上传速度）';
+		}
+	}
+
+	return ports;
+}
+
+function count_nft_set_elems(nft, set_name) {
+	let raw = read_cmd_output(`${nft} -j list set inet fw4 ${set_name}`);
+	if (raw == '')
+		return 0;
+	let parsed;
+	try { parsed = json(raw); }
+	catch (e) { return 0; }
+	if (type(parsed) != 'object' || type(parsed.nftables) != 'array')
+		return 0;
+	for (let item in parsed.nftables) {
+		if (type(item.set) == 'object' && type(item.set.elem) == 'array')
+			return length(item.set.elem);
+	}
+	return 0;
+}
+
+function read_nft_stats() {
+	let out = { active: false, rules: {}, app_sets: {}, app_ip_total: 0 };
+	let nft = access('/usr/sbin/nft', 'x') ? '/usr/sbin/nft' : (access('/sbin/nft', 'x') ? '/sbin/nft' : null);
+	if (nft == null)
+		return out;
+
+	let raw = read_cmd_output(`${nft} -j list chain inet fw4 rtl9617c_qos_mangle`);
+	if (raw == '')
+		return out;
+
+	let parsed;
+	try { parsed = json(raw); }
+	catch (e) { return out; }
+
+	if (type(parsed) != 'object' || type(parsed.nftables) != 'array')
+		return out;
+
+	let dom_cos = {};
+	for (let item in parsed.nftables) {
+		if (type(item.rule) != 'object')
+			continue;
+		let cmt = item.rule.comment;
+		if (type(cmt) != 'string' || substr(cmt, 0, 13) != 'rtl9617c-qos:')
+			continue;
+		let key = substr(cmt, 13);
+		let dm = match(key, /^__app_dom_c([0-7])$/);
+		if (dm != null)
+			dom_cos[dm[1]] = true;
+		let rec = out.rules[key] || { packets: 0, bytes: 0, instances: 0 };
+		rec.instances++;
+		if (type(item.rule.expr) == 'array') {
+			for (let ex in item.rule.expr) {
+				if (type(ex.counter) == 'object') {
+					rec.packets += +(ex.counter.packets || 0);
+					rec.bytes += +(ex.counter.bytes || 0);
+				}
+			}
+		}
+		out.rules[key] = rec;
+	}
+	for (let ck in keys(dom_cos)) {
+		let v4 = count_nft_set_elems(nft, `rtl9617c_qos_app_c${ck}_v4`);
+		let v6 = count_nft_set_elems(nft, `rtl9617c_qos_app_c${ck}_v6`);
+		out.app_sets['c' + ck] = { v4, v6 };
+		out.app_ip_total += v4 + v6;
+	}
+	out.active = length(keys(out.rules)) > 0;
+	return out;
+}
+
+function read_fe_qos_summary() {
+	let candidates = glob('/sys/kernel/debug/*.ethernet/flows');
+	let path = length(candidates) ? candidates[0] : '/sys/kernel/debug/4f4300000.ethernet/flows';
+	let raw = readfile(path);
+	if (raw == null)
+		return null;
+
+	let total = 0, cos_explicit = 0, cos_high = 0, cos_normal = 0, cos_low = 0;
+	let pol_flow = 0, pol_host = 0;
+	let cos_counts = [0, 0, 0, 0, 0, 0, 0, 0];
+	for (let line in split(trim(raw), '\n')) {
+		if (line == '')
+			continue;
+		if (match(line, /\bdeleting=1\b/) != null)
+			continue;
+		total++;
+		if (match(line, /\bcos_set=1\b/) != null)
+			cos_explicit++;
+		let cm = match(line, /\bcos=([0-7])\b/);
+		let cos = cm != null ? +cm[1] : 0;
+		cos_counts[cos]++;
+		if (cos >= 5)
+			cos_high++;
+		else if (cos >= 2)
+			cos_normal++;
+		else
+			cos_low++;
+		let pm = match(line, /\bpol=(-?[0-9]+)\s+host=([01])\b/);
+		if (pm != null && +pm[1] >= 0) {
+			if (pm[2] == '1')
+				pol_host++;
+			else
+				pol_flow++;
+		}
+	}
+	return {
+		total,
+		cos_explicit,
+		cos_high,
+		cos_normal,
+		cos_low,
+		cos_counts,
+		pol_flow,
+		pol_host
+	};
+}
+
+function read_fe_mirror() {
+	let candidates = glob('/sys/kernel/debug/*.ethernet/mirror');
+	let path = length(candidates) ? candidates[0] : '/sys/kernel/debug/4f4300000.ethernet/mirror';
+	return qos.parse_mirror(readfile(path));
+}
+
+function read_fe_tunnel() {
+	let candidates = glob('/sys/kernel/debug/*.ethernet/tunnel');
+	let path = length(candidates) ? candidates[0] : '/sys/kernel/debug/4f4300000.ethernet/tunnel';
+	return qos.parse_tunnel(readfile(path));
+}
+
+function read_nic_offload_features() {
+	let ethtool = access('/usr/sbin/ethtool', 'x') ? '/usr/sbin/ethtool'
+		: (access('/sbin/ethtool', 'x') ? '/sbin/ethtool' : null);
+	if (ethtool == null)
+		return null;
+	let ports = qos.discover_ni_ports();
+	if (!length(ports))
+		return null;
+	let dev = ports[0].device;
+	for (let p in ports) {
+		if (p.carrier) {
+			dev = p.device;
+			break;
+		}
+	}
+	let raw = read_cmd_output(`${ethtool} -k ${dev}`);
+	if (raw == '')
+		return null;
+	let parse_feat = (name) => {
+		for (let line in split(raw, '\n')) {
+			let s = trim(line);
+			if (substr(s, 0, length(name) + 1) == name + ':') {
+				let val = trim(substr(s, length(name) + 1));
+				return substr(val, 0, 2) == 'on';
+			}
+		}
+		return null;
+	};
+	return {
+		device: dev,
+		rx_csum: parse_feat('rx-checksumming'),
+		tx_csum: parse_feat('tx-checksumming'),
+		sg: parse_feat('scatter-gather'),
+		tso: parse_feat('tx-tcp-segmentation'),
+		tso_v6: parse_feat('tx-tcp6-segmentation'),
+		gso: parse_feat('generic-segmentation-offload'),
+		gro: parse_feat('generic-receive-offload')
+	};
+}
+
+function read_rx_zerocopy_stats(ethtool, dev) {
+	if (ethtool == null || dev == null)
+		return null;
+	let raw = read_cmd_output(`${ethtool} -S ${dev}`);
+	if (raw == '')
+		return null;
+	let out = {};
+	let found = false;
+	for (let line in split(raw, '\n')) {
+		let m = match(trim(line), /^(ni_rx_(zerocopy|copybreak|alloc_fallback|errors|dropped)):\s*([0-9]+)/);
+		if (m != null) {
+			out[m[1]] = +m[3];
+			found = true;
+		}
+	}
+	return found ? out : null;
+}
+
+function read_rx_steering() {
+	let irq_num = null;
+	let irq_cpu = null;
+	let irq_raw = readfile('/proc/interrupts') || '';
+	for (let line in split(irq_raw, '\n')) {
+		if (index(line, 'rtl9617c_ni') < 0)
+			continue;
+		let m = match(trim(line), /^([0-9]+):/);
+		if (m != null) {
+			irq_num = +m[1];
+			let eff = trim(readfile(`/proc/irq/${irq_num}/effective_affinity_list`) || '');
+			if (eff != '')
+				irq_cpu = eff;
+		}
+		break;
+	}
+	let rfs_global = +(trim(readfile('/proc/sys/net/core/rps_sock_flow_entries') || '0'));
+	let devs = [];
+	for (let d in ['lan1', 'lan2', 'lan3', 'lan4', 'pon0']) {
+		let rp = `/sys/class/net/${d}/queues/rx-0/rps_cpus`;
+		if (!access(rp, 'r'))
+			continue;
+		push(devs, {
+			device: d,
+			rps_cpus: trim(readfile(rp) || '0'),
+			rps_flow_cnt: +(trim(readfile(`/sys/class/net/${d}/queues/rx-0/rps_flow_cnt`) || '0'))
+		});
+	}
+	return {
+		irq_num,
+		irq_cpu,
+		rfs_global,
+		devs
+	};
+}
+
+function read_tx_offload() {
+	let base = '/sys/module/rtl9617c_ni/parameters/';
+	let nic = read_nic_offload_features();
+	let ethtool = ethtool_bin();
+	return {
+		tx_csum: trim(readfile(base + 'tx_csum') || '') == 'Y',
+		tso: trim(readfile(base + 'tso') || '') == 'Y',
+		tso_v6: trim(readfile(base + 'tso_v6') || '') == 'Y',
+		rx_zerocopy: trim(readfile(base + 'rx_zerocopy') || '') == 'Y',
+		mcast_hw: trim(readfile(base + 'mcast_hw') || '') == 'Y',
+		napt6: trim(readfile(base + 'napt6') || '') == 'Y',
+		dual_hdr: trim(readfile(base + 'dual_hdr') || '') == 'Y',
+		vpn_offload: trim(readfile(base + 'vpn_offload') || '') == 'Y',
+		clear_on_free: trim(readfile(base + 'clear_on_free') || '') == 'Y',
+		nic_features: nic,
+		rx_stats: read_rx_zerocopy_stats(ethtool, nic ? nic.device : 'lan1'),
+		steering: read_rx_steering()
+	};
+}
+
+function read_loaded_modules() {
+	let mods = {};
+	let raw = readfile('/proc/modules') || '';
+	for (let line in split(raw, '\n')) {
+		let m = match(line, /^([a-zA-Z0-9_-]+)\s+([0-9]+)\s+([0-9]+)/);
+		if (m != null)
+			mods[m[1]] = { size: +m[2], refcnt: +m[3] };
+	}
+	return mods;
+}
+
+function is_proc_running(comm) {
+	for (let p in glob('/proc/[0-9]*/comm')) {
+		if (trim(readfile(p) || '') == comm)
+			return true;
+	}
+	return false;
+}
+
+function read_crypto_status() {
+	let raw = readfile('/proc/crypto') || '';
+	let cur = {};
+	let algos = [];
+	const interesting = {
+		'rtk-cbc-aes': true,
+		'rtk-gcm-aes': true,
+		'rtk-rfc4106-gcm-aes': true,
+		'cbc-aes-ce': true,
+		'gcm-aes-ce': true,
+		'rfc4106-gcm-aes-ce': true
+	};
+	let flush = () => {
+		if (cur.driver && exists(interesting, cur.driver)) {
+			push(algos, {
+				name: cur.name || '',
+				driver: cur.driver,
+				priority: cur.priority != null ? +cur.priority : 0,
+				selftest: cur.selftest || '',
+				hw_engine: substr(cur.driver, 0, 4) == 'rtk-'
+			});
+		}
+		cur = {};
+	};
+	for (let line in split(raw, '\n')) {
+		let s = trim(line);
+		if (s == '') {
+			flush();
+			continue;
+		}
+		let kv = match(s, /^([a-z0-9_ ]+?)\s*:\s*(.*)$/);
+		if (kv != null)
+			cur[trim(kv[1])] = trim(kv[2]);
+	}
+	flush();
+	sort(algos, (a, b) => a.name != b.name ? (a.name < b.name ? -1 : 1) : (b.priority - a.priority));
+
+	let clk_mhz = null;
+	let clk_raw = readfile('/sys/kernel/debug/clk/clk_summary') || '';
+	for (let line in split(clk_raw, '\n')) {
+		let cm = match(trim(line), /^div_crypto\s+[0-9]+\s+[0-9]+\s+[0-9]+\s+([0-9]+)/);
+		if (cm != null) {
+			clk_mhz = int((+cm[1] + 500000) / 1000000);
+			break;
+		}
+	}
+
+	let irqs = 0;
+	let irq_found = false;
+	let irq_raw = readfile('/proc/interrupts') || '';
+	for (let line in split(irq_raw, '\n')) {
+		if (index(line, '90500000.crypto') < 0)
+			continue;
+		irq_found = true;
+		let parts = split(trim(line), /\s+/);
+		for (let i = 1; i < length(parts); i++) {
+			if (match(parts[i], /^[0-9]+$/))
+				irqs += +parts[i];
+			else
+				break;
+		}
+		break;
+	}
+
+	let rtk_passed = 0, rtk_total = 0;
+	for (let a in algos) {
+		if (a.hw_engine) {
+			rtk_total++;
+			if (a.selftest == 'passed')
+				rtk_passed++;
+		}
+	}
+	return {
+		available: irq_found || rtk_total > 0,
+		rtk_passed,
+		rtk_total,
+		clk_mhz,
+		irqs,
+		algos
+	};
+}
+
+function read_vpn_interfaces() {
+	let out = [];
+	let ctx = cursor();
+	ctx.load('network');
+	ctx.foreach('network', 'interface', (s) => {
+		let proto = lc(s.proto || '');
+		if (proto != 'l2tp' && proto != 'pptp')
+			return;
+		let name = s['.name'];
+		let netdev = (proto == 'l2tp' ? 'l2tp-' : 'pptp-') + name;
+		let up = access('/sys/class/net/' + netdev, 'r');
+		let oper = up ? trim(readfile('/sys/class/net/' + netdev + '/operstate') || '') : 'down';
+		push(out, {
+			name,
+			proto,
+			server: s.server || '',
+			disabled: qos.is_truthy(s.disabled ?? '0'),
+			netdev,
+			up,
+			operstate: oper != '' ? oper : (up ? 'up' : 'down')
+		});
+	});
+	return out;
+}
+
+function read_vpn_status() {
+	let base = '/sys/module/rtl9617c_ni/parameters/';
+	let mods = read_loaded_modules();
+	const kmod_specs = [
+		{ name: 'l2tp_core', role: 'L2TP 核心协议栈' },
+		{ name: 'l2tp_netlink', role: 'L2TP Netlink 控制接口' },
+		{ name: 'l2tp_ppp', role: 'PPPoL2TP 数据面驱动' },
+		{ name: 'pptp', role: 'PPTP (GREv1) 数据面驱动' },
+		{ name: 'ppp_generic', role: 'PPP 通用转发路径 (654 卸载支持)' },
+		{ name: 'ppp_mppe', role: 'MPPE 加密识别（自动安全回退软件）' }
+	];
+	let kmods = [];
+	for (let spec in kmod_specs) {
+		let m = mods[spec.name];
+		push(kmods, {
+			name: spec.name,
+			role: spec.role,
+			loaded: m != null,
+			refcnt: m != null ? m.refcnt : 0
+		});
+	}
+
+	let pppol2tp_list = glob('/usr/lib/pppd/*/pppol2tp.so');
+	let pptp_so_list = glob('/usr/lib/pppd/*/pptp.so');
+	let tools = [
+		{
+			name: 'xl2tpd',
+			role: 'L2TPv2 拨号守护进程',
+			path: '/usr/sbin/xl2tpd',
+			present: access('/usr/sbin/xl2tpd', 'x'),
+			running: is_proc_running('xl2tpd')
+		},
+		{
+			name: 'pppd',
+			role: 'PPP 拨号主程序',
+			path: '/usr/sbin/pppd',
+			present: access('/usr/sbin/pppd', 'x'),
+			running: is_proc_running('pppd')
+		},
+		{
+			name: 'pppol2tp.so',
+			role: 'pppd L2TP 插件',
+			path: length(pppol2tp_list) ? pppol2tp_list[0] : '/usr/lib/pppd/*/pppol2tp.so',
+			present: length(pppol2tp_list) > 0,
+			running: null
+		},
+		{
+			name: 'pptp.so',
+			role: 'pppd PPTP 插件',
+			path: length(pptp_so_list) ? pptp_so_list[0] : '/usr/lib/pppd/*/pptp.so',
+			present: length(pptp_so_list) > 0,
+			running: null
+		}
+	];
+
+	return {
+		vpn_offload: trim(readfile(base + 'vpn_offload') || '') == 'Y',
+		clear_on_free: trim(readfile(base + 'clear_on_free') || '') == 'Y',
+		tunnel: read_fe_tunnel(),
+		kmods,
+		tools,
+		interfaces: read_vpn_interfaces(),
+		crypto: read_crypto_status()
+	};
+}
+
+const methods = {
+	status: {
+		call: function() {
+			return {
+				hostpol: read_hostpol_fresh(),
+				te_flow: qos.parse_te_flow(readfile(qos.te_file('te_flow'))),
+				dos: qos.parse_dos(readfile(qos.te_file('dos'))),
+				ni_ports: inspect_ni_ports(),
+				nft: read_nft_stats(),
+				fe_summary: read_fe_qos_summary(),
+				mirror: read_fe_mirror(),
+				tx_offload: read_tx_offload(),
+				vpn: read_vpn_status(),
+				uptime_ms: uptime_ms(),
+				queried_at: time()
+			};
+		}
+	},
+
+	clear_host_mib: {
+		args: { mac: '' },
+		call: function(req) {
+			let path = qos.te_file('hostpol');
+			let parsed = qos.parse_hostpol(readfile(path));
+			if (!parsed.available)
+				return { ok: false, error: 'hostpol debugfs unavailable' };
+
+			let target_mac = req.args.mac != '' ? qos.normalize_mac(req.args.mac) : null;
+			if (req.args.mac != '' && target_mac == null)
+				return { ok: false, error: 'invalid MAC address' };
+
+			let cleared = 0;
+			for (let item in parsed.items) {
+				if (target_mac != null && item.mac != target_mac)
+					continue;
+				if (write_debugfs_cmd(path, 'mib-clear ' + item.idx))
+					cleared++;
+			}
+			return { ok: true, cleared };
+		}
+	},
+
+	clear_dos_flood: {
+		args: { scope: 'all' },
+		call: function(req) {
+			let path = qos.te_file('dos');
+			if (!access(path, 'w'))
+				return { ok: false, error: 'dos debugfs unavailable' };
+			let scope = req.args.scope || 'all';
+			let ok = true;
+			if (scope == 'all' || scope == 'l3')
+				ok = write_debugfs_cmd(path, 'flood-clear') && ok;
+			if (scope == 'all' || scope == 'l2')
+				ok = write_debugfs_cmd(path, 'l2-flood-clear') && ok;
+			return { ok };
+		}
+	},
+
+	apply: {
+		call: function() {
+			let rc = system(['/usr/libexec/rtl9617c-qos-apply', 'apply']);
+			return { ok: rc == 0, code: rc };
+		}
+	},
+
+	app_catalog: {
+		call: function() {
+			let cat = qos.load_app_catalog();
+			let compact_apps = [];
+			for (let a in (cat.apps || [])) {
+				push(compact_apps, {
+					id: a.id,
+					name: a.name,
+					cat: a.cat,
+					qos_class: a.qos_class,
+					d_cnt: length(a.domains || []),
+					t_cnt: length(a.tcp || []),
+					u_cnt: length(a.udp || [])
+				});
+			}
+			return {
+				version: cat.version,
+				categories: cat.categories,
+				apps: compact_apps
+			};
+		}
+	},
+
+	apply_preset: {
+		args: { preset: '' },
+		call: function(req) {
+			let preset = req.args.preset || '';
+			if (preset != 'gaming' && preset != 'office' && preset != 'small_only' && preset != 'clear')
+				return { ok: false, error: 'unknown preset: ' + preset };
+
+			let ctx = cursor();
+			ctx.load('rtl9617c_qos');
+
+			if (ctx.get('rtl9617c_qos', 'global') == null)
+				ctx.set('rtl9617c_qos', 'global', 'global');
+
+			let cls_ids = [];
+			ctx.foreach('rtl9617c_qos', 'classify', (s) => push(cls_ids, s['.name']));
+			for (let id in cls_ids)
+				ctx.delete('rtl9617c_qos', id);
+
+			let app_ids = [];
+			ctx.foreach('rtl9617c_qos', 'app_rule', (s) => push(app_ids, s['.name']));
+			for (let id in app_ids)
+				ctx.delete('rtl9617c_qos', id);
+
+			function add_cls(rule) {
+				let sid = ctx.add('rtl9617c_qos', 'classify');
+				for (let k, v in rule)
+					ctx.set('rtl9617c_qos', sid, k, v);
+			}
+
+			function add_app(rule) {
+				let sid = ctx.add('rtl9617c_qos', 'app_rule');
+				for (let k, v in rule)
+					ctx.set('rtl9617c_qos', sid, k, v);
+			}
+
+			function set_port_sched(dev, mode, strict_bands, quanta, create_if_missing) {
+				let target_sid = null;
+				ctx.foreach('rtl9617c_qos', 'port', (s) => {
+					if (s.device == dev)
+						target_sid = s['.name'];
+				});
+				if (target_sid == null) {
+					if (create_if_missing === false)
+						return;
+					target_sid = ctx.add('rtl9617c_qos', 'port');
+				}
+				ctx.set('rtl9617c_qos', target_sid, 'enabled', mode == 'none' ? '0' : '1');
+				ctx.set('rtl9617c_qos', target_sid, 'device', dev);
+				ctx.set('rtl9617c_qos', target_sid, 'egress_mode', mode);
+				if (strict_bands != null)
+					ctx.set('rtl9617c_qos', target_sid, 'strict_bands', '' + strict_bands);
+				if (quanta != null) {
+					for (let k in keys(quanta))
+						ctx.set('rtl9617c_qos', target_sid, k, '' + quanta[k]);
+				}
+			}
+
+			const ets_quanta = {
+				voq4_quantum: '6000',
+				voq3_quantum: '4000',
+				voq2_quantum: '3000',
+				voq1_quantum: '1000',
+				voq0_quantum: '500'
+			};
+
+			if (preset == 'gaming') {
+				ctx.set('rtl9617c_qos', 'global', 'enabled', '1');
+				ctx.set('rtl9617c_qos', 'global', 'small_pkt_prio', '1');
+				ctx.set('rtl9617c_qos', 'global', 'small_pkt_mode', 'udp_icmp');
+				ctx.set('rtl9617c_qos', 'global', 'small_pkt_bytes', '256');
+				ctx.set('rtl9617c_qos', 'global', 'small_pkt_cos', '6');
+				ctx.set('rtl9617c_qos', 'global', 'default_cos', '2');
+				ctx.set('rtl9617c_qos', 'global', 'wred_enabled', '1');
+				ctx.set('rtl9617c_qos', 'global', 'wred_profile', '1');
+				ctx.set('rtl9617c_qos', 'global', 'wred_ecn', '0');
+				add_app({ enabled: '1', match_type: 'category', category: 'mobile_game', cos: '6' });
+				add_app({ enabled: '1', match_type: 'category', category: 'pc_game', cos: '6' });
+				add_app({ enabled: '1', match_type: 'category', category: 'voice_meeting', cos: '6' });
+				add_app({ enabled: '1', match_type: 'category', category: 'download_bulk', cos: '0' });
+				add_cls({
+					enabled: '1', name: 'DNS 域名解析极速响应', cos: '7',
+					family: 'any', proto: 'tcp_udp', dst_port: '53,853', direction: 'both'
+				});
+				add_cls({
+					enabled: '1', name: '网络游戏与语音通话高频端口', cos: '6',
+					family: 'any', proto: 'udp', dst_port: '3074,3478-3480,27015-27050', direction: 'both'
+				});
+				add_cls({
+					enabled: '1', name: '语音与极低延迟应用标记 (EF)', cos: '6',
+					family: 'any', proto: 'any', dscp: 'ef', direction: 'both'
+				});
+				add_cls({
+					enabled: '1', name: 'BT 与后台大流量下载降权', cos: '0',
+					family: 'any', proto: 'tcp_udp', dst_port: '6881-6999,51413', direction: 'both'
+				});
+				set_port_sched('lan1', 'ets', 3, ets_quanta, true);
+				set_port_sched('pon0', 'ets', 3, ets_quanta, true);
+			} else if (preset == 'office') {
+				ctx.set('rtl9617c_qos', 'global', 'enabled', '1');
+				ctx.set('rtl9617c_qos', 'global', 'small_pkt_prio', '1');
+				ctx.set('rtl9617c_qos', 'global', 'small_pkt_mode', 'udp_icmp');
+				ctx.set('rtl9617c_qos', 'global', 'small_pkt_bytes', '256');
+				ctx.set('rtl9617c_qos', 'global', 'small_pkt_cos', '6');
+				ctx.set('rtl9617c_qos', 'global', 'default_cos', '2');
+				ctx.set('rtl9617c_qos', 'global', 'wred_enabled', '1');
+				ctx.set('rtl9617c_qos', 'global', 'wred_profile', '1');
+				ctx.set('rtl9617c_qos', 'global', 'wred_ecn', '0');
+				add_app({ enabled: '1', match_type: 'category', category: 'voice_meeting', cos: '6' });
+				add_app({ enabled: '1', match_type: 'category', category: 'remote_desk', cos: '5' });
+				add_app({ enabled: '1', match_type: 'category', category: 'education', cos: '5' });
+				add_app({ enabled: '1', match_type: 'category', category: 'download_bulk', cos: '0' });
+				add_cls({
+					enabled: '1', name: 'DNS 与 SSH 远程办公终端', cos: '7',
+					family: 'any', proto: 'tcp_udp', dst_port: '22,53,853', direction: 'both'
+				});
+				add_cls({
+					enabled: '1', name: '腾讯会议 / Zoom / Teams 视频会议', cos: '6',
+					family: 'any', proto: 'udp', dst_port: '3478-3481,8801-8810', direction: 'both'
+				});
+				add_cls({
+					enabled: '1', name: '网页浏览与 HTTPS 办公访问', cos: '4',
+					family: 'any', proto: 'tcp', dst_port: '80,443', direction: 'both'
+				});
+				add_cls({
+					enabled: '1', name: 'BT 与后台大流量下载降权', cos: '0',
+					family: 'any', proto: 'tcp_udp', dst_port: '6881-6999,51413', direction: 'both'
+				});
+				set_port_sched('lan1', 'ets', 3, ets_quanta, true);
+				set_port_sched('pon0', 'ets', 3, ets_quanta, true);
+			} else if (preset == 'small_only') {
+				ctx.set('rtl9617c_qos', 'global', 'enabled', '1');
+				ctx.set('rtl9617c_qos', 'global', 'small_pkt_prio', '1');
+				ctx.set('rtl9617c_qos', 'global', 'small_pkt_mode', 'udp_icmp');
+				ctx.set('rtl9617c_qos', 'global', 'small_pkt_bytes', '256');
+				ctx.set('rtl9617c_qos', 'global', 'small_pkt_cos', '6');
+				ctx.set('rtl9617c_qos', 'global', 'default_cos', '0');
+				ctx.set('rtl9617c_qos', 'global', 'wred_enabled', '1');
+				ctx.set('rtl9617c_qos', 'global', 'wred_profile', '1');
+				ctx.set('rtl9617c_qos', 'global', 'wred_ecn', '0');
+				set_port_sched('lan1', 'sp', null, null, true);
+				set_port_sched('pon0', 'none', null, null, false);
+			} else if (preset == 'clear') {
+				ctx.set('rtl9617c_qos', 'global', 'small_pkt_prio', '0');
+				ctx.set('rtl9617c_qos', 'global', 'small_pkt_mode', 'udp_icmp');
+				ctx.set('rtl9617c_qos', 'global', 'default_cos', '0');
+				ctx.set('rtl9617c_qos', 'global', 'wred_enabled', '0');
+				ctx.set('rtl9617c_qos', 'global', 'wred_ecn', '0');
+				set_port_sched('lan1', 'none', null, null, true);
+				set_port_sched('pon0', 'none', null, null, false);
+			}
+			ctx.set('rtl9617c_qos', 'global', 'preset', preset == 'clear' ? '' : preset);
+
+			ctx.commit('rtl9617c_qos');
+			let rc = system(['/usr/libexec/rtl9617c-qos-apply', 'apply']);
+			return { ok: rc == 0, code: rc, preset };
+		}
+	}
+};
+
+return { 'luci.rtl9617c-qos': methods };
