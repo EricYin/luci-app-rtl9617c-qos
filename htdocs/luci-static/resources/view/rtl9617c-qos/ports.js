@@ -4,6 +4,7 @@
 'require form';
 'require uci';
 'require rtl9617c-qos.common as q';
+'require rtl9617c-qos.pe_hook as peHook';
 
 var PORT_FRIENDLY_NAMES = {
 	'lan1': 'LAN1 网口（2.5G 口 · 连接主力电脑 / 下级路由 / 交换机）',
@@ -248,12 +249,16 @@ return view.extend({
 		o.modalonly = true;
 
 		return m.render().then(function(formNode) {
+			var peMount = E('div');
+			var refreshPe = peHook.mount(peMount, [ 'fq_codel' ], 'PE 协处理器公平队列卸载（非独占）', false);
+			var combinedLive = E('div', {}, [ liveMount, peMount ]);
 			return q.setupLivePage(
 				'物理网口总带宽限速与优先级排队',
 				'为每个物理网口（LAN1 ~ LAN4）配置整口总下载/上传最高速度、启用芯片 8 级硬件优先排队通道，并管理硬件队列防缓冲膨胀 (WRED)。',
-				liveMount,
+				combinedLive,
 				function(next) {
 					renderLivePorts(liveMount, next);
+					refreshPe();
 				},
 				formNode
 			);

@@ -4,6 +4,7 @@
 'require form';
 'require uci';
 'require rtl9617c-qos.common as q';
+'require rtl9617c-qos.pe_hook as peHook';
 
 function fmtCount(n) {
 	n = Number(n) || 0;
@@ -228,12 +229,16 @@ return view.extend({
 		o.rmempty = false;
 
 		return m.render().then(function(formNode) {
+			var peMount = E('div');
+			var refreshPe = peHook.mount(peMount, [ 'mcast' ], 'PE 协处理器摘要与组播卸载', true);
+			var combinedLive = E('div', {}, [ liveMount, peMount ]);
 			return q.setupLivePage(
 				'硬件加速与芯片卸载',
 				'统一管理网卡 DMA LSO 发包加速、VPN 硬件卸载入口、IPTV 硬件组播复制及芯片底层实验性加速开关。',
-				liveMount,
+				combinedLive,
 				function(next) {
 					renderLiveOffload(liveMount, next);
+					refreshPe();
 				},
 				formNode
 			);

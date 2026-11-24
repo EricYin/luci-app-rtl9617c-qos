@@ -4,6 +4,7 @@
 'require form';
 'require uci';
 'require rtl9617c-qos.common as q';
+'require rtl9617c-qos.pe_hook as peHook';
 
 function makeTable(headers, rows, emptyText) {
 	if (!rows.length) {
@@ -240,12 +241,16 @@ return view.extend({
 		o.rmempty = false;
 
 		return m.render().then(function(formNode) {
+			var peMount = E('div');
+			var refreshPe = peHook.mount(peMount, [ 'ipsec', 'srv6' ], 'PE 协处理器隧道与加密卸载（非独占）', false);
+			var combinedLive = E('div', {}, [ liveMount, peMount ]);
 			return q.setupLivePage(
 				'VPN 硬件加速与加密模块',
 				'集中管理 RTL9617C 的 L2TPv2 / PPTP ASIC 隧道硬件卸载、拨号工具栈自检及片内加解密引擎状态。',
-				liveMount,
+				combinedLive,
 				function(next) {
 					renderLiveVpn(liveMount, next);
+					refreshPe();
 				},
 				formNode
 			);
