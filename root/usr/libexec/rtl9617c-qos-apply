@@ -429,8 +429,12 @@ function apply_single_port(sec, live_only) {
 		if (has_managed_root)
 			run_cmd(tc_with_bin(['tc', 'qdisc', 'del', 'dev', dev, 'root']), true);
 		if (run_cmd(tc_with_bin(plan.root_cmd), false) != 0) {
-			if (is_pon && (sec.egress_mode == 'sp' || sec.egress_mode == 'ets'))
-				log_warn(`port ${dev}: failed to apply ETS qdisc; check kernel pon/epon/data.c ETS offload support`);
+			if (sec.egress_mode == 'sp' || sec.egress_mode == 'ets') {
+				if (is_pon)
+					log_warn(`port ${dev}: failed to apply ETS qdisc; check kernel CONFIG_NET_SCH_ETS and pon/epon/data.c ETS offload support`);
+				else
+					log_warn(`port ${dev}: failed to apply ETS qdisc; kernel may lack CONFIG_NET_SCH_ETS (TBF shaping and ingress policing still work)`);
+			}
 			errors++;
 		}
 	} else if (has_managed_root) {

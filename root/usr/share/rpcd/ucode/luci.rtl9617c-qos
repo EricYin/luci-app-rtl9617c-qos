@@ -352,11 +352,21 @@ function read_tx_offload() {
 	let base = '/sys/module/rtl9617c_ni/parameters/';
 	let nic = read_nic_offload_features();
 	let ethtool = ethtool_bin();
+	let available = {};
+	for (let key in ['tx_csum', 'tso', 'tso_v6', 'tx_sg', 'tx_multivp',
+			 'rx_zerocopy', 'rx_queues', 'rx_rss', 'mcast_hw',
+			 'napt6', 'dual_hdr', 'vpn_offload', 'clear_on_free'])
+		available[key] = !!access(base + key, 'r');
 	return {
+		available,
 		tx_csum: trim(readfile(base + 'tx_csum') || '') == 'Y',
 		tso: trim(readfile(base + 'tso') || '') == 'Y',
 		tso_v6: trim(readfile(base + 'tso_v6') || '') == 'Y',
+		tx_sg: trim(readfile(base + 'tx_sg') || '') == 'Y',
+		tx_multivp: trim(readfile(base + 'tx_multivp') || '') == 'Y',
 		rx_zerocopy: trim(readfile(base + 'rx_zerocopy') || '') == 'Y',
+		rx_queues: +(trim(readfile(base + 'rx_queues') || '1') || 1),
+		rx_rss: trim(readfile(base + 'rx_rss') || '') == 'Y',
 		mcast_hw: trim(readfile(base + 'mcast_hw') || '') == 'Y',
 		napt6: trim(readfile(base + 'napt6') || '') == 'Y',
 		dual_hdr: trim(readfile(base + 'dual_hdr') || '') == 'Y',

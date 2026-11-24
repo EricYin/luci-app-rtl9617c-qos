@@ -2,10 +2,10 @@ include $(TOPDIR)/rules.mk
 
 LUCI_TITLE:=RTL9617C hardware QoS and Host Policing UI
 LUCI_DESCRIPTION:=Native Web UI and UCI control service for RTL9617C Host Policing, L2TE/8-VoQ port shaping, flowtable CoS priority rules, and L3TE/DoS telemetry
-LUCI_DEPENDS:=+luci-base +tc +rpcd-mod-ucode +ucode-mod-fs +ucode-mod-uci
+LUCI_DEPENDS:=@TARGET_rtl9617c +luci-base +tc +kmod-sched-flower +kmod-sched-act-police +kmod-sched-mqprio +rpcd-mod-ucode +ucode-mod-fs +ucode-mod-uci
 LUCI_PKGARCH:=all
 PKG_VERSION:=0.1.0
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_LICENSE:=GPL-2.0-or-later
 # CSSTidy 1.3 breaks CSS custom properties and responsive grid rules.
 CONFIG_LUCI_CSSTIDY:=
