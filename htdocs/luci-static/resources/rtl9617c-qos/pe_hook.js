@@ -15,6 +15,12 @@ var callPeSetFeature = rpc.declare({
 	params: [ 'id', 'enabled', 'pe' ]
 });
 
+var callPeSetParams = rpc.declare({
+	object: 'luci.rtl9617c-pe',
+	method: 'set_params',
+	params: [ 'fq_rate_kbps', 'fq_target_us', 'fq_ecn', 'mcast_rate_kbps' ]
+});
+
 function fmtMhz(hz) {
 	var n = Number(hz) || 0;
 	return n ? (n / 1000000).toFixed(0) + ' MHz' : '-- MHz';
@@ -94,9 +100,11 @@ return baseclass.extend({
 								E('div', { 'class': 'rq-note', 'style': 'margin:2px 0 0' }, f.desc)
 							]),
 							E('td', {}, sel),
-							E('td', {}, f.active
-								? badge('PE' + f.pe + ' 运行中 · ' + fmtPct(f.util_permille), 'good')
-								: (f.enabled ? badge('待机', 'warn') : badge('未启用', ''))),
+							E('td', {}, f.active && f.hw_bound
+								? badge('PE' + f.pe + ' 硬件直通 · ' + fmtPct(f.util_permille), 'good')
+								: (f.active
+									? badge('仅框架占位', 'warn')
+									: (f.enabled ? badge('待机', 'warn') : badge('未启用', '')))),
 							E('td', {}, E('button', {
 								'class': 'cbi-button ' + (f.enabled ? 'cbi-button-remove' : 'cbi-button-positive'),
 								'style': 'padding:3px 10px;font-size:12px',
@@ -126,6 +134,36 @@ return baseclass.extend({
 							E('tbody', {}, rows)
 						])
 					]));
+
+					if (featureIds.indexOf('fq_codel') >= 0 && st.params) {
+						var inpFq = E('input', {
+							'type': 'number', 'min': '0', 'max': '10000000', 'step': '1000',
+							'class': 'cbi-input-text', 'style': 'width:110px',
+							'value': String(st.params.fq_rate_kbps || 0)
+						});
+						var inpEcn = E('input', {
+							'type': 'checkbox',
+							'checked': (st.params.fq_ecn === undefined || st.params.fq_ecn) ? 'checked' : null
+						});
+						body.push(E('div', { 'style': 'margin-top:10px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:12px' }, [
+							E('label', {}, [ 'PE FQ-CoDel 上行整形 (kbps, 0=不限): ', inpFq ]),
+							E('label', {}, [ inpEcn, ' ECN' ]),
+							E('button', {
+								'class': 'cbi-button cbi-button-apply',
+								'style': 'padding:3px 10px;font-size:12px',
+								'click': function() {
+									if (busy) return;
+									busy = true;
+									callPeSetParams(parseInt(inpFq.value, 10) || 0,
+											st.params.fq_target_us || 5000,
+											inpEcn.checked ? 1 : 0,
+											st.params.mcast_rate_kbps || 0)
+										.then(function() { busy = false; return refresh(); })
+										.catch(function() { busy = false; });
+								}
+							}, '应用整形参数')
+						]));
+					}
 				}
 
 				dom.content(container, E('div', { 'class': 'rq-card' }, [
