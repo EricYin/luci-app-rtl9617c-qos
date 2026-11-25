@@ -59,11 +59,18 @@ function renderLivePorts(container, data) {
 	}
 
 	var wredHwEn = !!teFlow.wred_hw_en;
+	var wredPortActive = !!teFlow.wred_port_active;
 	var wredEcnHwEn = !!teFlow.wred_ecn_hw_en;
-	var wredActive = wredHwEn && wredQueues.length > 0;
+	var wredActive = wredHwEn && wredPortActive && wredQueues.length > 0;
 	var wredBadge = wredActive
 		? q.badge('硬件主动控队生效', 'good')
-		: (wredQueues.length > 0 ? q.badge('全局 WRED 未开启', 'warn') : q.badge('默认尾丢弃模式', ''));
+		: ((wredHwEn || wredQueues.length > 0) ? q.badge('端口未使能', 'warn') : q.badge('默认尾丢弃模式', ''));
+	var pm = teFlow.te_pm || null;
+	var pmText = pm
+		? (' · 硬件统计：WRED 丢包 ' + String((pm.wred_g_drop || 0) + (pm.wred_y_drop || 0)) +
+		   ' / ECN 标记 ' + String(pm.ce_mark || 0) +
+		   ' / 尾丢弃 ' + String(pm.tail_drop || 0))
+		: '';
 
 	cards.push(q.card('硬件队列防缓冲膨胀 (WRED)',
 		wredBadge,
@@ -74,8 +81,8 @@ function renderLivePorts(container, data) {
 					: (wredQueues.length > 0 ? (wredQueues.length + ' 队列已绑但全局未启') : '未开启')
 			]),
 			E('p', { class: 'rq-note' }, [
-				'全局控制寄存器：' + (teFlow.l3_glb_ctrl || '未知') +
-				' · 满载下载时当队列开始积压，芯片会按概率提前通知发送端降速，防止网页打开变慢或游戏延迟飙升。'
+				'全局控制：' + (teFlow.l3_glb_ctrl || '未知') + pmText +
+				'。满载下载时当队列开始积压，芯片按概率提前丢包或标记 ECN，防止网页变慢与游戏跳 Ping。'
 			])
 		]));
 
@@ -115,13 +122,13 @@ return view.extend({
 		go.rmempty = false;
 
 		go = sg.option(form.Value, 'wred_profile', 'WRED 拥塞控制曲线模板',
-			'选择或输入硬件 WRED 曲线模板号（内置 1=标准均衡、2=激进低延迟、3=温和宽容，高级可填 1~31）。');
+			'选择或输入硬件 WRED 曲线模板号（内置 1=温和均衡、2=标准平衡、3=激进低延迟，高级可填 1~31）。');
 		go.depends('wred_enabled', '1');
 		go.datatype = 'range(1,31)';
 		go.default = '1';
-		go.value('1', '1（标准均衡 · 队列过半温和介入，推荐游戏/日常）');
-		go.value('2', '2（激进低延迟 · 更早开始提前降速，极度防跳 Ping）');
-		go.value('3', '3（温和宽容 · 优先保证吞吐，仅深队列时触发）');
+		go.value('1', '1（温和均衡 · 队列过半温和介入，优先吞吐与日常兼容）');
+		go.value('2', '2（标准平衡 · 较早开始提前降速，兼顾低延迟与吞吐）');
+		go.value('3', '3（激进低延迟 · 更早介入控队，极度防满载跳 Ping）');
 
 		go = sg.option(form.Flag, 'wred_ecn', '启用 ECN 显式拥塞通知标记（代替直接丢包）',
 			'开启后，芯片在队列开始积压时优先在 IP 包头写入 ECN 拥塞标记，让支持 ECN 的设备平滑降速且减少重传（仅对支持 ECN 的流量生效）。');

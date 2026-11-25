@@ -615,15 +615,20 @@ const methods = {
 	clear_dos_flood: {
 		args: { scope: 'all' },
 		call: function(req) {
+			/*
+			 * 0x3310 / 0x1234 are hardware flood time-window units (OEM
+			 * defaults 0x3fa / 0xff), not drop counters; restore defaults
+			 * instead of zeroing the timer window.
+			 */
 			let path = qos.te_file('dos');
 			if (!access(path, 'w'))
 				return { ok: false, error: 'dos debugfs unavailable' };
 			let scope = req.args.scope || 'all';
 			let ok = true;
 			if (scope == 'all' || scope == 'l3')
-				ok = write_debugfs_cmd(path, 'flood-clear') && ok;
+				ok = write_debugfs_cmd(path, 'flood-unit 0x3fa') && ok;
 			if (scope == 'all' || scope == 'l2')
-				ok = write_debugfs_cmd(path, 'l2-flood-clear') && ok;
+				ok = write_debugfs_cmd(path, 'l2-flood-unit 0xff') && ok;
 			return { ok };
 		}
 	},

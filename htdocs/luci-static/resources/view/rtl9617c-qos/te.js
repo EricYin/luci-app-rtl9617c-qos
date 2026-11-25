@@ -76,9 +76,9 @@ function renderLiveTe(container, data) {
 					])
 				]),
 			q.card('硬件队列 WRED / ECN 全局状态',
-				(tf.wred_hw_en && (tf.wred_queues || []).length > 0)
+				(tf.wred_hw_en && tf.wred_port_active && (tf.wred_queues || []).length > 0)
 					? q.badge('硬件已激活', 'good')
-					: ((tf.wred_queues || []).length > 0 ? q.badge('全局未使能', 'warn') : q.badge('未开启', '')),
+					: (((tf.wred_queues || []).length > 0 || tf.wred_hw_en) ? q.badge('端口未使能', 'warn') : q.badge('未开启', '')),
 				[
 					E('div', { class: 'rq-kpi' }, [
 						'WRED: ' + (tf.wred_hw_en ? '开启' : '关闭') +
@@ -86,7 +86,11 @@ function renderLiveTe(container, data) {
 					]),
 					E('p', { class: 'rq-note' }, [
 						'l3_glb_ctrl: ' + (tf.l3_glb_ctrl || '未知') +
-						' · 已绑定曲线队列数：' + String((tf.wred_queues || []).length) + '。'
+						' · 已绑定曲线队列数：' + String((tf.wred_queues || []).length) +
+						(tf.te_pm
+							? (' · WRED 丢包：' + String((tf.te_pm.wred_g_drop || 0) + (tf.te_pm.wred_y_drop || 0)) +
+							   ' · ECN 标记：' + String(tf.te_pm.ce_mark || 0))
+							: '') + '。'
 					])
 				])
 		]),

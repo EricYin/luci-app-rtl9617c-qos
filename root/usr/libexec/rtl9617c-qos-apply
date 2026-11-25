@@ -109,8 +109,15 @@ function apply_dos(enabled, global_sec) {
 
 	let plan = qos.build_dos_plan(enabled, global_sec);
 	let errors = 0;
+	let dos_live = qos.parse_dos(readfile(dos_path));
+	let hw_armed = dos_live.available && (
+		(dos_live.l3_type_en != null && dos_live.l3_type_en != '0x0000') ||
+		(dos_live.l2_type_en != null && dos_live.l2_type_en != '0x0000') ||
+		(dos_live.l3_port_mask != null && dos_live.l3_port_mask != '0x0000000000000000') ||
+		(dos_live.l2_port_mask != null && dos_live.l2_port_mask != '0x0000000000000000')
+	);
 
-	if (parsed.dos_enabled != plan.dos_enabled) {
+	if (parsed.dos_enabled != plan.dos_enabled || (!plan.dos_enabled && hw_armed)) {
 		if (getenv('RTL9617C_DRY_RUN')) {
 			print(`TE_FLOW: ${plan.te_flow_cmd}\n`);
 		} else {
@@ -161,7 +168,7 @@ function apply_policers_and_wred(enabled, global_sec, flow_policers, group_polic
 	for (let c in grp_plan.cmds)
 		push(cmds, c);
 
-	let had_wred = length(parsed.wred_queues || []) > 0 || parsed.wred_hw_en;
+	let had_wred = length(parsed.wred_queues || []) > 0 || parsed.wred_hw_en || parsed.wred_port_active;
 	let want_wred = enabled && qos.is_truthy((global_sec || {}).wred_enabled ?? '0');
 	if (want_wred || had_wred) {
 		for (let c in qos.build_wred_commands(enabled, global_sec))

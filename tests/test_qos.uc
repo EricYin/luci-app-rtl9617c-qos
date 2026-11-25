@@ -81,33 +81,46 @@ let sample_te = join('\n', [
 	'group64_ready=1 group_cfg_depth=1',
 	'flow_slots=1/160 group_slots=0/64',
 	'pie_wred_port_en= 00000000 00000000 00000000 00000000',
+	'l3_glb_ctrl=0x0000005d (wred_en=1 ecn=1)',
+	'wred_ctrl=0x00000044 (fast_decay=1 weight=4 sel_worst=0 mark_ecn=1 arb_ecn=1)',
+	'te_pm: pkts=12345 pol_drop=10 tail_drop=2 wred_y_drop=3 wred_g_drop=4 ce_mark=9',
+	'wred_afgs= 10588/10588 0/0 0/0 0/0 0/0 0/0 0/0 0/0',
 	'flow[  0] cir=50000kbps pir=50000kbps cbs=256 pbs=256 words=00000000/00000000/00000000',
-	'dos_enabled=0 dos_flood_l3=0 dos_flood_l2=0 (full dump: ./dos)',
+	'dos_enabled=0 dos_flood_l3=1018 dos_flood_l2=255 (full dump: ./dos)',
 	''
 ]);
 let parsed_te = qos.parse_te_flow(sample_te);
 assert_eq(parsed_te.flow_slots_used, 1, 'flow slots used');
 assert_eq(length(parsed_te.flow_policers), 1, '1 active flow policer');
 assert_eq(parsed_te.flow_policers[0].cir_kbps, 50000, 'flow policer cir');
+assert_eq(parsed_te.wred_hw_en, true, 'wred hw enabled');
+assert_eq(parsed_te.wred_ecn_hw_en, true, 'wred ecn hw enabled');
+assert_eq(parsed_te.wred_mark_ecn_en, true, 'wred mark ecn enabled');
+assert_eq(parsed_te.arb_ip_ecn_en, true, 'arb ip ecn enabled');
+assert_eq(parsed_te.te_pm.wred_g_drop, 4, 'te_pm wred_g_drop parsed');
+assert_eq(parsed_te.te_pm.ce_mark, 9, 'te_pm ce_mark parsed');
+assert_eq(parsed_te.wred_afgs[0], '10588/10588', 'wred_afgs[0] parsed');
 assert_eq(parsed_te.dos_enabled, false, 'dos disabled');
 
 let sample_dos = join('\n', [
 	'dos: dev=4f4300000.ethernet (type_en = 0x3304[31:16] / 0x1228[15:0])',
-	'l3_flood=0x00000005 count=5 (0x3310[10:0])',
-	'l2_flood=0x00000002 count=2 (0x1234[9:0])',
+	'l3_flood=0x000003fa count=1018 (0x3310[10:0])',
+	'l2_flood=0x000000ff count=255 (0x1234[9:0])',
 	'l3_type_en=0x0005 l2_type_en=0x0000',
-	'  [ 0] icmp_flood      l3_en=1 l3_pol=0x010 l3_th=0x00ff l2_en=0 l2_th=0x0000',
-	'  [ 2] syn_flood       l3_en=1 l3_pol=0x020 l3_th=0x01ff l2_en=0 l2_th=0x0000',
-	'  [15] smac_eq_dmac    l3_en=0 l3_pol=0x000 l2_en=0',
-	'l3_port_mask=0x000000000000000f l2_port_mask=0x000000000000000f',
+	'  [ 0] icmp_flood      l3_en=1 l3_pol=0x010 l3_th=0x03e8 l2_en=0 l2_th=0x0000 l3_act=drop l2_act=drop',
+	'  [ 2] syn_flood       l3_en=1 l3_pol=0x020 l3_th=0x07d0 l2_en=0 l2_th=0x0000 l3_act=trap l2_act=drop',
+	'  [15] smac_eq_dmac    l3_en=0 l3_pol=0x000 l2_en=0 l3_act=drop l2_act=drop',
+	'l3_port_mask=0x00000000000000ff l2_port_mask=0x00000000000000ff',
 	''
 ]);
 let parsed_dos = qos.parse_dos(sample_dos);
-assert_eq(parsed_dos.l3_flood_count, 5, 'l3 flood count');
-assert_eq(parsed_dos.l2_flood_count, 2, 'l2 flood count');
+assert_eq(parsed_dos.l3_flood_count, 1018, 'l3 flood unit');
+assert_eq(parsed_dos.l2_flood_count, 255, 'l2 flood unit');
 assert_eq(length(parsed_dos.types), 3, 'all 3 DoS types parsed (including s-containing names)');
 assert_eq(parsed_dos.types[0].l3_en, true, 'DoS l3_en true');
+assert_eq(parsed_dos.types[0].l3_act, 'drop', 'DoS l3_act drop');
 assert_eq(parsed_dos.types[1].name, 'syn_flood', 'syn_flood parsed');
+assert_eq(parsed_dos.types[1].l3_act, 'trap', 'syn_flood l3_act trap');
 assert_eq(parsed_dos.types[2].l3_th, null, 'smac_eq_dmac optional th omitted cleanly');
 
 // 6. nftables classify rule builder
@@ -201,9 +214,28 @@ let dos_p = qos.build_dos_plan(true, {
 	dos_syn_th: '2000',
 	dos_disabled_types: ['udp_bomb']
 });
+let dos_joined = join('|', dos_p.dos_cmds);
 assert_eq(dos_p.te_flow_cmd, 'dos on', 'dos te_flow cmd');
-assert_true(index(join('|', dos_p.dos_cmds), 'th icmp_flood 1000') >= 0, 'dos icmp th');
-assert_true(index(join('|', dos_p.dos_cmds), 'type udp_bomb off') >= 0, 'dos disabled type');
+assert_true(index(dos_joined, 'th icmp_flood 1000') >= 0, 'dos icmp th');
+assert_true(index(dos_joined, 'th fin_flood 2000') >= 0, 'dos default fin th');
+assert_true(index(dos_joined, 'type udp_bomb off') >= 0, 'dos disabled type');
+assert_true(index(dos_joined, 'type land_attacks on') >= 0, 'dos enabled type');
+assert_true(index(dos_joined, 'port-mask 0x00000000000000ff') >= 0, 'dos l3 port mask');
+assert_true(index(dos_joined, 'l2-port-mask 0x00000000000000ff') >= 0, 'dos l2 port mask');
+
+// Default enabled with empty disabled list must arm the 15 safe types + keep syn1024 off + safe thresholds + masks
+let dos_def = qos.build_dos_plan(true, { dos_enabled: '1' });
+let dos_def_joined = join('|', dos_def.dos_cmds);
+assert_true(index(dos_def_joined, 'th icmp_flood 1000') >= 0, 'dos default icmp th');
+assert_true(index(dos_def_joined, 'th syn_flood 2000') >= 0, 'dos default syn th');
+assert_true(index(dos_def_joined, 'type icmp_flood on') >= 0 && index(dos_def_joined, 'l2-type smac_eq_dmac on') >= 0,
+	'dos default arms safe L3+L2 types');
+assert_true(index(dos_def_joined, 'type syn1024 off') >= 0 && index(dos_def_joined, 'l2-type syn1024 off') >= 0,
+	'dos default keeps syn1024 off to protect WAN HTTP/HTTPS SYN+ACK');
+assert_true(index(dos_def_joined, 'port-mask 0x00000000000000ff') > index(dos_def_joined, 'type icmp_flood on'),
+	'dos sets port mask after thresholds and types');
+let dos_syn1024 = qos.build_dos_plan(true, { dos_enabled: '1', dos_allow_syn1024: '1' });
+assert_true(index(join('|', dos_syn1024.dos_cmds), 'type syn1024 on') >= 0, 'dos_allow_syn1024 opts in syn1024');
 
 let pol_diff = qos.diff_policer_commands(
 	[{ slot: 0, cir_kbps: 10000, pir_kbps: 10000, cbs: 1000, pbs: 2000 },
@@ -215,11 +247,15 @@ let pol_diff = qos.diff_policer_commands(
 assert_eq(join('|', pol_diff.cmds), 'policer-free 0|policer 1 50000 50000 2048 4095|policer 2 100000 100000 2048 4095', 'flow policer diff');
 
 let wred_cmds = qos.build_wred_commands(true, { wred_enabled: '1', wred_profile: '2', wred_queues: '2' });
-assert_true(index(wred_cmds[0], 'wred-prof 1 ') == 0, 'wred programs profile 1 curve');
-assert_true(index(join('|', wred_cmds), 'wred 0 3 0') >= 0 && index(join('|', wred_cmds), 'wred 0 2 2') >= 0 && index(join('|', wred_cmds), 'wred 0 0 7') >= 0, 'wred binds bulk/mid VoQs while protecting VoQ 7');
+let wred_joined = join('|', wred_cmds);
+assert_true(index(wred_cmds[0], 'wred-prof 1 ') == 0, 'wred programs profile 1 LAN DQ curve');
+assert_true(index(wred_joined, 'wred-prof 4 ') >= 0 && index(wred_joined, 'wred-prof 7 ') >= 0, 'wred programs CPU and WAN DQ profile banks');
+assert_true(index(wred_joined, 'wred-cfg 0 2 1') >= 0, 'wred programs EWMA weight=2 sel_worst=1');
+assert_true(index(wred_joined, 'wred 0 3 0') >= 0 && index(wred_joined, 'wred 0 2 2') >= 0 && index(wred_joined, 'wred 0 0 7') >= 0, 'wred binds bulk/mid VoQs while protecting VoQ 7');
+assert_true(index(wred_joined, 'pie 0 0xffffffff') >= 0 && index(wred_joined, 'pie 3 0xffffffff') >= 0, 'wred enables pie_wred_port_en words 0..3');
 assert_eq(wred_cmds[length(wred_cmds) - 1], 'wred-ctrl 1 0', 'wred enables L3TE global WRED bit');
 let wred_off = qos.build_wred_commands(false, { wred_enabled: '1', wred_profile: '2', wred_queues: '2' });
-assert_eq(join('|', wred_off), 'wred-ctrl 0 0|wred 0 0 all|wred 1 0 all', 'wred disable clears ctrl and queues');
+assert_eq(join('|', wred_off), 'wred-ctrl 0 0|wred-cfg 0 0 0|pie 0 0|pie 1 0|pie 2 0|pie 3 0|wred 0 0 all|wred 1 0 all', 'wred disable clears ctrl, cfg, pie_wred_port_en and queues');
 
 let mir_cmds = qos.build_mirror_commands(true, { mirror_enabled: '1', mirror_port: '6', mirror_len: '1500' });
 assert_eq(join('|', mir_cmds), 'len 1500|port 6', 'mirror cmds');

@@ -23,6 +23,12 @@ export const DOS_TYPES = [
 	'syn_fin_scan', 'blat_attacks', 'land_attacks', 'smac_eq_dmac'
 ];
 
+export const DOS_DEFAULT_ICMP_TH = 1000;
+export const DOS_DEFAULT_FIN_TH = 2000;
+export const DOS_DEFAULT_SYN_TH = 2000;
+/* Physical ingress ports 0..7 (NI LAN ports 0..6 + PON port 7), excluding CPU ports 16..23. */
+export const DOS_DEFAULT_PORT_MASK = '0x00000000000000ff';
+
 export const NFT_INCLUDE_PATH = '/etc/nftables.d/90-rtl9617c-qos.nft';
 export const APP_CATALOG_PATH = '/usr/share/rtl9617c/app_signatures.json';
 
@@ -307,8 +313,14 @@ export function parse_te_flow(text) {
 		group_slots_used: 0,
 		group_slots_total: 64,
 		pie_wred_port_en: [],
+		wred_port_active: false,
 		wred_hw_en: false,
 		wred_ecn_hw_en: false,
+		wred_mark_ecn_en: false,
+		arb_ip_ecn_en: false,
+		wred_ctrl: null,
+		wred_afgs: [],
+		te_pm: null,
 		l3_glb_ctrl: null,
 		flow_policers: [],
 		group_policers: [],
@@ -352,6 +364,11 @@ export function parse_te_flow(text) {
 		let pw = match(s, /^pie_wred_port_en=\s*(.+)$/);
 		if (pw != null) {
 			out.pie_wred_port_en = split(trim(pw[1]), /\s+/);
+			out.wred_port_active = false;
+			for (let w in out.pie_wred_port_en) {
+				if (w != '00000000')
+					out.wred_port_active = true;
+			}
 			continue;
 		}
 		let gc = match(s, /^l3_glb_ctrl=(0x[0-9a-fA-F]+)\s+\(wred_en=([01])\s+ecn=([01])\)/);
@@ -359,6 +376,33 @@ export function parse_te_flow(text) {
 			out.l3_glb_ctrl = gc[1];
 			out.wred_hw_en = (gc[2] == '1');
 			out.wred_ecn_hw_en = (gc[3] == '1');
+			continue;
+		}
+		let wc = match(s, /^wred_ctrl=(0x[0-9a-fA-F]+)\s+\(fast_decay=([01])\s+weight=([0-9]+)\s+sel_worst=([01])\s+mark_ecn=([01])\s+arb_ecn=([01])\)/);
+		if (wc != null) {
+			out.wred_ctrl = wc[1];
+			out.wred_fast_decay = (wc[2] == '1');
+			out.wred_afgs_weight = +wc[3];
+			out.wred_sel_worst = (wc[4] == '1');
+			out.wred_mark_ecn_en = (wc[5] == '1');
+			out.arb_ip_ecn_en = (wc[6] == '1');
+			continue;
+		}
+		let pm = match(s, /^te_pm:\s*pkts=([0-9]+)\s+pol_drop=([0-9]+)\s+tail_drop=([0-9]+)\s+wred_y_drop=([0-9]+)\s+wred_g_drop=([0-9]+)\s+ce_mark=([0-9]+)/);
+		if (pm != null) {
+			out.te_pm = {
+				pkts: +pm[1],
+				pol_drop: +pm[2],
+				tail_drop: +pm[3],
+				wred_y_drop: +pm[4],
+				wred_g_drop: +pm[5],
+				ce_mark: +pm[6]
+			};
+			continue;
+		}
+		let af = match(s, /^wred_afgs=\s*(.+)$/);
+		if (af != null) {
+			out.wred_afgs = split(trim(af[1]), /\s+/);
 			continue;
 		}
 		let fm = match(s, /^flow\[\s*([0-9]+)\]\s+cir=([0-9]+)kbps\s+pir=([0-9]+)kbps\s+cbs=([0-9]+)\s+pbs=([0-9]+)/);
@@ -454,7 +498,7 @@ export function parse_dos(text) {
 			out.l2_port_mask = pm[2];
 			continue;
 		}
-		let tm = match(s, /^\[\s*([0-9]+)\]\s+([^ \t]+)\s+l3_en=([01])\s+l3_pol=([^ \t]+)(\s+l3_th=([^ \t]+))?\s+l2_en=([01])(\s+l2_th=([^ \t]+))?/);
+		let tm = match(s, /^\[\s*([0-9]+)\]\s+([^ \t]+)\s+l3_en=([01])\s+l3_pol=([^ \t]+)(\s+l3_th=([^ \t]+))?\s+l2_en=([01])(\s+l2_th=([^ \t]+))?(\s+l3_act=([^ \t]+)\s+l2_act=([^ \t]+))?/);
 		if (tm != null) {
 			push(out.types, {
 				idx: +tm[1],
@@ -463,7 +507,9 @@ export function parse_dos(text) {
 				l3_pol: tm[4],
 				l3_th: tm[6] || null,
 				l2_en: (tm[7] == '1'),
-				l2_th: tm[9] || null
+				l2_th: tm[9] || null,
+				l3_act: tm[11] || 'drop',
+				l2_act: tm[12] || 'drop'
 			});
 		}
 	}
@@ -1172,21 +1218,22 @@ export function build_dos_plan(enabled, global_sec) {
 		};
 	}
 
-	let icmp_th = parse_uint(global_sec.dos_icmp_th, 0, 65535);
-	if (icmp_th != null) {
-		push(dos_cmds, `th icmp_flood ${icmp_th}`);
-		push(dos_cmds, `l2-th icmp_flood ${icmp_th}`);
-	}
-	let fin_th = parse_uint(global_sec.dos_fin_th, 0, 65535);
-	if (fin_th != null) {
-		push(dos_cmds, `th fin_flood ${fin_th}`);
-		push(dos_cmds, `l2-th fin_flood ${fin_th}`);
-	}
-	let syn_th = parse_uint(global_sec.dos_syn_th, 0, 65535);
-	if (syn_th != null) {
-		push(dos_cmds, `th syn_flood ${syn_th}`);
-		push(dos_cmds, `l2-th syn_flood ${syn_th}`);
-	}
+	/*
+	 * Always program non-zero flood thresholds BEFORE enabling flood types
+	 * and port masks; hardware reset values are 0, which would drop normal
+	 * ICMP/SYN/FIN packets as soon as the engine is armed.
+	 */
+	let icmp_th = parse_uint(global_sec.dos_icmp_th, 1, 65535) ?? DOS_DEFAULT_ICMP_TH;
+	push(dos_cmds, `th icmp_flood ${icmp_th}`);
+	push(dos_cmds, `l2-th icmp_flood ${icmp_th}`);
+
+	let fin_th = parse_uint(global_sec.dos_fin_th, 1, 65535) ?? DOS_DEFAULT_FIN_TH;
+	push(dos_cmds, `th fin_flood ${fin_th}`);
+	push(dos_cmds, `l2-th fin_flood ${fin_th}`);
+
+	let syn_th = parse_uint(global_sec.dos_syn_th, 1, 65535) ?? DOS_DEFAULT_SYN_TH;
+	push(dos_cmds, `th syn_flood ${syn_th}`);
+	push(dos_cmds, `l2-th syn_flood ${syn_th}`);
 
 	let disabled_raw = global_sec.dos_disabled_types;
 	let disabled_set = {};
@@ -1199,13 +1246,25 @@ export function build_dos_plan(enabled, global_sec) {
 				disabled_set[item] = true;
 	}
 
-	if (length(keys(disabled_set)) > 0) {
-		for (let tname in DOS_TYPES) {
-			let state = exists(disabled_set, tname) ? 'off' : 'on';
-			push(dos_cmds, `type ${tname} ${state}`);
-			push(dos_cmds, `l2-type ${tname} ${state}`);
-		}
+	let allow_syn1024 = is_truthy(global_sec.dos_allow_syn1024 ?? '0');
+
+	for (let tname in DOS_TYPES) {
+		/*
+		 * Hardware syn1024 matches any TCP packet with SYN=1 and sport < 1024,
+		 * which includes legitimate SYN+ACK replies from HTTP/80 & HTTPS/443
+		 * servers arriving on WAN (port 7). Keep it OFF unless explicitly opted in.
+		 */
+		let is_off = exists(disabled_set, tname) || (tname == 'syn1024' && !allow_syn1024);
+		let state = is_off ? 'off' : 'on';
+		push(dos_cmds, `type ${tname} ${state}`);
+		push(dos_cmds, `l2-type ${tname} ${state}`);
 	}
+
+	let mask = trim('' + (global_sec.dos_port_mask ?? ''));
+	if (!match(mask, /^0x[0-9a-fA-F]{1,16}$/))
+		mask = DOS_DEFAULT_PORT_MASK;
+	push(dos_cmds, `port-mask ${mask}`);
+	push(dos_cmds, `l2-port-mask ${mask}`);
 
 	return {
 		dos_enabled: true,
@@ -1302,48 +1361,87 @@ export function build_wred_commands(enabled, global_sec) {
 	let wred_en = enabled && is_truthy(global_sec.wred_enabled ?? '0');
 	let prof = wred_en ? (parse_uint(global_sec.wred_profile ?? '1', 1, 31) ?? 1) : 0;
 	let ecn_en = wred_en && is_truthy(global_sec.wred_ecn ?? '0') ? 1 : 0;
-	let max_q = parse_uint(global_sec.wred_queues ?? '16', 1, 64) ?? 16;
+	let max_q = parse_uint(global_sec.wred_queues ?? '64', 1, 64) ?? 64;
 	let cmds = [];
 
 	if (!wred_en) {
 		push(cmds, 'wred-ctrl 0 0');
+		push(cmds, 'wred-cfg 0 0 0');
+		for (let i = 0; i < 4; i++)
+			push(cmds, `pie ${i} 0`);
 		for (let q = 0; q < max_q; q++)
 			push(cmds, `wred ${q} 0 all`);
 		return cmds;
 	}
 
-	// Built-in WRED curves (1=gentle interactive, 2=moderate, 3=aggressive bulk)
-	let p1 = pack_wred_profile(
-		[0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 4, 8, 12, 20, 32, 63],
-		[0, 0, 0, 0, 2, 4, 8, 12, 18, 26, 36, 48, 56, 63, 63, 63],
-		15, 15
-	);
-	let p2 = pack_wred_profile(
-		[0, 0, 0, 0, 0, 0, 2, 4, 8, 14, 22, 32, 42, 52, 60, 63],
-		[0, 0, 2, 4, 8, 14, 20, 28, 36, 46, 56, 63, 63, 63, 63, 63],
-		15, 15
-	);
-	let p3 = pack_wred_profile(
-		[0, 0, 0, 1, 2, 4, 8, 12, 18, 26, 36, 48, 58, 63, 63, 63],
-		[0, 2, 4, 8, 14, 20, 28, 38, 48, 58, 63, 63, 63, 63, 63, 63],
-		15, 15
-	);
-	push(cmds, `wred-prof 1 ${join(' ', p1)}`);
-	push(cmds, `wred-prof 2 ${join(' ', p2)}`);
-	push(cmds, `wred-prof 3 ${join(' ', p3)}`);
+	/*
+	 * Silicon-calibrated RTL9617C L3TE WRED curves:
+	 *   - Hardware indexes dp[0..15] by bucket = AFGS >> idx (free buffers!).
+	 *     bucket >= 16 bypasses WRED (0% drop); bucket 0 = near-empty free pool
+	 *     (maximum congestion -> highest drop probability 63/63).
+	 *   - Curves are therefore DESCENDING from bucket 0 (full) to 15 (idle):
+	 *       preset 1 (gentle):     intervenes below ~50% free window
+	 *       preset 2 (moderate):   intervenes below ~62% free window
+	 *       preset 3 (aggressive): intervenes below ~81% free window
+	 *   - Pool-matched shifts (verified against live wred_afgs):
+	 *       LAN DeepQ  (10832 bufs, q=0..15):  profiles 1..3, idx=9 (16*512 = 8192)
+	 *       CPU RX     (  512 bufs, q=16..23): profiles 4..6, idx=5 (16*32  =  512)
+	 *       WAN/PON DQ ( 1024 bufs, q=24..63): profiles 7..9, idx=6 (16*64  = 1024)
+	 */
+	let curves = [
+		[
+			[63, 32, 20, 12, 8, 4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+			[63, 63, 63, 56, 48, 36, 26, 18, 12, 8, 4, 2, 0, 0, 0, 0]
+		],
+		[
+			[63, 60, 52, 42, 32, 22, 14, 8, 4, 2, 0, 0, 0, 0, 0, 0],
+			[63, 63, 63, 63, 63, 56, 46, 36, 28, 20, 14, 8, 4, 2, 0, 0]
+		],
+		[
+			[63, 63, 63, 58, 48, 36, 26, 18, 12, 8, 4, 2, 1, 0, 0, 0],
+			[63, 63, 63, 63, 63, 63, 58, 48, 38, 28, 20, 14, 8, 4, 2, 0]
+		]
+	];
 
-	// Protect strict interactive VoQs 6..7 (profile 0 = no drop),
-	// keep VoQ 5 at 0 (or prof 1 on aggressive preset),
-	// and apply WRED curve on VoQs 0..4 (earlier drop on bulk VoQs 0..1).
-	let bulk_prof = (prof <= 3) ? ((prof < 3) ? prof + 1 : 3) : prof;
+	// LAN DeepQ profiles 1..3 (idx=9), CPU profiles 4..6 (idx=5), WAN/PON profiles 7..9 (idx=6)
+	let banks = [
+		{ base: 1, idx: 9 },
+		{ base: 4, idx: 5 },
+		{ base: 7, idx: 6 }
+	];
+	for (let b in banks) {
+		for (let i = 0; i < 3; i++) {
+			let words = pack_wred_profile(curves[i][0], curves[i][1], b.idx, b.idx);
+			push(cmds, `wred-prof ${b.base + i} ${join(' ', words)}`);
+		}
+	}
+
+	// EWMA smoothing weight=2 (1/4), sel_worst=1 so unused EQ1=16383 never masks EQ0 congestion.
+	push(cmds, 'wred-cfg 0 2 1');
+
+	// Protect strict interactive VoQs 5..7 (profile 0 = 0% drop),
+	// and apply calibrated WRED curve on VoQs 0..4 (earlier drop on bulk VoQs 0..1).
 	for (let q = 0; q < max_q; q++) {
+		let q_prof = prof;
+		let q_bulk = prof;
+		if (prof <= 3) {
+			let bank_off = (q < 16) ? 0 : ((q < 24) ? 3 : 6);
+			let bulk_idx = (prof < 3) ? (prof + 1) : 3;
+			q_prof = bank_off + prof;
+			q_bulk = bank_off + bulk_idx;
+		}
 		for (let f = 0; f < 2; f++)
-			push(cmds, `wred ${q} ${bulk_prof} ${f}`);
+			push(cmds, `wred ${q} ${q_bulk} ${f}`);
 		for (let f = 2; f < 5; f++)
-			push(cmds, `wred ${q} ${prof} ${f}`);
+			push(cmds, `wred ${q} ${q_prof} ${f}`);
 		for (let f = 5; f < 8; f++)
 			push(cmds, `wred ${q} 0 ${f}`);
 	}
+
+	// Enable per-port WRED evaluation in L3TE_PIE_WRED_PORT_EN (0x9080..0x908c);
+	// VoQs 5..7 stay lossless via profile 0.
+	for (let i = 0; i < 4; i++)
+		push(cmds, `pie ${i} 0xffffffff`);
 	push(cmds, `wred-ctrl 1 ${ecn_en}`);
 	return cmds;
 };
