@@ -653,13 +653,13 @@ msgid "Content"
 msgstr "导入内容"
 
 msgid "Content #%d"
-msgstr "内容 #%d"
+msgstr "头模板 #%d"
 
 msgid "Control #%d"
-msgstr "控制 #%d"
+msgstr "控制表 #%d"
 
 msgid "Control %d/%d · Content %d/%d"
-msgstr "控制 %d/%d · 内容 %d/%d"
+msgstr "控制表 %d/%d · 头模板 %d/%d"
 
 msgid "Core"
 msgstr "挂载核"
@@ -1508,7 +1508,7 @@ msgid "No Preset"
 msgstr "未启用预设"
 
 msgid "No active L2TP / PPTP hardware offload slots. Once a plaintext L2TPv2 or PPTP tunnel connects and forwards traffic, allocated Control / Content / EIF slots appear here in real time."
-msgstr "当前没有活跃的 L2TP / PPTP 硬件卸载槽位。建立明文 L2TPv2 或 PPTP 隧道并产生转发流量后，此处会实时显示分配的 Control / Content / EIF 槽位。"
+msgstr "当前没有活跃的 L2TP / PPTP 硬件卸载槽位。建立明文 L2TPv2 或 PPTP 隧道并产生转发流量后，此处会实时显示分配的控制表 / 头模板 / EIF 槽位。"
 
 msgid "No active multi-flow shared policer groups."
 msgstr "当前没有占用的多连接共享限速组。"
