@@ -652,6 +652,15 @@ msgstr "连接状态"
 msgid "Content"
 msgstr "导入内容"
 
+msgid "Content #%d"
+msgstr "内容 #%d"
+
+msgid "Control #%d"
+msgstr "控制 #%d"
+
+msgid "Control %d/%d · Content %d/%d"
+msgstr "控制 %d/%d · 内容 %d/%d"
+
 msgid "Core"
 msgstr "挂载核"
 

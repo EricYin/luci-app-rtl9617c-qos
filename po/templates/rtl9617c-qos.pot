@@ -651,6 +651,15 @@ msgstr ""
 msgid "Content"
 msgstr ""
 
+msgid "Content #%d"
+msgstr ""
+
+msgid "Control #%d"
+msgstr ""
+
+msgid "Control %d/%d · Content %d/%d"
+msgstr ""
+
 msgid "Core"
 msgstr ""
 

@@ -36,7 +36,7 @@ function renderLiveVpn(container, data) {
 	var slotRows = [];
 	(tun.control_items || []).forEach(function(item) {
 		slotRows.push(E('tr', {}, [
-			E('td', {}, ['Control #' + item.idx]),
+			E('td', {}, [_('Control #%d').format(item.idx)]),
 			E('td', {}, [q.badge(String(item.type_name || item.type_id).toUpperCase(), 'good')]),
 			E('td', {}, [String(item.owner)]),
 			E('td', { class: 'rq-mono rq-wrap' }, [item.raw || '—'])
@@ -44,7 +44,7 @@ function renderLiveVpn(container, data) {
 	});
 	(tun.content_items || []).forEach(function(item) {
 		slotRows.push(E('tr', {}, [
-			E('td', {}, ['Content #' + item.idx]),
+			E('td', {}, [_('Content #%d').format(item.idx)]),
 			E('td', {}, [q.badge(String(item.type_name || item.type_id).toUpperCase(), 'good')]),
 			E('td', {}, [String(item.owner)]),
 			E('td', { class: 'rq-mono rq-wrap' }, [item.raw || '—'])
@@ -133,8 +133,12 @@ function renderLiveVpn(container, data) {
 					: q.badge(_('Disabled'), 'warn'),
 				[
 					E('div', { class: 'rq-kpi' }, [
-						'Control ' + (tun.control_used || 0) + '/' + (tun.control_max || 16) +
-						' · Content ' + (tun.content_used || 0) + '/' + (tun.content_max || 16)
+						_('Control %d/%d · Content %d/%d').format(
+							tun.control_used || 0,
+							tun.control_max || 16,
+							tun.content_used || 0,
+							tun.content_max || 16
+						)
 					]),
 					q.meterBar((tun.control_used || 0) + (tun.content_used || 0), (tun.control_max || 16) + (tun.content_max || 16), true),
 					E('p', { class: 'rq-note' }, [
