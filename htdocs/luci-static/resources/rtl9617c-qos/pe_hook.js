@@ -79,7 +79,7 @@ return baseclass.extend({
 				if (feats.length) {
 					var rows = feats.map(function(f) {
 						var sel = E('select', {
-							'style': 'padding:3px 7px;border-radius:6px;border:1px solid var(--rq-border);background:var(--rq-surface);color:var(--rq-text);font-size:12px',
+							'class': 'rq-sel',
 							'change': function(ev) {
 								if (busy) return;
 								busy = true;
@@ -106,8 +106,7 @@ return baseclass.extend({
 									? badge('仅框架占位', 'warn')
 									: (f.enabled ? badge('待机', 'warn') : badge('未启用', '')))),
 							E('td', {}, E('button', {
-								'class': 'cbi-button ' + (f.enabled ? 'cbi-button-remove' : 'cbi-button-positive'),
-								'style': 'padding:3px 10px;font-size:12px',
+								'class': 'cbi-button rq-btn-sm ' + (f.enabled ? 'cbi-button-remove' : 'cbi-button-positive'),
 								'click': function() {
 									if (busy) return;
 									busy = true;
@@ -138,19 +137,18 @@ return baseclass.extend({
 					if (featureIds.indexOf('fq_codel') >= 0 && st.params) {
 						var inpFq = E('input', {
 							'type': 'number', 'min': '0', 'max': '10000000', 'step': '1000',
-							'class': 'cbi-input-text', 'style': 'width:110px',
+							'class': 'cbi-input-text',
 							'value': String(st.params.fq_rate_kbps || 0)
 						});
 						var inpEcn = E('input', {
 							'type': 'checkbox',
 							'checked': (st.params.fq_ecn === undefined || st.params.fq_ecn) ? 'checked' : null
 						});
-						body.push(E('div', { 'style': 'margin-top:10px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:12px' }, [
+						body.push(E('div', { 'class': 'rq-pe-params' }, [
 							E('label', {}, [ 'PE FQ-CoDel 上行整形 (kbps, 0=不限): ', inpFq ]),
 							E('label', {}, [ inpEcn, ' ECN' ]),
 							E('button', {
-								'class': 'cbi-button cbi-button-apply',
-								'style': 'padding:3px 10px;font-size:12px',
+								'class': 'cbi-button cbi-button-apply rq-btn-sm',
 								'click': function() {
 									if (busy) return;
 									busy = true;

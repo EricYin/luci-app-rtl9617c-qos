@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 'use strict';
 
-import { access, glob, open, popen, readfile } from 'fs';
+import { access, chmod, glob, mkdir, open, popen, readfile, rename, unlink, writefile } from 'fs';
 import { cursor } from 'uci';
 import * as qos from 'rtl9617c.qos';
 
@@ -570,6 +570,43 @@ function read_vpn_status() {
 	};
 }
 
+function write_custom_catalog(doc) {
+	let target = qos.app_catalog_custom_path();
+	let slash = rindex(target, '/');
+	if (slash > 0) {
+		let dir = substr(target, 0, slash);
+		if (!access(dir, 'd'))
+			mkdir(dir, 0755);
+	}
+	let tmp = target + '.tmp';
+	let content = sprintf('%J\n', doc);
+	if (writefile(tmp, content) == null)
+		return { ok: false, error: `写入临时文件失败: ${tmp}` };
+	chmod(tmp, 0644);
+	if (!rename(tmp, target)) {
+		unlink(tmp);
+		return { ok: false, error: `保存自定义特征库失败: ${target}` };
+	}
+	return { ok: true, path: target };
+}
+
+function reapply_if_app_rules_active() {
+	let ctx = cursor();
+	ctx.load('rtl9617c_qos');
+	let global_sec = ctx.get_all('rtl9617c_qos', 'global') || {};
+	if (!qos.is_truthy(global_sec.enabled ?? '1'))
+		return { applied: false, code: 0 };
+	let has_active = false;
+	ctx.foreach('rtl9617c_qos', 'app_rule', (s) => {
+		if (qos.is_truthy(s.enabled ?? '1'))
+			has_active = true;
+	});
+	if (!has_active)
+		return { applied: false, code: 0 };
+	let rc = system(['/usr/libexec/rtl9617c-qos-apply', 'apply']);
+	return { applied: true, code: rc };
+}
+
 const methods = {
 	status: {
 		call: function() {
@@ -644,21 +681,148 @@ const methods = {
 		call: function() {
 			let cat = qos.load_app_catalog();
 			let compact_apps = [];
+			let domain_total = 0;
+			let port_total = 0;
 			for (let a in (cat.apps || [])) {
+				let dc = length(a.domains || []);
+				let tc = length(a.tcp || []);
+				let uc = length(a.udp || []);
+				domain_total += dc;
+				port_total += tc + uc;
 				push(compact_apps, {
 					id: a.id,
 					name: a.name,
 					cat: a.cat,
 					qos_class: a.qos_class,
-					d_cnt: length(a.domains || []),
-					t_cnt: length(a.tcp || []),
-					u_cnt: length(a.udp || [])
+					d_cnt: dc,
+					t_cnt: tc,
+					u_cnt: uc
 				});
 			}
 			return {
 				version: cat.version,
+				source: cat.source,
+				custom: !!cat.custom,
+				domain_total,
+				port_total,
 				categories: cat.categories,
 				apps: compact_apps
+			};
+		}
+	},
+
+	app_catalog_full: {
+		call: function() {
+			let cat = qos.load_app_catalog();
+			return {
+				ok: true,
+				version: cat.version,
+				source: cat.source,
+				custom: !!cat.custom,
+				categories: cat.categories,
+				apps: cat.apps
+			};
+		}
+	},
+
+	app_catalog_save_app: {
+		args: { id: '', orig_id: '', name: '', cat: '', domains: '', tcp: '', udp: '' },
+		call: function(req) {
+			let cur = qos.load_app_catalog();
+			let res = qos.upsert_catalog_app(cur, {
+				id: req.args.id,
+				name: req.args.name,
+				cat: req.args.cat,
+				domains: req.args.domains,
+				tcp: req.args.tcp,
+				udp: req.args.udp
+			}, req.args.orig_id);
+			if (!res.ok)
+				return res;
+			let wr = write_custom_catalog(res.catalog_doc);
+			if (!wr.ok)
+				return wr;
+			let ap = reapply_if_app_rules_active();
+			return {
+				ok: true,
+				updated: res.updated,
+				entry: res.entry,
+				warnings: res.warnings,
+				total_apps: length(res.catalog_doc.apps),
+				applied: ap.applied,
+				apply_code: ap.code
+			};
+		}
+	},
+
+	app_catalog_delete_app: {
+		args: { id: '' },
+		call: function(req) {
+			let cur = qos.load_app_catalog();
+			let res = qos.delete_catalog_app(cur, req.args.id);
+			if (!res.ok)
+				return res;
+			let wr = write_custom_catalog(res.catalog_doc);
+			if (!wr.ok)
+				return wr;
+			let ap = reapply_if_app_rules_active();
+			return {
+				ok: true,
+				removed_id: res.removed_id,
+				total_apps: length(res.catalog_doc.apps),
+				applied: ap.applied,
+				apply_code: ap.code
+			};
+		}
+	},
+
+	app_catalog_import: {
+		args: { format: 'auto', mode: 'merge', payload: '', default_cat: 'custom', target_app_id: '', target_app_name: '' },
+		call: function(req) {
+			let cur = qos.load_app_catalog();
+			let res = qos.parse_batch_import(req.args.payload, {
+				format: req.args.format || 'auto',
+				mode: req.args.mode || 'merge',
+				default_cat: req.args.default_cat || 'custom',
+				target_app_id: req.args.target_app_id || '',
+				target_app_name: req.args.target_app_name || ''
+			}, cur);
+			if (!res.ok)
+				return res;
+			let wr = write_custom_catalog(res.catalog_doc);
+			if (!wr.ok)
+				return wr;
+			let ap = reapply_if_app_rules_active();
+			return {
+				ok: true,
+				format: res.format,
+				mode: res.mode,
+				added: res.added,
+				updated: res.updated,
+				skipped: res.skipped,
+				warnings: res.warnings,
+				total_apps: res.total_apps,
+				total_domains: res.total_domains,
+				applied: ap.applied,
+				apply_code: ap.code
+			};
+		}
+	},
+
+	app_catalog_reset: {
+		call: function() {
+			let custom_path = qos.app_catalog_custom_path();
+			if (access(custom_path, 'r'))
+				unlink(custom_path);
+			let factory = qos.load_app_catalog();
+			let ap = reapply_if_app_rules_active();
+			return {
+				ok: true,
+				custom: !!factory.custom,
+				version: factory.version,
+				total_apps: length(factory.apps || []),
+				applied: ap.applied,
+				apply_code: ap.code
 			};
 		}
 	},

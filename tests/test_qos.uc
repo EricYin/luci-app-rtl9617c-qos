@@ -383,4 +383,97 @@ assert_eq(tun_ok.content_items[0].raw, 'raw=45000000,00004000', 'content 0 raw')
 assert_eq(tun_ok.eif_items[0].hash, 32, 'eif hash 32');
 assert_eq(tun_ok.eif_items[0].phys, 16, 'eif phys 16');
 
+// 12. App signature catalog maintenance, validation, and multi-format batch import
+assert_eq(qos.normalize_domain('  PVP.QQ.COM. '), 'pvp.qq.com', 'normalize plain domain');
+assert_eq(qos.normalize_domain('*.example.com'), 'example.com', 'strip wildcard prefix');
+assert_eq(qos.normalize_domain('+.sub.example.cn'), 'sub.example.cn', 'strip clash plus prefix');
+assert_eq(qos.normalize_domain('DOMAIN-SUFFIX,Meeting.QQ.com,DIRECT'), 'meeting.qq.com', 'parse clash DOMAIN-SUFFIX');
+assert_eq(qos.normalize_domain('DOMAIN-SUFFIX,extra-test.sub.qq.com'), 'extra-test.sub.qq.com', 'clash domain containing letter s preserved');
+assert_eq(qos.normalize_domain('https://Pan.Baidu.com:443/disk/main'), 'pan.baidu.com', 'strip url scheme/port/path');
+assert_eq(qos.normalize_domain('evil.com/4#inet#fw4#hack'), 'evil.com', 'strip path prevents dnsmasq injection');
+assert_eq(qos.normalize_domain('bad domain.com'), null, 'reject space in domain');
+assert_eq(qos.normalize_domain('localhost'), null, 'reject single-label hostname');
+
+let pnorm = qos.normalize_port_list('17005, 8000-8100, 17005, 99999, 500-400, 500-500');
+assert_eq(join(',', pnorm.ports), '500,8000-8100,17005', 'port list normalized, collapsed & deduped');
+assert_eq(length(pnorm.invalid), 2, 'invalid ports recorded');
+
+let up1 = qos.upsert_catalog_app(mock_catalog, {
+	name: '自定义加速器',
+	cat: 'mobile_game',
+	domains: 'DOMAIN-SUFFIX,game.example.com\n*.sub.example.com',
+	tcp: '30001, 30005-30010',
+	udp: '27015'
+}, '');
+assert_true(up1.ok && !up1.updated, 'upsert adds new app with auto id');
+assert_eq(length(up1.catalog_doc.apps), 4, 'catalog now has 4 apps');
+assert_eq(join(',', up1.entry.domains), 'game.example.com,sub.example.com', 'upsert normalizes domains with s intact');
+
+let up2 = qos.upsert_catalog_app(up1.catalog_doc, {
+	id: up1.entry.id,
+	name: '自定义加速器 Pro',
+	cat: 'pc_game',
+	domains: 'game.example.com',
+	udp: '27015-27020'
+}, up1.entry.id);
+assert_true(up2.ok && up2.updated, 'upsert edits existing app in place');
+assert_eq(length(up2.catalog_doc.apps), 4, 'edit keeps app count 4');
+assert_eq(up2.entry.cat, 'pc_game', 'category updated');
+
+let del1 = qos.delete_catalog_app(up2.catalog_doc, up1.entry.id);
+assert_true(del1.ok, 'delete removes app');
+assert_eq(length(del1.catalog_doc.apps), 3, 'catalog back to 3 apps');
+
+// Batch import: JSON array merge
+let imp_json = qos.parse_batch_import(sprintf('%J', [
+	{ id: '12019', name: '王者荣耀(增强)', cat: 'mobile_game', domains: ['pvp.qq.com', 'new.pvp.qq.com'], tcp: ['31003'], udp: ['17005'] },
+	{ name: 'B站直播', cat: 'video_live', domains: ['live.bilibili.com'], udp: ['7826'] }
+]), { format: 'auto', mode: 'merge' }, mock_catalog);
+assert_true(imp_json.ok, 'json batch import ok');
+assert_eq(imp_json.added, 1, 'json import added 1');
+assert_eq(imp_json.updated, 1, 'json import updated 1');
+assert_eq(imp_json.total_apps, 4, 'json merge total 4 apps');
+
+// Batch import: structured lines (pipe + CSV + header + comments)
+let lines_payload = join('\n', [
+	'# sample rules',
+	'cat,name,domains,tcp,udp',
+	'voice_meeting|Zoom会议|zoom.us;zoomgov.com|8801|8801-8810',
+	'download_bulk,夸克网盘,pan.quark.cn,,'
+]);
+let imp_lines = qos.parse_batch_import(lines_payload, { format: 'auto', mode: 'merge' }, mock_catalog);
+assert_true(imp_lines.ok, 'lines batch import ok');
+assert_eq(imp_lines.added, 2, 'lines import added 2');
+assert_eq(imp_lines.total_apps, 5, 'lines import total 5 apps');
+
+// Batch import: plain/Clash domain list merged into existing app
+let dom_payload = join('\n', [
+	'DOMAIN-SUFFIX,extra1.pvp.qq.com',
+	'*.extra2.pvp.qq.com',
+	'pvp.qq.com'
+]);
+let imp_doms = qos.parse_batch_import(dom_payload, {
+	format: 'domains',
+	mode: 'merge',
+	target_app_id: '12019'
+}, mock_catalog);
+assert_true(imp_doms.ok, 'domain list merge ok');
+assert_eq(imp_doms.updated, 1, 'domain list updated target app');
+let merged_hok = null;
+for (let a in imp_doms.catalog_doc.apps) {
+	if (a.id == '12019')
+		merged_hok = a;
+}
+assert_eq(join(',', merged_hok.domains), 'extra1.pvp.qq.com,extra2.pvp.qq.com,pvp.qq.com', 'domains unioned and sorted');
+
+// Batch import: replace mode replaces full catalog
+let imp_rep = qos.parse_batch_import(sprintf('%J', [
+	{ id: 'only1', name: '唯一测试应用', cat: 'custom', domains: ['only.example.com'] }
+]), { format: 'json', mode: 'replace' }, mock_catalog);
+assert_true(imp_rep.ok, 'replace mode ok');
+assert_eq(imp_rep.total_apps, 1, 'replace mode keeps only imported apps');
+
+let imp_empty = qos.parse_batch_import('# only comments\n\n', { format: 'auto', mode: 'replace' }, mock_catalog);
+assert_eq(imp_empty.ok, false, 'empty replace import rejected safely');
+
 print('ALL QOS UCODE UNIT TESTS PASSED\n');

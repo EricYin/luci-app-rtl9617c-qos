@@ -147,7 +147,7 @@ function renderPresetCard() {
 		q.badge(activeNames[activePreset] || '4 套预设可选',
 			activePreset === 'legacy' ? 'warn' : (activePreset !== 'clear' ? 'good' : '')),
 		[
-			E('div', { class: 'rq-grid', style: 'margin-bottom:0' }, presets.map(function(p) {
+			E('div', { class: 'rq-preset-grid' }, presets.map(function(p) {
 				var isCurrent = (activePreset === p.id);
 				var statusBadge;
 				if (p.id === 'clear') {
@@ -166,23 +166,567 @@ function renderPresetCard() {
 
 				var btn = L.hasViewPermission() ? E('button', {
 					type: 'button',
-					class: p.btnClass,
-					style: 'margin-top:8px;width:100%',
+					class: p.btnClass + ' rq-preset-action',
 					click: function() {
 						applyPresetHandler(p.id, p.title, btn);
 					}
 				}, [btnLabel]) : null;
 
 				return q.card(p.title, statusBadge, [
-					E('p', {
-						class: 'rq-note',
-						style: 'margin:0 0 6px;font-weight:600;color:var(--rq-accent)'
-					}, ['适用定位：' + p.tagline]),
-					E('p', { class: 'rq-note', style: 'min-height:66px;margin-top:0' }, [p.desc]),
+					E('p', { class: 'rq-note rq-preset-tagline' }, ['适用定位：' + p.tagline]),
+					E('p', { class: 'rq-note rq-preset-desc' }, [p.desc]),
 					btn
-				]);
+				], 'rq-preset-card');
 			}))
 		]);
+}
+
+var SAMPLE_JSON_IMPORT = JSON.stringify([
+	{
+		id: 'custom_geforce',
+		name: '示例：云游戏 / 自定义加速',
+		cat: 'pc_game',
+		domains: ['example-game.qq.com', 'match.example-game.com'],
+		tcp: ['31003'],
+		udp: ['17005', '27015-27030']
+	},
+	{
+		name: '示例：自定义网盘降权',
+		cat: 'download_bulk',
+		domains: ['dl.example-cloud.cn'],
+		tcp: [],
+		udp: []
+	}
+], null, 2);
+
+var SAMPLE_LINES_IMPORT = [
+	'# 格式：分类ID | 应用名称 | 域名列表(分号或空格分隔) | TCP端口 | UDP端口',
+	'# 常用分类：mobile_game / pc_game / voice_meeting / remote_desk / education / im_chat / video_live / finance / download_bulk / custom',
+	'voice_meeting | 示例语音会议 | meet.example.com;rtc.example.com | 8801 | 8801-8810',
+	'download_bulk | 示例后台下载 | dl.example.net;cdn.example.net | | '
+].join('\n');
+
+var SAMPLE_DOMAINS_IMPORT = [
+	'# 每行一个域名，也支持 Clash DOMAIN-SUFFIX / *.通配符 / +.前缀',
+	'DOMAIN-SUFFIX,pvp.qq.com',
+	'*.smoba.qq.com',
+	'match.example-game.cn'
+].join('\n');
+
+function openCatalogManager(initialTab, onDirtyClose) {
+	var state = {
+		tab: initialTab === 'import' ? 'import' : 'manage',
+		catalog: null,
+		filterCat: '',
+		query: '',
+		limit: 80,
+		editing: null,
+		dirty: false,
+		busy: false,
+		importResult: null
+	};
+
+	var modalRoot = E('div', { class: 'rq-cat-modal' }, [
+		E('p', { class: 'rq-note' }, ['正在读取完整应用特征库…'])
+	]);
+
+	function closeModal() {
+		ui.hideModal();
+		if (state.dirty && typeof onDirtyClose === 'function')
+			onDirtyClose();
+	}
+
+	function downloadJson() {
+		if (!state.catalog)
+			return;
+		var doc = {
+			version: state.catalog.version || 'custom-v1',
+			source: state.catalog.source || 'RTL9617C App Signature Catalog',
+			categories: state.catalog.categories || [],
+			apps: state.catalog.apps || []
+		};
+		var blob = new Blob([JSON.stringify(doc, null, 2) + '\n'], { type: 'application/json;charset=utf-8' });
+		var url = URL.createObjectURL(blob);
+		var a = E('a', { href: url, download: 'rtl9617c-app-signatures.json' });
+		a.click();
+		window.setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+	}
+
+	function reloadCatalog() {
+		return q.callAppCatalogFull().then(function(res) {
+			state.catalog = res || { categories: [], apps: [], custom: false };
+			renderModal();
+		}).catch(function(err) {
+			dom.content(modalRoot, [
+				E('div', { class: 'rq-cat-result is-error' }, [
+					'读取特征库失败：', err && err.message ? err.message : String(err)
+				]),
+				E('div', { class: 'rq-cat-footer' }, [
+					E('span'),
+					E('button', { type: 'button', class: 'btn cbi-button', click: closeModal }, ['关闭'])
+				])
+			]);
+		});
+	}
+
+	function buildManagePanel(cats, catNameMap, apps) {
+		var canWrite = L.hasViewPermission();
+		var qLower = (state.query || '').trim().toLowerCase();
+		var filtered = apps.filter(function(a) {
+			if (state.filterCat && a.cat !== state.filterCat)
+				return false;
+			if (!qLower)
+				return true;
+			if ((a.name || '').toLowerCase().indexOf(qLower) >= 0)
+				return true;
+			if ((a.id || '').toLowerCase().indexOf(qLower) >= 0)
+				return true;
+			if ((a.domains || []).some(function(d) { return d.toLowerCase().indexOf(qLower) >= 0; }))
+				return true;
+			if ((a.tcp || []).concat(a.udp || []).some(function(p) { return String(p).toLowerCase().indexOf(qLower) >= 0; }))
+				return true;
+			return false;
+		});
+
+		var catSel = E('select', {
+			change: function(ev) {
+				state.filterCat = ev.target.value;
+				state.limit = 80;
+				renderModal();
+			}
+		}, [E('option', { value: '' }, ['全部分类（' + apps.length + ' 款）'])].concat(cats.map(function(c) {
+			return E('option', {
+				value: c.id,
+				selected: state.filterCat === c.id ? 'selected' : null
+			}, [c.name + '（' + (c.count || 0) + '）']);
+		})));
+
+		var searchInput = E('input', {
+			type: 'search',
+			value: state.query,
+			placeholder: '按应用名 / ID / 域名 / 端口筛选…',
+			input: function(ev) {
+				state.query = ev.target.value;
+				state.limit = 80;
+				renderModal();
+			}
+		});
+
+		var addBtn = canWrite ? E('button', {
+			type: 'button',
+			class: 'btn cbi-button cbi-button-add',
+			click: function() {
+				state.editing = {
+					orig_id: '',
+					id: '',
+					name: '',
+					cat: state.filterCat || 'custom',
+					domains: '',
+					tcp: '',
+					udp: ''
+				};
+				renderModal();
+			}
+		}, ['+ 新增应用特征']) : null;
+
+		var editorNode = null;
+		if (state.editing && canWrite) {
+			var ed = state.editing;
+			var inpName = E('input', { type: 'text', value: ed.name || '', placeholder: '如：原神 / 某办公平台' });
+			var selCat = E('select', {}, cats.map(function(c) {
+				return E('option', { value: c.id, selected: (ed.cat || 'custom') === c.id ? 'selected' : null }, [c.name + ' (' + c.id + ')']);
+			}));
+			var inpId = E('input', { type: 'text', value: ed.id || '', placeholder: '留空自动生成，如 custom_app1' });
+			var inpDoms = E('textarea', { placeholder: '每行一个域名，或逗号分隔；支持 *.example.com 与 Clash DOMAIN-SUFFIX,example.com' }, [ed.domains || '']);
+			var inpTcp = E('input', { type: 'text', value: ed.tcp || '', placeholder: '如：31003, 50011-50016（可留空）' });
+			var inpUdp = E('input', { type: 'text', value: ed.udp || '', placeholder: '如：8000-8100, 17005（可留空）' });
+			var edErr = E('div', { class: 'rq-cat-result is-error', style: 'display:none' });
+
+			var saveBtn = E('button', {
+				type: 'button',
+				class: 'btn cbi-button cbi-button-apply',
+				click: function() {
+					if (state.busy) return;
+					state.busy = true;
+					saveBtn.disabled = true;
+					edErr.style.display = 'none';
+					q.callAppCatalogSaveApp(
+						inpId.value.trim(),
+						ed.orig_id || '',
+						inpName.value.trim(),
+						selCat.value,
+						inpDoms.value,
+						inpTcp.value.trim(),
+						inpUdp.value.trim()
+					).then(function(res) {
+						state.busy = false;
+						saveBtn.disabled = false;
+						if (!res || !res.ok) {
+							edErr.textContent = (res && res.error) ? res.error : '保存失败';
+							edErr.style.display = 'block';
+							return;
+						}
+						state.dirty = true;
+						state.editing = null;
+						ui.addNotification(null, E('p', {}, [
+							'已保存应用特征「', res.entry.name, '」',
+							res.applied ? '并已同步更新运行中的硬件流控规则。' : '（写入持久自定义特征库）。'
+						]), 'info');
+						return reloadCatalog();
+					}).catch(function(err) {
+						state.busy = false;
+						saveBtn.disabled = false;
+						edErr.textContent = '保存异常：' + (err && err.message ? err.message : String(err));
+						edErr.style.display = 'block';
+					});
+				}
+			}, [ed.orig_id ? '保存修改' : '保存并加入特征库']);
+
+			editorNode = E('div', { class: 'rq-cat-editor' }, [
+				E('strong', {}, [ed.orig_id ? ('编辑应用特征：' + ed.name + ' (' + ed.orig_id + ')') : '新增应用特征']),
+				E('div', { class: 'rq-cat-form-grid' }, [
+					E('div', { class: 'rq-cat-field' }, [E('label', {}, ['应用名称 *']), inpName]),
+					E('div', { class: 'rq-cat-field' }, [E('label', {}, ['所属分类 *']), selCat]),
+					E('div', { class: 'rq-cat-field' }, [E('label', {}, ['应用 ID（选填）']), inpId])
+				]),
+				E('div', { class: 'rq-cat-field' }, [E('label', {}, ['匹配域名（dnsmasq nftset 自动追踪服务器 IP）']), inpDoms]),
+				E('div', { class: 'rq-cat-form-grid' }, [
+					E('div', { class: 'rq-cat-field' }, [E('label', {}, ['专用 TCP 端口 / 端口段']), inpTcp]),
+					E('div', { class: 'rq-cat-field' }, [E('label', {}, ['专用 UDP 端口 / 端口段']), inpUdp])
+				]),
+				edErr,
+				E('div', { class: 'rq-actions-row', style: 'padding-top:2px' }, [
+					saveBtn,
+					E('button', {
+						type: 'button',
+						class: 'btn cbi-button',
+						click: function() { state.editing = null; renderModal(); }
+					}, ['取消'])
+				])
+			]);
+		}
+
+		var visible = filtered.slice(0, state.limit);
+		var rows = visible.map(function(a) {
+			var doms = a.domains || [];
+			var tcp = a.tcp || [];
+			var udp = a.udp || [];
+			var chips = [];
+			doms.slice(0, 4).forEach(function(d) {
+				chips.push(E('span', { class: 'rq-cat-chip rq-mono' }, [d]));
+			});
+			if (doms.length > 4)
+				chips.push(E('span', { class: 'rq-cat-chip' }, ['+' + (doms.length - 4) + ' 域名']));
+			if (tcp.length)
+				chips.push(E('span', { class: 'rq-cat-chip rq-mono' }, ['TCP: ' + tcp.slice(0, 3).join(',') + (tcp.length > 3 ? '…' : '')]));
+			if (udp.length)
+				chips.push(E('span', { class: 'rq-cat-chip rq-mono' }, ['UDP: ' + udp.slice(0, 3).join(',') + (udp.length > 3 ? '…' : '')]));
+
+			return E('tr', {}, [
+				E('td', { class: 'rq-wrap' }, [
+					E('strong', {}, [a.name]),
+					E('div', { class: 'rq-note', style: 'margin:2px 0 0' }, [
+						(catNameMap[a.cat] || a.cat) + ' · ID: ' + a.id
+					])
+				]),
+				E('td', { class: 'rq-wrap' }, [
+					E('div', { class: 'rq-cat-chips' }, chips.length ? chips : [E('span', { class: 'rq-note', style: 'margin:0' }, ['—'])])
+				]),
+				canWrite ? E('td', {}, [
+					E('div', { style: 'display:flex;gap:6px;flex-wrap:wrap' }, [
+						E('button', {
+							type: 'button',
+							class: 'btn cbi-button rq-btn-sm',
+							click: function() {
+								state.editing = {
+									orig_id: a.id,
+									id: a.id,
+									name: a.name,
+									cat: a.cat,
+									domains: doms.join('\n'),
+									tcp: tcp.join(', '),
+									udp: udp.join(', ')
+								};
+								renderModal();
+							}
+						}, ['编辑']),
+						E('button', {
+							type: 'button',
+							class: 'btn cbi-button cbi-button-remove rq-btn-sm',
+							click: function() {
+								if (state.busy) return;
+								if (!window.confirm('确认从特征库中删除「' + a.name + '」(' + a.id + ') 吗？'))
+									return;
+								state.busy = true;
+								q.callAppCatalogDeleteApp(a.id).then(function(res) {
+									state.busy = false;
+									if (!res || !res.ok) {
+										ui.addNotification(null, E('p', {}, ['删除失败：', (res && res.error) || 'unknown']), 'error');
+										return;
+									}
+									state.dirty = true;
+									return reloadCatalog();
+								}).catch(function(err) {
+									state.busy = false;
+									ui.addNotification(null, E('p', {}, ['删除异常：', err && err.message ? err.message : String(err)]), 'error');
+								});
+							}
+						}, ['删除'])
+					])
+				]) : null
+			]);
+		});
+
+		if (!rows.length) {
+			rows.push(E('tr', {}, [
+				E('td', { colspan: canWrite ? 3 : 2, class: 'rq-note' }, ['没有匹配当前筛选条件的应用特征。'])
+			]));
+		}
+
+		var moreBtn = filtered.length > visible.length ? E('button', {
+			type: 'button',
+			class: 'btn cbi-button rq-btn-sm',
+			style: 'margin:8px auto;display:flex',
+			click: function() {
+				state.limit = filtered.length;
+				renderModal();
+			}
+		}, ['显示全部 ' + filtered.length + ' 条（当前展示前 ' + visible.length + ' 条）']) : null;
+
+		return [
+			E('div', { class: 'rq-cat-toolbar' }, [catSel, searchInput, addBtn]),
+			editorNode,
+			E('div', { class: 'rq-cat-list-wrap' }, [
+				E('table', { class: 'rq-table' }, [
+					E('thead', {}, [
+						E('tr', {}, [
+							E('th', {}, ['应用 / 分类']),
+							E('th', {}, ['域名与端口特征']),
+							canWrite ? E('th', {}, ['操作']) : null
+						])
+					]),
+					E('tbody', {}, rows)
+				]),
+				moreBtn
+			])
+		];
+	}
+
+	function buildImportPanel(cats, apps) {
+		var canWrite = L.hasViewPermission();
+		var modeSel = E('select', {}, [
+			E('option', { value: 'merge' }, ['合并更新（保留现有特征，新增或更新匹配项）']),
+			E('option', { value: 'replace' }, ['覆盖替换（清空现有列表，完全替换为导入内容）'])
+		]);
+		var fmtSel = E('select', {}, [
+			E('option', { value: 'auto' }, ['自动识别（推荐 · 支持 JSON / 表格文本 / Clash 域名规则）']),
+			E('option', { value: 'json' }, ['JSON 特征库（完整导出文件或应用对象数组）']),
+			E('option', { value: 'lines' }, ['表格 / 文本行（分类|名称|域名|TCP|UDP 或 CSV）']),
+			E('option', { value: 'domains' }, ['纯域名列表导入到指定应用（自动去重合并）'])
+		]);
+		var defCatSel = E('select', {}, cats.map(function(c) {
+			return E('option', { value: c.id, selected: c.id === 'custom' ? 'selected' : null }, [c.name + ' (' + c.id + ')']);
+		}));
+		var targetAppSel = E('select', {}, [
+			E('option', { value: '' }, ['新建应用（填写右侧新应用名称）'])
+		].concat(apps.map(function(a) {
+			return E('option', { value: a.id }, [a.name + ' (' + a.id + ')']);
+		})));
+		var targetNameInp = E('input', { type: 'text', placeholder: '仅新建域名组时生效，如：公司内网加速' });
+		var textArea = E('textarea', {
+			style: 'min-height:170px',
+			placeholder: '在此粘贴 JSON、表格文本行（分类|名称|域名|TCP|UDP）或 Clash/纯域名列表，或点击上方选择本地文件导入…'
+		});
+		var fileInput = E('input', {
+			type: 'file',
+			accept: '.json,.txt,.csv,.list,application/json,text/plain',
+			change: function(ev) {
+				var file = ev.target.files && ev.target.files[0];
+				if (!file) return;
+				if (file.size > 524288) {
+					state.importResult = { ok: false, error: '文件超过 512 KB 上限，请精简后再导入。' };
+					renderModal();
+					return;
+				}
+				var reader = new FileReader();
+				reader.onload = function() {
+					textArea.value = String(reader.result || '');
+				};
+				reader.readAsText(file, 'utf-8');
+			}
+		});
+
+		var targetWrap = E('div', { class: 'rq-cat-form-grid' }, [
+			E('div', { class: 'rq-cat-field' }, [E('label', {}, ['默认归属分类（未指明分类时使用）']), defCatSel]),
+			E('div', { class: 'rq-cat-field' }, [E('label', {}, ['域名列表追加到已有应用（选填）']), targetAppSel]),
+			E('div', { class: 'rq-cat-field' }, [E('label', {}, ['或新建应用名称（纯域名列表时）']), targetNameInp])
+		]);
+
+		var resBox = null;
+		if (state.importResult) {
+			var r = state.importResult;
+			if (r.ok) {
+				resBox = E('div', { class: 'rq-cat-result is-good' }, [
+					E('strong', {}, [
+						'导入成功：新增 ' + String(r.added || 0) + ' 款 · 更新 ' + String(r.updated || 0) +
+						' 款 · 跳过 ' + String(r.skipped || 0) + ' 项（当前共 ' + String(r.total_apps || 0) +
+						' 款应用 / ' + String(r.total_domains || 0) + ' 个域名）'
+					]),
+					r.applied ? E('div', {}, ['已自动热同步至 nftables 与 dnsmasq 规则。']) : null,
+					(r.warnings && r.warnings.length) ? E('div', { class: 'rq-note', style: 'margin:4px 0 0' }, [
+						'提示：' + r.warnings.slice(0, 5).join('；')
+					]) : null
+				]);
+			} else {
+				resBox = E('div', { class: 'rq-cat-result is-error' }, [
+					'导入失败：' + (r.error || '未知错误')
+				]);
+			}
+		}
+
+		var runBtn = canWrite ? E('button', {
+			type: 'button',
+			class: 'btn cbi-button cbi-button-apply',
+			click: function() {
+				if (state.busy) return;
+				if (!textArea.value.trim()) {
+					state.importResult = { ok: false, error: '请先粘贴导入内容或选择本地文件。' };
+					renderModal();
+					return;
+				}
+				if (modeSel.value === 'replace' && !window.confirm('确认使用导入内容【覆盖替换】当前整个特征库吗？可随时通过「恢复出厂库」还原。'))
+					return;
+				state.busy = true;
+				runBtn.disabled = true;
+				q.callAppCatalogImport(
+					fmtSel.value,
+					modeSel.value,
+					textArea.value,
+					defCatSel.value,
+					targetAppSel.value,
+					targetNameInp.value.trim()
+				).then(function(res) {
+					state.busy = false;
+					runBtn.disabled = false;
+					state.importResult = res || { ok: false, error: '返回为空' };
+					if (res && res.ok) {
+						state.dirty = true;
+						return reloadCatalog();
+					}
+					renderModal();
+				}).catch(function(err) {
+					state.busy = false;
+					runBtn.disabled = false;
+					state.importResult = { ok: false, error: err && err.message ? err.message : String(err) };
+					renderModal();
+				});
+			}
+		}, ['开始批量导入并保存']) : null;
+
+		return [
+			E('div', { class: 'rq-cat-form-grid' }, [
+				E('div', { class: 'rq-cat-field' }, [E('label', {}, ['导入模式']), modeSel]),
+				E('div', { class: 'rq-cat-field' }, [E('label', {}, ['数据格式']), fmtSel])
+			]),
+			targetWrap,
+			E('div', { class: 'rq-cat-field' }, [
+				E('label', {}, ['从本地文件导入（.json / .csv / .txt）或一键填入示例']),
+				E('div', { class: 'rq-cat-file-row' }, [
+					fileInput,
+					E('button', { type: 'button', class: 'btn cbi-button rq-btn-sm', click: function() { fmtSel.value = 'json'; textArea.value = SAMPLE_JSON_IMPORT; } }, ['JSON 示例']),
+					E('button', { type: 'button', class: 'btn cbi-button rq-btn-sm', click: function() { fmtSel.value = 'lines'; textArea.value = SAMPLE_LINES_IMPORT; } }, ['文本行示例']),
+					E('button', { type: 'button', class: 'btn cbi-button rq-btn-sm', click: function() { fmtSel.value = 'domains'; textArea.value = SAMPLE_DOMAINS_IMPORT; } }, ['域名列表示例'])
+				])
+			]),
+			E('div', { class: 'rq-cat-field' }, [
+				E('label', {}, ['批量导入内容']),
+				textArea
+			]),
+			resBox,
+			E('div', { class: 'rq-actions-row', style: 'padding-top:2px' }, [
+				runBtn,
+				E('span', { class: 'rq-note', style: 'margin:0' }, ['所有域名与端口均会做安全合法性校验并去重；保存后持久化于 /etc/rtl9617c-qos/app_signatures.json（升级保留）。'])
+			])
+		];
+	}
+
+	function renderModal() {
+		var cat = state.catalog || { categories: [], apps: [], custom: false };
+		var cats = cat.categories || [];
+		var apps = cat.apps || [];
+		var catNameMap = {};
+		var domCount = 0;
+		cats.forEach(function(c) { catNameMap[c.id] = c.name; });
+		apps.forEach(function(a) { domCount += (a.domains || []).length; });
+
+		var resetBtn = (L.hasViewPermission() && cat.custom) ? E('button', {
+			type: 'button',
+			class: 'btn cbi-button cbi-button-reset rq-btn-sm',
+			click: function() {
+				if (state.busy) return;
+				if (!window.confirm('确认删除自定义覆盖文件并恢复为固件出厂特征库吗？'))
+					return;
+				state.busy = true;
+				q.callAppCatalogReset().then(function(res) {
+					state.busy = false;
+					if (res && res.ok) {
+						state.dirty = true;
+						state.editing = null;
+						state.importResult = null;
+						ui.addNotification(null, E('p', {}, ['已恢复固件出厂应用特征库（共 ' + String(res.total_apps || 0) + ' 款应用）。']), 'info');
+						return reloadCatalog();
+					}
+				}).catch(function(err) {
+					state.busy = false;
+					ui.addNotification(null, E('p', {}, ['恢复失败：', err && err.message ? err.message : String(err)]), 'error');
+				});
+			}
+		}, ['恢复出厂库']) : null;
+
+		var body = state.tab === 'import'
+			? buildImportPanel(cats, apps)
+			: buildManagePanel(cats, catNameMap, apps);
+
+		dom.content(modalRoot, [
+			E('div', { class: 'rq-cat-topbar' }, [
+				E('div', { class: 'rq-cat-meta' }, [
+					cat.custom ? q.badge('自定义持久化特征库', 'warn') : q.badge('出厂特征库', 'good'),
+					E('span', {}, ['共 ' + String(apps.length) + ' 款应用 · ' + String(domCount) + ' 条域名']),
+					cat.version ? E('span', { class: 'rq-mono' }, ['v' + cat.version]) : null
+				]),
+				E('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
+					E('button', { type: 'button', class: 'btn cbi-button rq-btn-sm', click: downloadJson }, ['导出 JSON']),
+					resetBtn
+				])
+			]),
+			E('div', { class: 'rq-cat-tabs' }, [
+				E('button', {
+					type: 'button',
+					class: 'rq-cat-tab' + (state.tab === 'manage' ? ' is-active' : ''),
+					click: function() { state.tab = 'manage'; renderModal(); }
+				}, ['特征列表与维护 (' + String(apps.length) + ')']),
+				E('button', {
+					type: 'button',
+					class: 'rq-cat-tab' + (state.tab === 'import' ? ' is-active' : ''),
+					click: function() { state.tab = 'import'; renderModal(); }
+				}, ['批量导入 (JSON / 文本 / 域名)'])
+			])
+		].concat(body).concat([
+			E('div', { class: 'rq-cat-footer' }, [
+				E('span', { class: 'rq-note', style: 'margin:0' }, [
+					state.dirty ? '特征库已变更，关闭弹窗后将自动刷新页面以更新下拉列表。' : '提示：支持增删改单项、批量合并/覆盖导入与导出备份。'
+				]),
+				E('div', {}, [
+					E('button', { type: 'button', class: 'btn cbi-button cbi-button-action', click: closeModal }, [
+						state.dirty ? '完成并刷新页面' : '关闭'
+					])
+				])
+			])
+		]));
+	}
+
+	ui.showModal('应用特征库维护与批量导入', [modalRoot]);
+	reloadCatalog();
 }
 
 function renderLiveClassify(container, data, catIndex) {
@@ -374,7 +918,7 @@ function renderLiveClassify(container, data, catIndex) {
 	dom.content(container, [
 		q.guideCard('怎么用？（让游戏、语音或主力设备不卡顿）', [
 			'1. 最省心用法：直接点击下方【一键套用场景预设方案】中的“电竞游戏与语音防卡顿”或“办公与视频会议优先”，系统会自动开启小包优先、加载应用特征库并配置好网口硬件排队。',
-			'2. 应用特征库智能识别：内置 308 款精选应用 / 9 大分类（手游、端游、语音会议、远控、网课、下载网盘等），通过 dnsmasq nftset 自动追踪域名服务器 IP + 专用窄端口识别，无需正则 DPI、零持续 CPU 开销且全程走芯片硬件加速（注：仅对直连或绕过代理的流量生效）。',
+			'2. 应用特征库智能识别：当前已加载 ' + String((catIndex && catIndex.appCount) || 302) + ' 款应用特征（' + ((catIndex && catIndex.custom) ? '自定义持久化库' : '出厂精校库') + '），通过 dnsmasq nftset 自动追踪域名服务器 IP + 专用窄端口识别，零持续 CPU 开销且全程走芯片硬件加速；可随时点击下方【维护特征库 / 批量导入】自由增删或导入规则（注：仅对直连或绕过代理的流量生效）。',
 			'3. 进阶自定义：您也可以在底部“自定义优先转发规则列表”中按内网设备 IP（如 192.168.2.100）、MAC 或特定游戏端口自由添加、修改或删除规则。'
 		]),
 		renderPresetCard(),
@@ -390,7 +934,9 @@ function renderLiveClassify(container, data, catIndex) {
 					])
 				]),
 			q.card('应用特征库识别',
-				activeAppRules > 0 ? q.badge(String(activeAppRules) + ' 条特征规则', 'good') : q.badge('未启用', ''),
+				activeAppRules > 0
+					? q.badge(String(activeAppRules) + ' 条特征规则' + ((catIndex && catIndex.custom) ? ' · 自定义库' : ''), 'good')
+					: q.badge((catIndex && catIndex.custom) ? '自定义特征库' : '未启用', (catIndex && catIndex.custom) ? 'warn' : ''),
 				[
 					E('div', { class: 'rq-kpi' }, [
 						'捕获 ' + String(nft.app_ip_total || 0) + ' 个服务器 IP'
@@ -398,7 +944,23 @@ function renderLiveClassify(container, data, catIndex) {
 					E('p', { class: 'rq-note' }, [
 						appSetSummary.length
 							? ('域名动态集合：' + appSetSummary.join(' · '))
-							: ('内置 ' + String((catIndex && catIndex.appCount) || 308) + ' 款应用特征，开启后通过 dnsmasq nftset + 专用端口自动识别。')
+							: ('已加载 ' + String((catIndex && catIndex.appCount) || 302) + ' 款应用特征，开启后通过 dnsmasq nftset + 专用端口自动识别。')
+					]),
+					E('div', { class: 'rq-actions-row' }, [
+						E('button', {
+							type: 'button',
+							class: 'btn cbi-button cbi-button-action rq-btn-sm',
+							click: function() {
+								openCatalogManager('manage', function() { window.location.reload(); });
+							}
+						}, ['维护特征库 (' + String((catIndex && catIndex.appCount) || 302) + ')']),
+						L.hasViewPermission() ? E('button', {
+							type: 'button',
+							class: 'btn cbi-button cbi-button-apply rq-btn-sm',
+							click: function() {
+								openCatalogManager('import', function() { window.location.reload(); });
+							}
+						}, ['批量导入']) : null
 					])
 				]),
 			q.card('已加速的高优先级连接',
@@ -455,7 +1017,8 @@ return view.extend({
 		var catIndex = {
 			catById: catById,
 			appById: appById,
-			appCount: (catalog.apps || []).length
+			appCount: (catalog.apps || []).length,
+			custom: !!catalog.custom
 		};
 		var liveMount = E('div');
 		var m = new form.Map('rtl9617c_qos', null, null);

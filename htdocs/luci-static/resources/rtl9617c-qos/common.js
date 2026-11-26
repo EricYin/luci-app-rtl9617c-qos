@@ -49,6 +49,44 @@ var callAppCatalogRpc = rpc.declare({
 	reject: false
 });
 
+var callAppCatalogFullRpc = rpc.declare({
+	object: 'luci.rtl9617c-qos',
+	method: 'app_catalog_full',
+	expect: { '': {} },
+	reject: true
+});
+
+var callAppCatalogSaveAppRpc = rpc.declare({
+	object: 'luci.rtl9617c-qos',
+	method: 'app_catalog_save_app',
+	params: ['id', 'orig_id', 'name', 'cat', 'domains', 'tcp', 'udp'],
+	expect: { '': {} },
+	reject: true
+});
+
+var callAppCatalogDeleteAppRpc = rpc.declare({
+	object: 'luci.rtl9617c-qos',
+	method: 'app_catalog_delete_app',
+	params: ['id'],
+	expect: { '': {} },
+	reject: true
+});
+
+var callAppCatalogImportRpc = rpc.declare({
+	object: 'luci.rtl9617c-qos',
+	method: 'app_catalog_import',
+	params: ['format', 'mode', 'payload', 'default_cat', 'target_app_id', 'target_app_name'],
+	expect: { '': {} },
+	reject: true
+});
+
+var callAppCatalogResetRpc = rpc.declare({
+	object: 'luci.rtl9617c-qos',
+	method: 'app_catalog_reset',
+	expect: { '': {} },
+	reject: true
+});
+
 var callHostHintsRpc = rpc.declare({
 	object: 'luci-rpc',
 	method: 'getHostHints',
@@ -72,13 +110,13 @@ function badge(text, tone) {
 	return E('span', { class: 'rq-badge ' + (tone ? 'rq-' + tone : '') }, [text]);
 }
 
-function card(title, badgeNode, body) {
-	return E('section', { class: 'rq-card' }, [
+function card(title, badgeNode, body, extraClass) {
+	return E('section', { class: 'rq-card' + (extraClass ? ' ' + extraClass : '') }, [
 		E('div', { class: 'rq-card-head' }, [
 			E('h3', {}, [title]),
 			badgeNode || E('span')
 		]),
-		E('div', {}, body)
+		E('div', { class: 'rq-card-body' }, body)
 	]);
 }
 
@@ -259,6 +297,11 @@ return baseclass.extend({
 	callApply: callApplyRpc,
 	callApplyPreset: callApplyPresetRpc,
 	callAppCatalog: callAppCatalogRpc,
+	callAppCatalogFull: callAppCatalogFullRpc,
+	callAppCatalogSaveApp: callAppCatalogSaveAppRpc,
+	callAppCatalogDeleteApp: callAppCatalogDeleteAppRpc,
+	callAppCatalogImport: callAppCatalogImportRpc,
+	callAppCatalogReset: callAppCatalogResetRpc,
 	callHostHints: callHostHintsRpc,
 	badge: badge,
 	card: card,

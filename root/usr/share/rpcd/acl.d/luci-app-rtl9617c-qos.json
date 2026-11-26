@@ -4,14 +4,23 @@
 		"read": {
 			"uci": [ "rtl9617c_qos" ],
 			"ubus": {
-				"luci.rtl9617c-qos": [ "status", "app_catalog" ],
+				"luci.rtl9617c-qos": [ "status", "app_catalog", "app_catalog_full" ],
 				"luci-rpc": [ "getHostHints", "getNetworkDevices" ]
 			}
 		},
 		"write": {
 			"uci": [ "rtl9617c_qos" ],
 			"ubus": {
-				"luci.rtl9617c-qos": [ "clear_host_mib", "clear_dos_flood", "apply", "apply_preset" ]
+				"luci.rtl9617c-qos": [
+					"clear_host_mib",
+					"clear_dos_flood",
+					"apply",
+					"apply_preset",
+					"app_catalog_save_app",
+					"app_catalog_delete_app",
+					"app_catalog_import",
+					"app_catalog_reset"
+				]
 			}
 		}
 	}

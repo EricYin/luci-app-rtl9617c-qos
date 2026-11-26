@@ -31,6 +31,25 @@ export const DOS_DEFAULT_PORT_MASK = '0x00000000000000ff';
 
 export const NFT_INCLUDE_PATH = '/etc/nftables.d/90-rtl9617c-qos.nft';
 export const APP_CATALOG_PATH = '/usr/share/rtl9617c/app_signatures.json';
+export const APP_CATALOG_CUSTOM_PATH = '/etc/rtl9617c-qos/app_signatures.json';
+export const APP_CATALOG_MAX_APPS = 2000;
+
+export const DEFAULT_APP_CATEGORIES = [
+	{ id: 'mobile_game', name: '热门手机游戏', default_cos: 6, desc: '王者荣耀、和平精英、原神、三角洲、金铲铲等手游专用端口与加速域名', count: 0 },
+	{ id: 'pc_game', name: '电脑端游与游戏平台', default_cos: 6, desc: '英雄联盟、Steam、WeGame、地下城与勇士、魔兽世界、Ubisoft 等', count: 0 },
+	{ id: 'voice_meeting', name: '视频会议与语音通话', default_cos: 6, desc: '腾讯会议、微信/QQ/钉钉/企业微信语音与多媒体通话', count: 0 },
+	{ id: 'remote_desk', name: '远程桌面与远控', default_cos: 5, desc: '向日葵、TeamViewer、Microsoft 远程桌面低延迟交互', count: 0 },
+	{ id: 'education', name: '在线教育与网课', default_cos: 5, desc: '常见在线课堂与网课直播平台', count: 0 },
+	{ id: 'im_chat', name: '即时通讯文字消息', default_cos: 5, desc: '微信、QQ、TIM、钉钉等即时消息连接', count: 0 },
+	{ id: 'video_live', name: '影音与视频直播', default_cos: 4, desc: '西瓜、优酷、虎牙、斗鱼、YY 等视频直播平台', count: 0 },
+	{ id: 'finance', name: '证券行情与网银支付', default_cos: 5, desc: '行情交易与银行支付连接防卡顿', count: 0 },
+	{ id: 'download_bulk', name: '下载 / 应用商店 / 网盘（建议降权）', default_cos: 0, desc: '迅雷下载、应用商店更新、大文件传输与网盘同步，设为低优先级防止抢占带宽', count: 0 },
+	{ id: 'custom', name: '自定义应用', default_cos: 5, desc: '用户手动维护或批量导入的自定义应用特征', count: 0 }
+];
+
+export function app_catalog_custom_path() {
+	return getenv('RTL9617C_APP_CATALOG_CUSTOM') || APP_CATALOG_CUSTOM_PATH;
+};
 
 export const DSCP_MAP = {
 	cs0: 0, df: 0, le: 1,
@@ -637,9 +656,257 @@ function build_single_nft_stmt(fam, l4proto, src_ip, dst_ip, sport, dport, dscp,
 	return '\t\t' + join(' ', parts);
 }
 
+export function normalize_domain(raw) {
+	if (raw == null)
+		return null;
+	let s = lc(trim('' + raw));
+	if (s == '')
+		return null;
+	let rule_m = match(s, /^(domain-suffix|domain|host-suffix|host)\s*,\s*([^, \t\r\n#]+)/);
+	if (rule_m != null)
+		s = trim(rule_m[2]);
+	s = replace(s, /^[a-z][a-z0-9+.-]*:\/\//, '');
+	let slash = index(s, '/');
+	if (slash >= 0)
+		s = substr(s, 0, slash);
+	let colon = index(s, ':');
+	if (colon >= 0)
+		s = substr(s, 0, colon);
+	s = replace(s, /^(\+\.|\*\.|\.+)/, '');
+	s = replace(s, /\.+$/, '');
+	if (length(s) < 3 || length(s) > 253 || index(s, '.') < 0)
+		return null;
+	if (!match(s, /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/))
+		return null;
+	return s;
+};
+
+export function normalize_port_list(raw) {
+	let items = [];
+	if (raw == null)
+		return { ports: [], invalid: [] };
+	if (type(raw) == 'array') {
+		for (let el in raw) {
+			for (let tok in split('' + el, /[,; \t\r\n]+/)) {
+				let t = trim(tok);
+				if (t != '')
+					push(items, t);
+			}
+		}
+	} else {
+		for (let tok in split('' + raw, /[,; \t\r\n]+/)) {
+			let t = trim(tok);
+			if (t != '')
+				push(items, t);
+		}
+	}
+	let seen = {};
+	let ports = [];
+	let invalid = [];
+	for (let tok in items) {
+		let rm = match(tok, /^([0-9]+)-([0-9]+)$/);
+		if (rm != null) {
+			let a = parse_uint(rm[1], 1, 65535);
+			let b = parse_uint(rm[2], 1, 65535);
+			if (a == null || b == null || a > b) {
+				push(invalid, tok);
+				continue;
+			}
+			let norm = (a == b) ? ('' + a) : (a + '-' + b);
+			if (!exists(seen, norm)) {
+				seen[norm] = true;
+				push(ports, norm);
+			}
+		} else {
+			let p = parse_uint(tok, 1, 65535);
+			if (p == null) {
+				push(invalid, tok);
+				continue;
+			}
+			let norm = '' + p;
+			if (!exists(seen, norm)) {
+				seen[norm] = true;
+				push(ports, norm);
+			}
+		}
+	}
+	sort(ports, (a, b) => {
+		let na = +(split(a, '-')[0]);
+		let nb = +(split(b, '-')[0]);
+		return na != nb ? (na - nb) : (a < b ? -1 : (a > b ? 1 : 0));
+	});
+	return { ports, invalid };
+};
+
+function sanitize_app_id(raw) {
+	if (raw == null)
+		return null;
+	let s = trim('' + raw);
+	if (s == '')
+		return null;
+	s = replace(s, /[^a-zA-Z0-9._-]/g, '_');
+	s = substr(s, 0, 48);
+	return match(s, /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,47}$/) ? s : null;
+}
+
+function qos_class_for_cat(cat_id) {
+	if (cat_id == 'mobile_game' || cat_id == 'pc_game' || cat_id == 'voice_meeting')
+		return 1;
+	if (cat_id == 'download_bulk')
+		return 4;
+	if (cat_id == 'video_live')
+		return 3;
+	return 2;
+}
+
+function normalize_domain_list(raw) {
+	let items = [];
+	if (raw == null)
+		return { domains: [], invalid: [] };
+	if (type(raw) == 'array') {
+		for (let el in raw) {
+			let s = trim('' + el);
+			if (s != '')
+				push(items, s);
+		}
+	} else {
+		for (let line in split('' + raw, /[\r\n;]+/)) {
+			let trimmed = trim(line);
+			if (trimmed == '' || substr(trimmed, 0, 1) == '#')
+				continue;
+			if (match(lc(trimmed), /^(domain-suffix|domain|host-suffix|host)\s*,/)) {
+				push(items, trimmed);
+			} else {
+				for (let tok in split(trimmed, /[, \t]+/)) {
+					let t = trim(tok);
+					if (t != '')
+						push(items, t);
+				}
+			}
+		}
+	}
+	let seen = {};
+	let domains = [];
+	let invalid = [];
+	for (let item in items) {
+		let d = normalize_domain(item);
+		if (d == null) {
+			push(invalid, item);
+			continue;
+		}
+		if (!exists(seen, d)) {
+			seen[d] = true;
+			push(domains, d);
+		}
+	}
+	sort(domains);
+	return { domains, invalid };
+}
+
+function build_category_map(base_categories) {
+	let list = [];
+	let by_id = {};
+	for (let c in (base_categories || [])) {
+		if (type(c) != 'object' || !c.id)
+			continue;
+		let cid = '' + c.id;
+		let copy = {
+			id: cid,
+			name: '' + (c.name || cid),
+			default_cos: parse_uint(c.default_cos, 0, COS_MAX) ?? 5,
+			desc: '' + (c.desc || ''),
+			count: 0
+		};
+		by_id[cid] = copy;
+		push(list, copy);
+	}
+	for (let def in DEFAULT_APP_CATEGORIES) {
+		if (!exists(by_id, def.id)) {
+			let copy = {
+				id: def.id,
+				name: def.name,
+				default_cos: def.default_cos,
+				desc: def.desc,
+				count: 0
+			};
+			by_id[def.id] = copy;
+			push(list, copy);
+		}
+	}
+	return { list, by_id };
+}
+
+export function rebuild_catalog_doc(base_catalog, apps_list, meta) {
+	meta = meta || {};
+	let cat_info = build_category_map(base_catalog ? base_catalog.categories : []);
+	let cleaned = [];
+	let seen_id = {};
+
+	for (let app in (apps_list || [])) {
+		if (type(app) != 'object' || !app.id)
+			continue;
+		let id = '' + app.id;
+		if (exists(seen_id, id))
+			continue;
+		seen_id[id] = true;
+		let cat = '' + (app.cat || 'custom');
+		if (!exists(cat_info.by_id, cat)) {
+			let extra = { id: cat, name: cat, default_cos: 5, desc: '', count: 0 };
+			cat_info.by_id[cat] = extra;
+			push(cat_info.list, extra);
+		}
+		cat_info.by_id[cat].count++;
+		let entry = {
+			id,
+			name: '' + (app.name || id),
+			cat,
+			qos_class: parse_uint(app.qos_class, 1, 4) ?? qos_class_for_cat(cat)
+		};
+		if (length(app.domains || []) > 0)
+			entry.domains = app.domains;
+		if (length(app.tcp || []) > 0)
+			entry.tcp = app.tcp;
+		if (length(app.udp || []) > 0)
+			entry.udp = app.udp;
+		push(cleaned, entry);
+	}
+
+	sort(cleaned, (a, b) => {
+		if (a.cat != b.cat)
+			return a.cat < b.cat ? -1 : 1;
+		return a.id < b.id ? -1 : (a.id > b.id ? 1 : 0);
+	});
+
+	let out_cats = [];
+	for (let c in cat_info.list) {
+		if (c.count > 0 || c.id != 'custom')
+			push(out_cats, c);
+	}
+	if (exists(cat_info.by_id, 'custom') && cat_info.by_id['custom'].count == 0)
+		push(out_cats, cat_info.by_id['custom']);
+
+	return {
+		version: '' + (meta.version || (base_catalog && base_catalog.version) || 'custom-v1'),
+		source: '' + (meta.source || (base_catalog && base_catalog.source) || 'RTL9617C Custom App Signature Catalog'),
+		categories: out_cats,
+		apps: cleaned
+	};
+};
+
 export function load_app_catalog(path) {
-	let target = path || getenv('RTL9617C_APP_CATALOG') || APP_CATALOG_PATH;
-	let empty = { version: '', categories: [], apps: [], by_id: {}, by_cat: {} };
+	let target = path || getenv('RTL9617C_APP_CATALOG');
+	let custom = false;
+	if (!target) {
+		let custom_path = app_catalog_custom_path();
+		let st = stat(custom_path);
+		if (st != null && st.size > 0) {
+			target = custom_path;
+			custom = true;
+		} else {
+			target = APP_CATALOG_PATH;
+		}
+	}
+	let empty = { version: '', source: '', custom, path: target, categories: [], apps: [], by_id: {}, by_cat: {} };
 	let raw = readfile(target);
 	if (raw == null || raw == '')
 		return empty;
@@ -649,27 +916,490 @@ export function load_app_catalog(path) {
 	if (type(parsed) != 'object' || type(parsed.apps) != 'array')
 		return empty;
 
+	let cat_info = build_category_map(type(parsed.categories) == 'array' ? parsed.categories : []);
 	let by_id = {};
 	let by_cat = {};
+	let apps = [];
 	for (let app in parsed.apps) {
 		if (type(app) != 'object' || !app.id)
 			continue;
 		let id = '' + app.id;
-		by_id[id] = app;
-		let cat = '' + (app.cat || '');
-		if (cat != '') {
-			if (!exists(by_cat, cat))
-				by_cat[cat] = [];
-			push(by_cat[cat], app);
+		let cat = '' + (app.cat || 'custom');
+		if (!exists(cat_info.by_id, cat)) {
+			let extra = { id: cat, name: cat, default_cos: 5, desc: '', count: 0 };
+			cat_info.by_id[cat] = extra;
+			push(cat_info.list, extra);
 		}
+		cat_info.by_id[cat].count++;
+		by_id[id] = app;
+		if (!exists(by_cat, cat))
+			by_cat[cat] = [];
+		push(by_cat[cat], app);
+		push(apps, app);
 	}
+
+	let categories = [];
+	for (let c in cat_info.list) {
+		if (c.count > 0 || c.id != 'custom')
+			push(categories, c);
+	}
+	if (exists(cat_info.by_id, 'custom') && cat_info.by_id['custom'].count == 0)
+		push(categories, cat_info.by_id['custom']);
 
 	return {
 		version: '' + (parsed.version || ''),
-		categories: type(parsed.categories) == 'array' ? parsed.categories : [],
-		apps: parsed.apps,
+		source: '' + (parsed.source || ''),
+		custom,
+		path: target,
+		categories,
+		apps,
 		by_id,
 		by_cat
+	};
+};
+
+export function normalize_app_entry(raw, valid_cats, fallback_cat, auto_id_fn) {
+	if (type(raw) != 'object')
+		return { error: '无效的应用条目对象' };
+
+	let name = trim(replace('' + (raw.name ?? ''), /[[:cntrl:]]/g, ' '));
+	if (name == '')
+		return { error: '应用名称不能为空' };
+	if (length(name) > 80)
+		name = substr(name, 0, 80);
+
+	let cat = trim('' + (raw.cat ?? raw.category ?? fallback_cat ?? 'custom'));
+	if (cat == '' || (valid_cats && !exists(valid_cats, cat)))
+		cat = (fallback_cat && (!valid_cats || exists(valid_cats, fallback_cat))) ? fallback_cat : 'custom';
+
+	let id = sanitize_app_id(raw.id);
+	if (id == null) {
+		if (trim('' + (raw.id ?? '')) != '')
+			return { error: `非法应用 ID '${raw.id}'（仅支持字母、数字及 ._ -）` };
+		id = auto_id_fn ? auto_id_fn(name, cat) : ('custom_' + substr(replace(lc(name), /[^a-z0-9]+/g, '_'), 0, 24));
+		id = sanitize_app_id(id) || 'custom_app';
+	}
+
+	let dom_res = normalize_domain_list(raw.domains);
+	let tcp_res = normalize_port_list(raw.tcp);
+	let udp_res = normalize_port_list(raw.udp);
+
+	let warnings = [];
+	if (length(dom_res.invalid) > 0)
+		push(warnings, `应用「${name}」忽略非法域名: ${join(', ', slice(dom_res.invalid, 0, 5))}`);
+	if (length(tcp_res.invalid) > 0)
+		push(warnings, `应用「${name}」忽略非法 TCP 端口: ${join(', ', slice(tcp_res.invalid, 0, 5))}`);
+	if (length(udp_res.invalid) > 0)
+		push(warnings, `应用「${name}」忽略非法 UDP 端口: ${join(', ', slice(udp_res.invalid, 0, 5))}`);
+
+	if (!length(dom_res.domains) && !length(tcp_res.ports) && !length(udp_res.ports))
+		return { error: `应用「${name}」至少需要 1 个有效域名或 1 个有效 TCP/UDP 端口` };
+
+	let entry = {
+		id,
+		name,
+		cat,
+		qos_class: parse_uint(raw.qos_class, 1, 4) ?? qos_class_for_cat(cat)
+	};
+	if (length(dom_res.domains) > 0)
+		entry.domains = dom_res.domains;
+	if (length(tcp_res.ports) > 0)
+		entry.tcp = tcp_res.ports;
+	if (length(udp_res.ports) > 0)
+		entry.udp = udp_res.ports;
+
+	return { entry, warnings };
+};
+
+function make_id_allocator(existing_ids) {
+	let used = {};
+	for (let k in keys(existing_ids || {}))
+		used[k] = true;
+	let seq = 1;
+	return function(name, cat) {
+		let slug = replace(lc('' + (name || '')), /[^a-z0-9]+/g, '_');
+		slug = replace(slug, /^_+|_+$/g, '');
+		if (length(slug) > 20)
+			slug = substr(slug, 0, 20);
+		if (slug != '' && !exists(used, 'c_' + slug)) {
+			let cid = 'c_' + slug;
+			used[cid] = true;
+			return cid;
+		}
+		while (true) {
+			let cid = sprintf('c_%04d', seq++);
+			if (!exists(used, cid)) {
+				used[cid] = true;
+				return cid;
+			}
+		}
+	};
+}
+
+export function upsert_catalog_app(catalog, app_input, orig_id) {
+	catalog = catalog || { categories: [], apps: [], by_id: {} };
+	let cat_info = build_category_map(catalog.categories);
+	let existing_ids = {};
+	for (let a in (catalog.apps || [])) {
+		if (a && a.id)
+			existing_ids['' + a.id] = true;
+	}
+	let alloc_id = make_id_allocator(existing_ids);
+	let res = normalize_app_entry(app_input, cat_info.by_id, 'custom', alloc_id);
+	if (res.error)
+		return { ok: false, error: res.error };
+
+	let entry = res.entry;
+	let old_id = trim('' + (orig_id ?? ''));
+	if (old_id != '' && old_id != entry.id && exists(existing_ids, entry.id))
+		return { ok: false, error: `应用 ID '${entry.id}' 已存在，请更换其他 ID` };
+
+	let next_apps = [];
+	let updated = false;
+	for (let a in (catalog.apps || [])) {
+		if (!a || !a.id)
+			continue;
+		let aid = '' + a.id;
+		if ((old_id != '' && aid == old_id) || (old_id == '' && aid == entry.id)) {
+			push(next_apps, entry);
+			updated = true;
+		} else {
+			push(next_apps, a);
+		}
+	}
+	if (!updated) {
+		if (length(next_apps) >= APP_CATALOG_MAX_APPS)
+			return { ok: false, error: `特征库应用数量已达上限 (${APP_CATALOG_MAX_APPS})` };
+		push(next_apps, entry);
+	}
+
+	let doc = rebuild_catalog_doc(catalog, next_apps, {
+		version: (catalog.version || 'custom')
+	});
+	return {
+		ok: true,
+		updated,
+		entry,
+		warnings: res.warnings || [],
+		catalog_doc: doc
+	};
+};
+
+export function delete_catalog_app(catalog, app_id) {
+	catalog = catalog || { categories: [], apps: [] };
+	let target = trim('' + (app_id ?? ''));
+	if (target == '')
+		return { ok: false, error: '未指定要删除的应用 ID' };
+	let next_apps = [];
+	let removed = false;
+	for (let a in (catalog.apps || [])) {
+		if (a && ('' + a.id) == target) {
+			removed = true;
+			continue;
+		}
+		push(next_apps, a);
+	}
+	if (!removed)
+		return { ok: false, error: `未找到应用 ID '${target}'` };
+	let doc = rebuild_catalog_doc(catalog, next_apps);
+	return { ok: true, removed_id: target, catalog_doc: doc };
+};
+
+function merge_unique_sorted(a, b, is_port) {
+	let seen = {};
+	let out = [];
+	for (let arr in [a || [], b || []]) {
+		for (let item in arr) {
+			let s = '' + item;
+			if (!exists(seen, s)) {
+				seen[s] = true;
+				push(out, s);
+			}
+		}
+	}
+	if (is_port) {
+		sort(out, (x, y) => {
+			let nx = +(split(x, '-')[0]);
+			let ny = +(split(y, '-')[0]);
+			return nx != ny ? (nx - ny) : (x < y ? -1 : (x > y ? 1 : 0));
+		});
+	} else {
+		sort(out);
+	}
+	return out;
+}
+
+export function parse_batch_import(payload, opts, existing_catalog) {
+	opts = opts || {};
+	existing_catalog = existing_catalog || { categories: [], apps: [], by_id: {} };
+	let raw = '' + (payload ?? '');
+	if (trim(raw) == '')
+		return { ok: false, error: '导入内容为空' };
+	if (length(raw) > 524288)
+		return { ok: false, error: '导入内容过大（单次上限 512 KB）' };
+
+	let mode = (opts.mode == 'replace') ? 'replace' : 'merge';
+	let fmt = opts.format || 'auto';
+	let trimmed = trim(raw);
+	if (fmt == 'auto') {
+		let first = substr(trimmed, 0, 1);
+		if (first == '{' || first == '[')
+			fmt = 'json';
+		else
+			fmt = 'lines';
+	}
+
+	let cat_info = build_category_map(existing_catalog.categories);
+	let default_cat = trim('' + (opts.default_cat ?? 'custom'));
+	if (!exists(cat_info.by_id, default_cat))
+		default_cat = 'custom';
+
+	let warnings = [];
+	let imported_items = [];
+	let loose_domains = [];
+	let skipped = 0;
+	let meta_version = null;
+
+	if (fmt == 'json') {
+		let parsed;
+		try { parsed = json(trimmed); }
+		catch (e) { return { ok: false, error: 'JSON 解析失败：请检查语法格式' }; }
+
+		let raw_apps = [];
+		if (type(parsed) == 'array') {
+			raw_apps = parsed;
+		} else if (type(parsed) == 'object') {
+			if (type(parsed.categories) == 'array') {
+				for (let c in parsed.categories) {
+					if (type(c) == 'object' && c.id && !exists(cat_info.by_id, '' + c.id)) {
+						let extra = {
+							id: '' + c.id,
+							name: '' + (c.name || c.id),
+							default_cos: parse_uint(c.default_cos, 0, COS_MAX) ?? 5,
+							desc: '' + (c.desc || ''),
+							count: 0
+						};
+						cat_info.by_id[extra.id] = extra;
+						push(cat_info.list, extra);
+					}
+				}
+			}
+			if (parsed.version)
+				meta_version = '' + parsed.version;
+			if (type(parsed.apps) == 'array')
+				raw_apps = parsed.apps;
+			else if (parsed.name || parsed.domains || parsed.tcp || parsed.udp)
+				raw_apps = [parsed];
+			else
+				return { ok: false, error: 'JSON 中未找到 apps 数组或有效应用对象' };
+		} else {
+			return { ok: false, error: 'JSON 根节点须为对象或应用数组' };
+		}
+
+		for (let item in raw_apps)
+			push(imported_items, item);
+	} else if (fmt == 'domains') {
+		let dom_res = normalize_domain_list(trimmed);
+		loose_domains = dom_res.domains;
+		skipped += length(dom_res.invalid);
+		for (let bad in slice(dom_res.invalid, 0, 8))
+			push(warnings, `跳过无效域名: ${bad}`);
+	} else {
+		let lines = split(trimmed, /\r?\n/);
+		for (let i = 0; i < length(lines); i++) {
+			let line = trim(lines[i]);
+			if (line == '' || substr(line, 0, 1) == '#' || substr(line, 0, 2) == '//')
+				continue;
+			let low = lc(line);
+			if (match(low, /^(id\s*[,|\t]\s*)?(cat|category)\s*[,|\t]\s*name\b/))
+				continue;
+
+			// Clash/Surge single-domain rule line
+			if (match(low, /^(domain-suffix|domain|host-suffix|host)\s*,/)) {
+				let d = normalize_domain(line);
+				if (d != null)
+					push(loose_domains, d);
+				else {
+					skipped++;
+					if (length(warnings) < 20)
+						push(warnings, `第 ${i + 1} 行跳过无效域名规则: ${line}`);
+				}
+				continue;
+			}
+
+			let delim = null;
+			if (index(line, '|') >= 0)
+				delim = '|';
+			else if (index(line, '\t') >= 0)
+				delim = '\t';
+			else if (index(line, ',') >= 0)
+				delim = ',';
+
+			if (delim == null) {
+				let d = normalize_domain(line);
+				if (d != null)
+					push(loose_domains, d);
+				else {
+					skipped++;
+					if (length(warnings) < 20)
+						push(warnings, `第 ${i + 1} 行无法识别: ${line}`);
+				}
+				continue;
+			}
+
+			let cols = map(split(line, delim), c => trim(c));
+			let obj = null;
+			if (length(cols) >= 6 || (length(cols) >= 3 && exists(cat_info.by_id, cols[1]) && !exists(cat_info.by_id, cols[0]))) {
+				obj = {
+					id: cols[0],
+					cat: cols[1],
+					name: cols[2],
+					domains: cols[3] ?? '',
+					tcp: cols[4] ?? '',
+					udp: cols[5] ?? ''
+				};
+			} else if (exists(cat_info.by_id, cols[0])) {
+				obj = {
+					cat: cols[0],
+					name: cols[1] ?? '',
+					domains: cols[2] ?? '',
+					tcp: cols[3] ?? '',
+					udp: cols[4] ?? ''
+				};
+			} else {
+				obj = {
+					cat: default_cat,
+					name: cols[0],
+					domains: cols[1] ?? '',
+					tcp: cols[2] ?? '',
+					udp: cols[3] ?? ''
+				};
+			}
+			push(imported_items, obj);
+		}
+	}
+
+	let base_apps = (mode == 'replace') ? [] : [...(existing_catalog.apps || [])];
+	let by_id = {};
+	let by_name_cat = {};
+	let idx_by_id = {};
+	for (let i = 0; i < length(base_apps); i++) {
+		let a = base_apps[i];
+		if (a && a.id) {
+			let aid = '' + a.id;
+			by_id[aid] = a;
+			idx_by_id[aid] = i;
+			by_name_cat[lc('' + (a.cat || '')) + '\n' + lc('' + (a.name || ''))] = aid;
+		}
+	}
+
+	let alloc_id = make_id_allocator(by_id);
+	let added = 0;
+	let updated = 0;
+
+	if (length(loose_domains) > 0) {
+		let uniq_doms = merge_unique_sorted(loose_domains, [], false);
+		let target_id = trim('' + (opts.target_app_id ?? ''));
+		if (mode == 'merge' && target_id != '' && exists(by_id, target_id)) {
+			let cur = by_id[target_id];
+			let merged = {
+				id: cur.id,
+				name: cur.name,
+				cat: cur.cat,
+				qos_class: cur.qos_class,
+				domains: merge_unique_sorted(cur.domains, uniq_doms, false)
+			};
+			if (length(cur.tcp || []) > 0)
+				merged.tcp = cur.tcp;
+			if (length(cur.udp || []) > 0)
+				merged.udp = cur.udp;
+			base_apps[idx_by_id[target_id]] = merged;
+			by_id[target_id] = merged;
+			updated++;
+		} else {
+			let tname = trim('' + (opts.target_app_name ?? '')) || '批量导入域名组';
+			push(imported_items, {
+				id: (target_id != '' && !exists(by_id, target_id)) ? target_id : null,
+				name: tname,
+				cat: default_cat,
+				domains: uniq_doms
+			});
+		}
+	}
+
+	for (let item in imported_items) {
+		let has_explicit_id = trim('' + (item.id ?? '')) != '';
+		let res = normalize_app_entry(item, cat_info.by_id, default_cat, alloc_id);
+		if (res.error) {
+			skipped++;
+			if (length(warnings) < 20)
+				push(warnings, res.error);
+			continue;
+		}
+		for (let w in (res.warnings || [])) {
+			if (length(warnings) < 20)
+				push(warnings, w);
+		}
+		let entry = res.entry;
+		let match_id = null;
+		if (exists(by_id, entry.id)) {
+			match_id = entry.id;
+		} else if (!has_explicit_id) {
+			let nk = lc(entry.cat) + '\n' + lc(entry.name);
+			if (exists(by_name_cat, nk)) {
+				match_id = by_name_cat[nk];
+				entry.id = match_id;
+			}
+		}
+
+		if (match_id != null) {
+			base_apps[idx_by_id[match_id]] = entry;
+			by_id[match_id] = entry;
+			by_name_cat[lc(entry.cat) + '\n' + lc(entry.name)] = match_id;
+			updated++;
+		} else {
+			if (length(base_apps) >= APP_CATALOG_MAX_APPS) {
+				skipped++;
+				if (length(warnings) < 20)
+					push(warnings, `超过特征库上限 (${APP_CATALOG_MAX_APPS})，已跳过「${entry.name}」`);
+				continue;
+			}
+			idx_by_id[entry.id] = length(base_apps);
+			by_id[entry.id] = entry;
+			by_name_cat[lc(entry.cat) + '\n' + lc(entry.name)] = entry.id;
+			push(base_apps, entry);
+			added++;
+		}
+	}
+
+	if (added == 0 && updated == 0)
+		return { ok: false, error: length(warnings) ? warnings[0] : '未解析到任何有效应用特征', warnings, skipped };
+	if (mode == 'replace' && length(base_apps) == 0)
+		return { ok: false, error: '覆盖导入结果为空，已取消以防止清空特征库' };
+
+	let doc = rebuild_catalog_doc({
+		version: meta_version || existing_catalog.version,
+		source: existing_catalog.source,
+		categories: cat_info.list
+	}, base_apps);
+
+	let dom_seen = {};
+	for (let a in doc.apps) {
+		for (let d in (a.domains || []))
+			dom_seen[d] = true;
+	}
+
+	return {
+		ok: true,
+		format: fmt,
+		mode,
+		added,
+		updated,
+		skipped,
+		warnings,
+		total_apps: length(doc.apps),
+		total_domains: length(keys(dom_seen)),
+		catalog_doc: doc
 	};
 };
 
