@@ -921,19 +921,19 @@ const methods = {
 				add_app({ enabled: '1', match_type: 'category', category: 'voice_meeting', cos: '6' });
 				add_app({ enabled: '1', match_type: 'category', category: 'download_bulk', cos: '0' });
 				add_cls({
-					enabled: '1', name: 'DNS Fast Resolution', cos: '7',
+					enabled: '1', name: 'DNS Resolution', cos: '7',
 					family: 'any', proto: 'tcp_udp', dst_port: '53,853', direction: 'both'
 				});
 				add_cls({
-					enabled: '1', name: 'High-Frequency Gaming & Voice Ports', cos: '6',
+					enabled: '1', name: 'Gaming & Voice Ports', cos: '6',
 					family: 'any', proto: 'udp', dst_port: '3074,3478-3480,27015-27050', direction: 'both'
 				});
 				add_cls({
-					enabled: '1', name: 'Voice & Ultra-Low-Latency Apps (DSCP EF)', cos: '6',
+					enabled: '1', name: 'Voice & Low-Latency (DSCP EF)', cos: '6',
 					family: 'any', proto: 'any', dscp: 'ef', direction: 'both'
 				});
 				add_cls({
-					enabled: '1', name: 'BitTorrent & Background Bulk Download Deprioritization', cos: '0',
+					enabled: '1', name: 'BT & Background Downloads', cos: '0',
 					family: 'any', proto: 'tcp_udp', dst_port: '6881-6999,51413', direction: 'both'
 				});
 				set_port_sched('lan1', 'ets', 3, ets_quanta, true);
@@ -953,19 +953,19 @@ const methods = {
 				add_app({ enabled: '1', match_type: 'category', category: 'education', cos: '5' });
 				add_app({ enabled: '1', match_type: 'category', category: 'download_bulk', cos: '0' });
 				add_cls({
-					enabled: '1', name: 'DNS & SSH Remote Office Terminal', cos: '7',
+					enabled: '1', name: 'DNS & SSH Terminal', cos: '7',
 					family: 'any', proto: 'tcp_udp', dst_port: '22,53,853', direction: 'both'
 				});
 				add_cls({
-					enabled: '1', name: 'Tencent Meeting / Zoom / Teams Video Conferencing', cos: '6',
+					enabled: '1', name: 'Video Conferencing', cos: '6',
 					family: 'any', proto: 'udp', dst_port: '3478-3481,8801-8810', direction: 'both'
 				});
 				add_cls({
-					enabled: '1', name: 'Web Browsing & HTTPS Office Traffic', cos: '4',
+					enabled: '1', name: 'Web & HTTPS Traffic', cos: '4',
 					family: 'any', proto: 'tcp', dst_port: '80,443', direction: 'both'
 				});
 				add_cls({
-					enabled: '1', name: 'BitTorrent & Background Bulk Download Deprioritization', cos: '0',
+					enabled: '1', name: 'BT & Background Downloads', cos: '0',
 					family: 'any', proto: 'tcp_udp', dst_port: '6881-6999,51413', direction: 'both'
 				});
 				set_port_sched('lan1', 'ets', 3, ets_quanta, true);

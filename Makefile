@@ -5,7 +5,7 @@ LUCI_DESCRIPTION:=Native Web UI and UCI control service for RTL9617C Host Polici
 LUCI_DEPENDS:=@TARGET_rtl9617c +luci-base +tc +kmod-sched-flower +kmod-sched-act-police +kmod-sched-mqprio +rpcd-mod-ucode +ucode-mod-fs +ucode-mod-uci
 LUCI_PKGARCH:=all
 PKG_VERSION:=0.1.0
-PKG_RELEASE:=7
+PKG_RELEASE:=8
 PKG_LICENSE:=GPL-2.0-or-later
 # CSSTidy 1.3 breaks CSS custom properties and responsive grid rules.
 CONFIG_LUCI_CSSTIDY:=

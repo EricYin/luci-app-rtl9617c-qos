@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-rtl9617c-qos\n"
-"PO-Revision-Date: 2026-11-26 14:45+0800\n"
+"PO-Revision-Date: 2026-11-26 18:25+0800\n"
 "Last-Translator: RTL9617C Maintainers\n"
 "Language-Team: Chinese (Simplified)\n"
 "Language: zh_Hans\n"
@@ -13,14 +13,14 @@ msgstr ""
 msgid "#"
 msgstr "编号"
 
-msgid "# Common categories: mobile_game / pc_game / voice_meeting / remote_desk / education / im_chat / video_live / finance / download_bulk / custom"
+msgid "# Categories: mobile_game / pc_game / voice_meeting / remote_desk / education / im_chat / video_live / finance / download_bulk / custom"
 msgstr "# 常用分类：mobile_game / pc_game / voice_meeting / remote_desk / education / im_chat / video_live / finance / download_bulk / custom"
 
-msgid "# Format: CategoryID | App Name | Domain List (semicolon or space separated) | TCP Ports | UDP Ports"
-msgstr "# 格式：分类ID | 应用名称 | 域名列表(分号或空格分隔) | TCP端口 | UDP端口"
+msgid "# Format: Category | Name | Domains (;/space) | TCP | UDP"
+msgstr "# 格式：分类 | 名称 | 域名(;或空格) | TCP | UDP"
 
-msgid "# One domain per line; also supports Clash DOMAIN-SUFFIX / *.wildcard / +.prefix"
-msgstr "# 每行一个域名，也支持 Clash DOMAIN-SUFFIX / *.通配符 / +.前缀"
+msgid "# One domain per line (supports DOMAIN-SUFFIX, *.wildcard, +.prefix)"
+msgstr "# 每行一个域名（支持 DOMAIN-SUFFIX / *.通配符 / +.前缀）"
 
 msgid "%d / %d connected"
 msgstr "%d / %d 个已连接"
@@ -40,17 +40,29 @@ msgstr "%d / %d 口已开启"
 msgid "%d / %d used"
 msgstr "%d / %d 个"
 
+msgid "%d IPv4 · %d IPv6 (12h cache)"
+msgstr "捕获 %d IPv4 · %d IPv6（12h 缓存）"
+
 msgid "%d active flows (%d%%)"
 msgstr "%d 条活跃流（占比 %d%%）"
 
 msgid "%d active hardware entries"
 msgstr "共 %d 条活跃硬件项"
 
-msgid "%d app signatures loaded; once enabled, auto-detects via dnsmasq nftset + dedicated ports."
-msgstr "已加载 %d 款应用特征，开启后通过 dnsmasq nftset + 专用端口自动识别。"
+msgid "%d active rules"
+msgstr "%d 条规则"
 
-msgid "%d apps total · %d domains"
-msgstr "共 %d 款应用 · %d 条域名"
+msgid "%d apps (domains + ports)"
+msgstr "含 %d 款应用（域名 + 端口）"
+
+msgid "%d apps ready (DNS nftset + ports)."
+msgstr "内置 %d 款应用，按域名与端口自动识别。"
+
+msgid "%d apps · %d domains"
+msgstr "%d 款应用 · %d 条域名"
+
+msgid "%d domains · %d TCP · %d UDP"
+msgstr "域名 %d · TCP %d · UDP %d"
 
 msgid "%d flow refs"
 msgstr "引用 %d 条流"
@@ -73,20 +85,17 @@ msgstr "%d 队列生效 · ECN %s"
 msgid "%d queues bound (globally off)"
 msgstr "%d 队列已绑但全局未启"
 
-msgid "%d rules active"
-msgstr "%d 条规则运行中"
+msgid "%d rules"
+msgstr "%d 条规则"
 
-msgid "%d server IPs captured"
-msgstr "捕获 %d 个服务器 IP"
+msgid "%d rules · Custom"
+msgstr "%d 条规则 · 自定义"
 
-msgid "%d signature rules"
-msgstr "%d 条特征规则"
+msgid "%d tracked IPs"
+msgstr "已捕获 %d 个 IP"
 
-msgid "%d signature rules · Custom"
-msgstr "%d 条特征规则 · 自定义库"
-
-msgid "%s (%d apps · recommended CoS %d)"
-msgstr "%s（%d 款 · 推荐等级 %d）"
+msgid "%s (%d · CoS %d)"
+msgstr "%s（%d 款 · 推荐 %d 级）"
 
 msgid "%s Mbps · Connected"
 msgstr "%s Mbps · 已连接"
@@ -94,20 +103,20 @@ msgstr "%s Mbps · 已连接"
 msgid "%s · ID: %s"
 msgstr "%s · ID: %s"
 
-msgid "(No match criteria specified)"
-msgstr "（未填写匹配条件）"
+msgid "(No criteria)"
+msgstr "（未填条件）"
 
 msgid "(no egress qdisc info)"
 msgstr "（无出站队列信息）"
 
-msgid "+ Add App Signature"
-msgstr "+ 新增应用特征"
+msgid "+ Add App"
+msgstr "+ 新增应用"
 
 msgid "+%d domains"
 msgstr "+%d 域名"
 
-msgid "0 (No extra marking · keep unmatched traffic in lowest queue 0)"
-msgstr "0（不额外打标 · 未匹配流量保留最低队列 0）"
+msgid "0 (Default · keep queue 0)"
+msgstr "0（默认 · 保持队列 0）"
 
 msgid "0 (Unlimited, download stats only)"
 msgstr "0（不限速，仅统计下载流量）"
@@ -124,8 +133,14 @@ msgstr "0 = 不限速仅统计"
 msgid "0 interfaces"
 msgstr "0 个接口"
 
+msgid "0 · Lowest (BT / Background)"
+msgstr "0 · 最低（BT/后台）"
+
 msgid "1 (Gentle · intervenes past half queue, prioritizes throughput & compatibility)"
 msgstr "1（温和均衡 · 队列过半温和介入，优先吞吐与日常兼容）"
+
+msgid "1 · Low (Downloads / Sync)"
+msgstr "1 · 偏低（下载/同步）"
 
 msgid "1. Centrally manage low-level RTL9617C NIC and forwarding ASIC offload features, kept separate from QoS shaping and queueing."
 msgstr "1. 这里集中管理 RTL9617C 网卡与硬件转发引擎的底层加速特性（与限速、排队功能独立开来，避免混杂）。"
@@ -139,11 +154,11 @@ msgstr "1. 这里针对路由器背后的物理网口（如 LAN1 ~ LAN4）与 PO
 msgid "1. During port scans, SYN/ICMP floods, or malformed packet attacks, software firewalls on traditional routers can max out the CPU and drop connectivity. With this master switch enabled, the RTL9617C ASIC inspects and drops all 16 attack types at the physical port front-end with 0% CPU usage."
 msgstr "1. 当遭遇恶意端口扫描、SYN/Ping 洪水攻击或畸形数据包时，传统路由器靠 CPU 软件防火墙拦截容易占满 CPU 导致断网；开启本页总开关后，RTL9617C 芯片会在网口最前端直接识别并丢弃以下 16 类攻击包，CPU 占用始终为 0%。"
 
-msgid "1. Easiest setup: click \"Esports Gaming & Voice Anti-Lag\" or \"Work-From-Home & Video Conferencing Priority\" under \"One-Click Scenario Presets\" below to automatically enable small-packet priority, load the app signature catalog, and configure port hardware queueing."
-msgstr "1. 最省心用法：直接点击下方【一键套用场景预设方案】中的“电竞游戏与语音防卡顿”或“办公与视频会议优先”，系统会自动开启小包优先、加载应用特征库并配置好网口硬件排队。"
-
 msgid "1. Manage the RTL9617C forwarding ASIC's per-flow policer channels (0–159) and multi-flow shared policer groups (0–63) for precise hardware rate limiting and burst control."
 msgstr "1. 本页管理 RTL9617C 硬件转发引擎中的“单连接限速通道 (0 ~ 159)”和“多连接共享限速组 (0 ~ 63)”，用于在硬件层对特定连接或共享分组做精确限速与突发缓冲控制。"
+
+msgid "1. Quick start: pick a preset below to configure small-packet boost, app rules, and port queueing."
+msgstr "1. 快速启用：点击下方场景预设，一键配置小包优先、应用规则与网口排队。"
 
 msgid "1. When hardware flowtable offload is enabled, established forwarded packets are switched directly in silicon between ports without reaching the router CPU, so running tcpdump on the router cannot see offloaded traffic."
 msgstr "1. 开启硬件加速（flowtable）后，大部分已建连的转发数据包会直接由芯片在网口间转发，不再经过路由器 CPU，因此直接在路由器上跑 tcpdump 看不到已加速的流量。"
@@ -160,8 +175,8 @@ msgstr "100000 (约 100 Mbps)"
 msgid "1000000 (~1000 Mbps)"
 msgstr "1000000 (约 1000 Mbps)"
 
-msgid "128 bytes (tiny control / voice frames only)"
-msgstr "128 字节（仅极小控制包/语音帧）"
+msgid "128 B (Tiny control / voice)"
+msgstr "128 字节（极小控制/语音包）"
 
 msgid "15 safe protection rules are enabled by default (excluding syn1024, which blocks 80/443 replies). Select any rule here to disable it individually if false positives occur."
 msgstr "默认开启 15 类安全防护（不含会误拦 80/443 回包的 syn1024）；如果某一项在您的网络环境中产生误拦，可在此勾选将其单独关闭。"
@@ -175,8 +190,14 @@ msgstr "共 160 个通道"
 msgid "2 (Balanced · throttles earlier, balances low latency & throughput)"
 msgstr "2（标准平衡 · 较早开始提前降速，兼顾低延迟与吞吐）"
 
+msgid "2 · Normal (Baseline)"
+msgstr "2 · 普通（基线）"
+
 msgid "2. \"Host TX Offload (DMA LSO)\" accelerates heavy local router uploads (such as Samba, web server, proxy, or iperf3 server on the router) by offloading checksumming and TCP segmentation to DMA LSO hardware; the status card verifies live ethtool NIC flags."
 msgstr "2. 「网卡本机发包硬件加速」适合路由器本机跑大流量上传（如路由器上的 Samba/Web/代理/iperf3 服务端），由 DMA LSO 硬件计算校验和及分段；状态卡片会同时核验 ethtool 网卡层是否真实生效。"
+
+msgid "2. App signatures (%d · %s): matched via DNS tracking and ports in hardware (direct or bypass traffic only)."
+msgstr "2. 应用特征库（%d 款 · %s）：按域名与端口自动硬件加速（仅对直连或绕过代理流量生效）。"
 
 msgid "2. Choosing a mode: (a) To cap total download speed on a LAN port, select \"Port Download Shaping\"; (b) To let high-priority gaming/voice traffic always go first, select \"Strict Priority Queueing\" (VoQ 7 highest → VoQ 0 lowest); (c) Recommended: \"Hybrid Priority Queueing (ETS)\", e.g., top 3 high-priority queues (CoS 7–5) strict and CoS 4–0 sharing bandwidth by weight. (Note: pon0 hardware PUC supports sp and ets only.)"
 msgstr "2. 模式怎么选？① 只想限制某个 LAN 口的总下载速度：选“整口下载限速”；② 想让高优游戏/语音无条件抢先：选“按优先级严格排队”（VoQ 7 最高 → VoQ 0 最低）；③ 推荐预设方案：“高低优先级混合排队 (ETS)”，如前 3 个高优通道（等级 7~5）绝对优先，其余 4~0 通道按比重公平分摊带宽。（注：pon0 光口上行硬件 PUC 仅支持 sp 与 ets 排队调度）。"
@@ -190,9 +211,6 @@ msgstr "2. 若隧道协商了 MPPE 加密、CCP 压缩、VJ 压缩或 IPsec 封�
 msgid "2. Recommended setup: check \"Enable Hardware Automatic DoS Blocking\" below and click \"Save & Apply\". Safe default flood thresholds (ICMP 1000 / SYN 2000 / FIN 2000) and zero-CPU hardware drop on physical ports (excluding CPU ports) are configured automatically."
 msgstr "2. 推荐设置：勾选下方“启用硬件级网络攻击自动拦截”并点击右下角“保存并应用”即可，系统会自动配置安全的默认洪水速率阈值（ICMP 1000 / SYN 2000 / FIN 2000）并仅对物理网口（不含 CPU 口）开启硬件零 CPU 丢弃。"
 
-msgid "2. Smart App Signature Detection: %d app signatures loaded (%s), using dnsmasq nftset to dynamically track domain server IPs + dedicated narrow-port matching with zero ongoing CPU overhead and full ASIC hardware acceleration. Click \"Manage Catalog / Batch Import\" below to add, edit, or import rules freely (applies to direct or proxy-bypassed traffic)."
-msgstr "2. 应用特征库智能识别：当前已加载 %d 款应用特征（%s），通过 dnsmasq nftset 自动追踪域名服务器 IP + 专用窄端口识别，零持续 CPU 开销且全程走芯片硬件加速；可随时点击下方【维护特征库 / 批量导入】自由增删或导入规则（注：仅对直连或绕过代理的流量生效）。"
-
 msgid "2. Speed unit conversion: 1000 kbps ≈ 1 Mbps (e.g. 50000 for 50 Mbps, 100000 for 100 Mbps, 1000000 for 1000 Mbps)."
 msgstr "2. 速度单位换算：1000 kbps ≈ 1 Mbps（例如：限制 50 Mbps 填 50000，限制 100 Mbps 填 100000，限制 1000 Mbps 填 1000000）。"
 
@@ -205,17 +223,20 @@ msgstr "20000 (约 20 Mbps)"
 msgid "200000 (~200 Mbps)"
 msgstr "200000 (约 200 Mbps)"
 
-msgid "256 bytes (recommended · covers most gaming & voice packets)"
-msgstr "256 字节（推荐 · 覆盖绝大多数游戏与语音包）"
+msgid "256 B (Recommended · Gaming / voice)"
+msgstr "256 字节（推荐 · 游戏/语音）"
 
 msgid "3 (Aggressive Low-Latency · earliest intervention to prevent ping spikes)"
 msgstr "3（激进低延迟 · 更早介入控队，极度防满载跳 Ping）"
 
+msgid "3 · Above Normal (Office)"
+msgstr "3 · 偏高（办公/云盘）"
+
 msgid "3. \"Zero-Copy RX (page_pool)\" eliminates full-packet CPU memcpy on receive to lower CPU usage for non-offloaded flows (proxy/VPN/Wi-Fi bridging); \"Multi-Core RX Steering\" pins NI IRQs and distributes PON & LAN receive across CPU cores with RPS+RFS."
 msgstr "3. 「零拷贝收包 (page_pool)」消除 CPU 收包时的整包内存拷贝，降低非硬件流转发（如代理/VPN/Wi-Fi 桥接）的 CPU 占用；「多核收包调度」将 NI 硬中断独立绑核并让 PON 光口与 LAN 口均衡利用多核 RPS+RFS。"
 
-msgid "3. Advanced customization: you can also add, edit, or delete rules by LAN device IP (e.g. 192.168.2.100), MAC, or specific game ports in the \"Custom Priority Forwarding Rules\" section at the bottom."
-msgstr "3. 进阶自定义：您也可以在底部“自定义优先转发规则列表”中按内网设备 IP（如 192.168.2.100）、MAC 或特定游戏端口自由添加、修改或删除规则。"
+msgid "3. Custom rules: fine-tune by IP, MAC, port, or DSCP in the table at the bottom."
+msgstr "3. 自定义规则：可在底部按设备 IP、MAC、端口或 DSCP 灵活微调。"
 
 msgid "3. Enabling \"Hardware Queue Anti-Bufferbloat (WRED)\" below is recommended to reduce queueing delay under saturation. (Note: NIC TX offload and IPTV multicast offload switches are in Network → Hardware Offload.)"
 msgstr "3. 建议同时开启下方“硬件队列防缓冲膨胀 (WRED)”，减少跑满带宽时的排队延迟。（注：网卡发包加速、IPTV 组播卸载等硬件开关已独立至【网络 → 硬件加速与卸载】页面）。"
@@ -244,11 +265,14 @@ msgstr "300000 (约 300 Mbps)"
 msgid "32 total (UL + DL)"
 msgstr "双向合计 32 个"
 
-msgid "384 bytes (covers larger game state sync packets)"
-msgstr "384 字节（覆盖较长游戏状态同步包）"
+msgid "384 B (Larger game sync)"
+msgstr "384 字节（较长游戏同步包）"
 
-msgid "4 presets available"
-msgstr "4 套预设可选"
+msgid "4 presets"
+msgstr "4 套预设"
+
+msgid "4 · Med-High (Video / Web)"
+msgstr "4 · 较高（视频/网页）"
 
 msgid "4. \"VPN Hardware Offload (L2TP / PPTP)\" uses the L3PE dual-header ASIC to offload plaintext L2TPv2 and PPTP; \"IPTV Hardware Multicast Replication\" and \"GbE 802.3az EEE Power Saving\" can be enabled on demand."
 msgstr "4. 「VPN 硬件加速 (L2TP / PPTP)」由芯片 L3PE 双头隧道引擎直接卸载明文 L2TPv2 与 PPTP；「IPTV 硬件组播复制」与「GE 网口 802.3az EEE 节能」均可按需开启。"
@@ -259,17 +283,26 @@ msgstr "4. 修改规则后点击页面右下角“保存并应用”（或右上
 msgid "4. The on-chip crypto engine 90500000.crypto (100 MHz) passes self-tests and registers at prio=150; because Cortex-A55 includes ARMv8 CE instructions (prio=300, >2.6 Gbps single-core AES-GCM), the kernel prefers the faster CPU crypto instructions by default."
 msgstr "4. 片内加密引擎 90500000.crypto（100 MHz）已完成自检并注册（prio=150）；因 Cortex-A55 自带 ARMv8 CE 指令集（prio=300，单核 AES-GCM 已超 2.6 Gbps），内核默认优先使用更快的 CPU 加密指令。"
 
+msgid "5 · High (Meetings / Live)"
+msgstr "5 · 高（会议/直播）"
+
 msgid "50000 (~50 Mbps)"
 msgstr "50000 (约 50 Mbps)"
 
 msgid "500000 (~500 Mbps)"
 msgstr "500000 (约 500 Mbps)"
 
-msgid "512 bytes (relaxed small-packet threshold)"
-msgstr "512 字节（宽松小包阈值）"
+msgid "512 B (Relaxed)"
+msgstr "512 字节（宽松阈值）"
+
+msgid "6 · Very High (Gaming / Voice)"
+msgstr "6 · 极高（游戏/语音）"
 
 msgid "64 groups ready"
 msgstr "64 组就绪"
+
+msgid "7 · Highest (Control)"
+msgstr "7 · 最高（控制）"
 
 msgid "8 (all 8 priority levels use strict priority)"
 msgstr "8（全部 8 个优先等级均按严格优先级排队）"
@@ -277,14 +310,14 @@ msgstr "8（全部 8 个优先等级均按严格优先级排队）"
 msgid "802.3az EEE Power Saving:"
 msgstr "802.3az EEE 节能："
 
+msgid "<= %s B · %s"
+msgstr "≤ %s 字节 · %s"
+
 msgid "A configuration rule already exists for this port; please edit the existing rule"
 msgstr "该物理网口已存在一条配置规则，请直接编辑原规则"
 
 msgid "ASIC Line-Rate Forwarding"
 msgstr "芯片级实时转发"
-
-msgid "Accelerated High-Priority Flows"
-msgstr "已加速的高优先级连接"
 
 msgid "Action"
 msgstr "操作"
@@ -301,41 +334,50 @@ msgstr "活跃的多连接共享限速组（0 ~ 63）"
 msgid "Active Per-Flow Hardware Policers (0 ~ 159)"
 msgstr "活跃的单连接硬件限速通道（0 ~ 159）"
 
-msgid "Active Priority Forwarding Rules & Hit Statistics"
-msgstr "正在生效的优先转发规则与命中统计"
+msgid "Active Rules & Hit Stats"
+msgstr "生效规则与命中统计"
 
 msgid "Active on NIC"
 msgstr "网卡已生效"
 
+msgid "Active sets: %s"
+msgstr "生效集合：%s"
+
 msgid "Active slots %d/16"
 msgstr "活跃槽位 %d/16"
 
-msgid "Active · Re-apply"
-msgstr "已开启 · 重新套用"
+msgid "Active: Gaming & Voice"
+msgstr "当前：游戏与语音"
 
-msgid "Add App Signature"
-msgstr "新增应用特征"
+msgid "Active: Small-Packet"
+msgstr "当前：极简小包"
+
+msgid "Active: Work & Meetings"
+msgstr "当前：办公与会议"
+
+msgid "Add App"
+msgstr "新增应用"
 
 msgid "Add LAN devices to configure independent max upload and download speeds (in kbps; 100000 = 100 Mbps). Set 0 for unlimited speed with hardware traffic statistics only."
 msgstr "添加局域网设备后，可分别设置它的最高上传速度和下载速度（单位 kbps，100000 = 100 Mbps）。填 0 表示不限制速度、仅开启硬件流量统计。"
 
-msgid "Add rules directly by app category (e.g., mobile games, PC games, video conferencing, download/cloud-drive deprioritize) or by specific app name without looking up port numbers. Per-app rules take precedence over category rules; once enabled, dnsmasq nftset tracks server IPs and syncs with ASIC hardware acceleration."
-msgstr "无需手查端口号，直接按应用大类（如热门手游、端游、视频会议、下载/网盘降权）或具体应用名添加规则。单个应用的规则优先级高于大类规则；开启后通过 dnsmasq nftset 自动追踪服务器 IP 并同步芯片硬件加速。"
-
-msgid "Adds no complex port rules; enables only the Smart Small-Packet Priority master switch and LAN1 hardware priority queueing, letting the ASIC automatically detect and prioritize small gaming, voice, Ping, and TCP handshake packets."
-msgstr "不添加任何复杂端口规则，仅开启【智能小包优先】总开关与 LAN1 硬件优先排队，靠芯片自动识别游戏、语音、Ping 和网页握手小包并优先转发。"
+msgid "Add, edit, delete, batch import, or export JSON."
+msgstr "支持单项增删改、批量导入与 JSON 导出。"
 
 msgid "Algorithm"
 msgstr "算法"
 
-msgid "All Categories (%d apps)"
-msgstr "全部分类（%d 款）"
+msgid "All"
+msgstr "全部"
+
+msgid "All Categories (%d)"
+msgstr "全部分类（%d）"
 
 msgid "All Disconnected"
 msgstr "均未连接"
 
-msgid "All Protocols"
-msgstr "全部协议"
+msgid "All Protocols (TCP + UDP + ICMP)"
+msgstr "全协议（TCP + UDP + ICMP）"
 
 msgid "All Ready"
 msgstr "全部就绪"
@@ -343,17 +385,11 @@ msgstr "全部就绪"
 msgid "All disabled"
 msgstr "全部未启用"
 
-msgid "All domains and ports are validated and deduplicated; saved persistently to /etc/rtl9617c-qos/app_signatures.json (survives sysupgrade)."
-msgstr "所有域名与端口均会做安全合法性校验并去重；保存后持久化于 /etc/rtl9617c-qos/app_signatures.json（升级保留）。"
-
 msgid "All packets entering the hardware flowtable are currently being mirrored to the target port."
 msgstr "当前所有进入硬件加速表的连接报文都在向目标端口复制输出。"
 
-msgid "All protocols (TCP+UDP+ICMP)"
-msgstr "全协议 (TCP+UDP+ICMP)"
-
-msgid "All-Protocol Mode (prioritize all TCP + UDP + ICMP packets below threshold)"
-msgstr "全协议模式（所有小于阈值的 TCP + UDP + ICMP 小包均优先）"
+msgid "All protocols"
+msgstr "全协议"
 
 msgid "All-zero or broadcast MAC address is not allowed"
 msgstr "不能使用全零或广播 MAC"
@@ -370,17 +406,29 @@ msgstr "允许内核直接把超长 TCP 数据块交给网卡 DMA 引擎自动�
 msgid "Also Enable IPv6 TCP Segmentation Offload (TSO6)"
 msgstr "同时启用 IPv6 TCP 硬件分段加速 (TSO6)"
 
+msgid "Any"
+msgstr "留空不限"
+
+msgid "Any, e.g. 192.168.2.100"
+msgstr "留空不限，如 192.168.2.100"
+
+msgid "Any, or IP/CIDR"
+msgstr "留空不限，或填 IP/网段"
+
+msgid "Any, or select DSCP"
+msgstr "留空不限，或选 DSCP"
+
+msgid "App"
+msgstr "应用"
+
 msgid "App & Game Priority"
 msgstr "应用与游戏优先"
 
 msgid "App / Category"
 msgstr "应用 / 分类"
 
-msgid "App / Category (%d matched)"
-msgstr "应用 / 分类（匹配 %d 条）"
-
-msgid "App Category"
-msgstr "应用大类"
+msgid "App / Category (%d)"
+msgstr "应用 / 分类（%d）"
 
 msgid "App ID (Optional)"
 msgstr "应用 ID（选填）"
@@ -391,29 +439,29 @@ msgstr "应用 ID: %s"
 msgid "App Name *"
 msgstr "应用名称 *"
 
-msgid "App Signature Catalog Maintenance & Batch Import"
-msgstr "应用特征库维护与批量导入"
+msgid "App Signature Catalog"
+msgstr "应用特征库管理"
 
-msgid "App Signature Detection"
-msgstr "应用特征库识别"
+msgid "App Signature Rules (%d)"
+msgstr "应用特征规则（%d 款）"
 
-msgid "App Signature Smart Detection (%d built-in apps · dynamic domain tracking + dedicated ports)"
-msgstr "应用特征库智能识别（内置 %d 款应用 · 域名动态追踪 + 专用端口）"
+msgid "App Signatures"
+msgstr "应用特征库"
 
 msgid "App name cannot be empty"
 msgstr "应用名称不能为空"
 
-msgid "App, Game & Device Priority Forwarding"
-msgstr "应用、游戏与设备优先转发"
+msgid "Append to Existing App (Optional)"
+msgstr "追加到已有应用（选填）"
 
-msgid "Append Domain List to Existing App (Optional)"
-msgstr "域名列表追加到已有应用（选填）"
+msgid "Applied \"%s\". Reloading…"
+msgstr "已套用「%s」，正在刷新…"
 
-msgid "Apply Gaming Preset"
-msgstr "一键开启游戏预设"
+msgid "Apply Gaming"
+msgstr "套用游戏预设"
 
-msgid "Apply Office Preset"
-msgstr "一键开启办公预设"
+msgid "Apply Office"
+msgstr "套用办公预设"
 
 msgid "Apply Rules Now"
 msgstr "立即应用规则"
@@ -421,8 +469,8 @@ msgstr "立即应用规则"
 msgid "Apply Shaping Parameters"
 msgstr "应用整形参数"
 
-msgid "Apply Small-Packet Preset"
-msgstr "一键开启小包优先预设"
+msgid "Apply Small-Packet"
+msgstr "套用小包预设"
 
 msgid "Apply failed: %s"
 msgstr "下发失败：%s"
@@ -430,23 +478,14 @@ msgstr "下发失败：%s"
 msgid "Applying QoS configuration returned error code: %s"
 msgstr "应用 QoS 配置返回错误码：%s"
 
-msgid "Assign higher forwarding priority levels (CoS 0-7) to critical traffic via the built-in app signature catalog (dynamic domain tracking + dedicated ports), smart small-packet priority, or custom IP/MAC/port rules, synced automatically to the RTL9617C hardware forwarding engine upon connection establishment."
-msgstr "通过内置应用特征库（域名动态追踪 + 专用端口）、智能小包优先或自定义 IP/MAC/端口规则，为重要流量分配更高的转发优先等级（0 ~ 7 级），并在连接建立时自动同步给 RTL9617C 硬件转发引擎。"
-
 msgid "Attack / Malformed Packet Type"
 msgstr "攻击或异常数据包类型说明"
 
-msgid "Auto-Detect (Recommended · JSON / Tabular Text / Clash Domain Rules)"
-msgstr "自动识别（推荐 · 支持 JSON / 表格文本 / Clash 域名规则）"
+msgid "Auto-Detect (JSON / Lines / Domains)"
+msgstr "自动识别（JSON / 文本行 / 域名）"
 
-msgid "Automatically enables Smart Small-Packet Priority (<=256B -> CoS 6) and default normal traffic baseline CoS 2 + enables App Signature Library priority for mobile/PC games & voice meetings while deprioritizing BT/downloads to lowest queue 0 + DNS/high-frequency port rules + enables LAN1 (2.5G) and PON0 (optical uplink) ETS hybrid queueing (CoS 7-5 strict priority, 4-0 weighted) and WRED anti-bufferbloat."
-msgstr "自动开启【智能小包优先 (≤256B → 等级6)】与默认普通流量基线等级 2 + 启用【应用特征库】手游/端游/语音会议优先并把 BT/下载降权至最低队列 0 + DNS/高频端口规则 + 开启 LAN1 (2.5G 口) 与 PON0 (光口上行) ETS 混合排队（7~5 绝对优先，4~0 按比重）及 WRED 防缓冲膨胀。"
-
-msgid "Automatically enables Smart Small-Packet Priority and default normal traffic baseline CoS 2 + enables App Signature Library priority for video conferencing, remote desktop, and online education while deprioritizing BT/downloads to lowest queue 0 + DNS/SSH/web priority rules + enables LAN1 and PON0 ETS hybrid priority queueing and WRED."
-msgstr "自动开启【智能小包优先】与默认普通流量基线等级 2 + 启用【应用特征库】视频会议/远程桌面/在线教育优先并把 BT/下载降权至最低队列 0 + DNS/SSH/网页优先规则 + 开启 LAN1 与 PON0 光口 ETS 高低优先级混合排队及 WRED。"
-
-msgid "Automatically hot-synced to nftables and dnsmasq rules."
-msgstr "已自动热同步至 nftables 与 dnsmasq 规则。"
+msgid "Auto-prioritizes small packets without port rules."
+msgstr "自动识别并提权小包，免配端口规则。"
 
 msgid "Automatically programs IGMP Snooping bridge multicast subscriptions (MDB) into the ASIC MCE and ARB MC FIB hardware tables."
 msgstr "当网桥收到 IGMP Snooping 组播订阅 (MDB) 时，自动将组播端口掩码写入芯片 MCE 与 ARB MC FIB 硬件表。"
@@ -454,50 +493,53 @@ msgstr "当网桥收到 IGMP Snooping 组播订阅 (MDB) 时，自动将组播�
 msgid "Awaiting NIC Sync"
 msgstr "等待网卡同步"
 
-msgid "Baseline Priority Level for Unmatched Normal Traffic"
-msgstr "未匹配普通流量基线等级"
+msgid "BT & Background Downloads"
+msgstr "BT 与后台下载"
 
 msgid "Batch Import"
 msgstr "批量导入"
 
-msgid "Batch Import (JSON / Text / Domains)"
-msgstr "批量导入 (JSON / 文本 / 域名)"
-
-msgid "Batch Import Content"
-msgstr "批量导入内容"
-
 msgid "Batch-Imported Domain Group"
 msgstr "批量导入域名组"
-
-msgid "Best For: %s"
-msgstr "适用定位：%s"
 
 msgid "Bidirectional"
 msgstr "双向"
 
-msgid "Bidirectional (Auto-match Upload + Download)"
-msgstr "双向（上传 + 下载自动匹配）"
-
-msgid "Bidirectional (Upload + Download)"
-msgstr "双向（上传 + 下载）"
-
 msgid "BitTorrent & Background Bulk Download Deprioritization"
-msgstr "BT 与后台大流量下载降权"
+msgstr "BT 与后台大流量降权"
 
 msgid "Blat Same-Port Spoofing (source port equals destination port)"
 msgstr "Blat 同端口欺骗攻击（源端口与目标端口完全相同）"
 
+msgid "Boosts games, voice, DNS & <=256B packets; lowers downloads; enables LAN1/PON0 ETS & WRED."
+msgstr "提权游戏、语音、DNS 与小包，下载降权；开启 LAN1/PON0 排队与 WRED。"
+
+msgid "Boosts meetings, remote desktop, SSH/DNS & web; lowers downloads; enables ETS & WRED."
+msgstr "提权视频会议、远控、SSH/DNS 与网页，下载降权；开启排队与 WRED。"
+
 msgid "Bridge Software Forwarding"
 msgstr "纯网桥转发"
+
+msgid "Built-in Catalog"
+msgstr "内置特征库"
 
 msgid "Burst Buffer (Bytes)"
 msgstr "突发缓冲 (Bytes)"
 
+msgid "By App"
+msgstr "按应用"
+
+msgid "By Category"
+msgstr "按分类"
+
 msgid "Cancel"
 msgstr "取消"
 
-msgid "Catalog changed; closing this dialog will refresh the page to update dropdown lists."
-msgstr "特征库已变更，关闭弹窗后将自动刷新页面以更新下拉列表。"
+msgid "Catalog (%d)"
+msgstr "特征库 (%d)"
+
+msgid "Catalog updated; closing will refresh the page."
+msgstr "特征库已更新，关闭后将刷新页面。"
 
 msgid "Category"
 msgstr "类别"
@@ -520,6 +562,9 @@ msgstr "清零流量"
 msgid "Clear failed: %s"
 msgstr "清零失败：%s"
 
+msgid "Clear rules on this page"
+msgstr "清空本页预设规则"
+
 msgid "Cleared cumulative traffic counters for all devices."
 msgstr "已清零全部设备的累计流量统计。"
 
@@ -528,9 +573,6 @@ msgstr "已清零设备 %s 的累计流量统计。"
 
 msgid "Click \"Add\" to configure priority queueing or whole-port rate limiting for physical ports (lan1–lan4) or PON optical port (pon0, hardware supports sp/ets only)."
 msgstr "点击“添加”可为指定物理网口（如 lan1 ~ lan4）或 PON 光口（pon0，硬件仅支持 sp/ets）设置优先排队或整口限速。"
-
-msgid "Click to Disable Preset"
-msgstr "可点击关闭预设"
 
 msgid "Clock-gated (power save)"
 msgstr "已关钟省电"
@@ -544,29 +586,29 @@ msgstr "等级 %s"
 msgid "CoS %s: %d v4 / %d v6"
 msgstr "等级%s: %d v4 / %d v6"
 
-msgid "CoS 0 · Lowest Queue (BT/Background Updates Deprioritized, or Default When No Baseline Set)"
-msgstr "等级 0 · 最低队列（BT/后台更新降权，或未设基线时的默认队列）"
+msgid "CoS 0 · Lowest"
+msgstr "0 · 最低"
 
-msgid "CoS 1 · Low Priority (Large Downloads / Sync)"
-msgstr "等级 1 · 偏低优先（大文件下载/同步）"
+msgid "CoS 1 · Low"
+msgstr "1 · 偏低"
 
-msgid "CoS 2 · Normal Traffic (Default Baseline)"
-msgstr "等级 2 · 普通流量（日常基线/默认）"
+msgid "CoS 2 · Normal"
+msgstr "2 · 普通"
 
-msgid "CoS 3 · Above-Normal Priority (Daily Office / Cloud Storage)"
-msgstr "等级 3 · 普通偏高（日常办公/云盘）"
+msgid "CoS 3 · Above Normal"
+msgstr "3 · 偏高"
 
-msgid "CoS 4 · Medium-High Priority (HD Video / Web Browsing)"
-msgstr "等级 4 · 较高优先（高清视频/常用网页）"
+msgid "CoS 4 · Med-High"
+msgstr "4 · 较高"
 
-msgid "CoS 5 · High Priority (Video Conferencing / Live Interactive)"
-msgstr "等级 5 · 高优先（视频会议/直播互动）"
+msgid "CoS 5 · High"
+msgstr "5 · 高"
 
-msgid "CoS 6 · Very High Priority (Gaming / Voice Calls)"
-msgstr "等级 6 · 极高优先（网络游戏/语音通话）"
+msgid "CoS 6 · Very High"
+msgstr "6 · 极高"
 
-msgid "CoS 7 · Highest Priority (Network Control / Critical)"
-msgstr "等级 7 · 最高优先（网络控制/关键指令）"
+msgid "CoS 7 · Highest"
+msgstr "7 · 最高"
 
 msgid "Committed Burst CBS (1~4095)"
 msgstr "常规缓冲 (1~4095)"
@@ -598,9 +640,6 @@ msgstr "已配置的 L2TP / PPTP 接口"
 msgid "Configured VPN Dialer Interfaces"
 msgstr "已配置 VPN 拨号接口"
 
-msgid "Confirm replacing the entire current signature catalog with the imported content? You can restore the factory catalog at any time via \"Restore Factory Catalog\"."
-msgstr "确认使用导入内容【覆盖替换】当前整个特征库吗？可随时通过「恢复出厂库」还原。"
-
 msgid "Connected"
 msgstr "已连接"
 
@@ -610,44 +649,26 @@ msgstr "已连接 (%s)"
 msgid "Connection Status"
 msgstr "连接状态"
 
+msgid "Content"
+msgstr "导入内容"
+
 msgid "Core"
 msgstr "挂载核"
 
-msgid "Counted in domain tracking above"
-msgstr "计入上方域名追踪"
+msgid "Counted in domain set"
+msgstr "见上方域名统计"
 
-msgid "Covers %d apps (auto-merges dynamic domain tracking + dedicated narrow ports)"
-msgstr "覆盖 %d 款应用（自动合并域名动态追踪 + 专用窄端口）"
-
-msgid "Create New App (enter new app name on the right)"
-msgstr "新建应用（填写右侧新应用名称）"
+msgid "Create New App (enter name on right)"
+msgstr "新建应用（在右侧填名称）"
 
 msgid "Crypto Algorithm Priority Comparison (On-Chip HW Engine vs CPU ARMv8 CE)"
 msgstr "加解密算法优先级对照（片内硬件引擎 vs CPU ARMv8 CE）"
 
-msgid "Current Status: No Preset Active"
-msgstr "当前状态：未开启任何预设"
-
-msgid "Current Status: Using Custom Rules"
-msgstr "当前状态：使用自定义规则"
+msgid "Current Default"
+msgstr "当前默认"
 
 msgid "Currently %d active hardware-offloaded flows (changing dynamically as connections open/age), of which %d are bound to per-device rate limiting/accounting channels (IPv4 & IPv6 bidirectional)."
 msgstr "当前瞬时活跃硬件加速流共 %d 条（随连接新建/老化动态变化），其中 %d 条已关联单设备限速/统计通道（IPv4 & IPv6 双向统计）。"
-
-msgid "Currently %d live hardware-accelerated flows (varying dynamically as connections open/age): High-priority (CoS 5-7): %d · Normal (CoS 2-4): %d · Low-priority (CoS 0-1): %d."
-msgstr "当前瞬时活跃硬件加速流共 %d 条（随连接新建/老化动态变化）：高优（等级 5~7）%d 条 · 普通（等级 2~4）%d 条 · 低优（等级 0~1）%d 条。"
-
-msgid "Currently Active: Preset 1 (Esports Gaming & Voice Anti-Lag)"
-msgstr "当前已开启：方案一（电竞游戏与语音防卡顿）"
-
-msgid "Currently Active: Preset 2 (Work-From-Home & Video Conferencing Priority)"
-msgstr "当前已开启：方案二（居家办公与视频会议优先）"
-
-msgid "Currently Active: Preset 3 (Minimalist Smart Small-Packet Priority)"
-msgstr "当前已开启：方案三（极简智能小包优先）"
-
-msgid "Currently Default"
-msgstr "当前为默认状态"
 
 msgid "Custom Apps"
 msgstr "自定义应用"
@@ -655,29 +676,23 @@ msgstr "自定义应用"
 msgid "Custom Catalog"
 msgstr "自定义特征库"
 
-msgid "Custom Persistent Catalog"
-msgstr "自定义持久化特征库"
-
-msgid "Custom Priority Forwarding Rules (Evaluated Top-to-Bottom; Freely Editable)"
-msgstr "自定义优先转发规则列表（按从上到下顺序匹配，可自由增删改）"
+msgid "Custom Rules"
+msgstr "自定义规则"
 
 msgid "DNS & SSH Remote Office Terminal"
-msgstr "DNS 与 SSH 远程办公终端"
+msgstr "DNS 与 SSH 办公终端"
+
+msgid "DNS & SSH Terminal"
+msgstr "DNS 与 SSH 终端"
 
 msgid "DNS Fast Resolution"
-msgstr "DNS 域名解析极速响应"
+msgstr "DNS 极速解析"
 
-msgid "Data Format"
-msgstr "数据格式"
+msgid "DNS Resolution"
+msgstr "DNS 解析"
 
-msgid "Dedicated TCP Ports / Ranges"
-msgstr "专用 TCP 端口 / 端口段"
-
-msgid "Dedicated UDP Ports / Ranges"
-msgstr "专用 UDP 端口 / 端口段"
-
-msgid "Dedicated ports and acceleration domains for Honor of Kings, Peacekeeper Elite, Genshin Impact, Delta Force, TFT Mobile, etc."
-msgstr "王者荣耀、和平精英、原神、三角洲、金铲铲等手游专用端口与加速域名"
+msgid "Default"
+msgstr "默认"
 
 msgid "Default (unlimited port download speed)"
 msgstr "默认（不限制网口下载速度）"
@@ -694,8 +709,11 @@ msgstr "默认 2000"
 msgid "Default 65536 (64 KB)"
 msgstr "默认 65536 (64 KB)"
 
-msgid "Default Category (used when category is omitted)"
-msgstr "默认归属分类（未指明分类时使用）"
+msgid "Default Baseline Priority"
+msgstr "未匹配流量基线"
+
+msgid "Default Category"
+msgstr "默认分类"
 
 msgid "Default Scheduling"
 msgstr "默认调度"
@@ -706,23 +724,29 @@ msgstr "默认尾丢弃模式"
 msgid "Delete"
 msgstr "删除"
 
+msgid "Delete custom overrides and restore built-in catalog?"
+msgstr "确认删除自定义配置并恢复内置特征库吗？"
+
 msgid "Delete error: %s"
 msgstr "删除异常：%s"
 
 msgid "Delete failed: %s"
 msgstr "删除失败：%s"
 
-msgid "Delete the custom override file and restore the factory signature catalog?"
-msgstr "确认删除自定义覆盖文件并恢复为固件出厂特征库吗？"
-
 msgid "Description / Path"
 msgstr "说明 / 路径"
 
-msgid "Destination IP (Remote Server)"
-msgstr "目标 IP（远程服务器）"
+msgid "Dest IP"
+msgstr "目标 IP"
 
-msgid "Destination Port (Game / App Port)"
-msgstr "目标端口（游戏/应用端口）"
+msgid "Dest Port"
+msgstr "目标端口"
+
+msgid "Detection Mode"
+msgstr "识别模式"
+
+msgid "Device MAC"
+msgstr "设备 MAC"
 
 msgid "Device MAC Address"
 msgstr "设备 MAC 地址"
@@ -742,12 +766,6 @@ msgstr "生效方向"
 msgid "Disable PE Offload"
 msgstr "关闭 PE 卸载"
 
-msgid "Disable Preset & Clear Rules"
-msgstr "关闭预设并清空规则"
-
-msgid "Disable Preset / Full Manual Configuration"
-msgstr "关闭预设 / 完全自己配置"
-
 msgid "Disabled"
 msgstr "已停用"
 
@@ -757,23 +775,17 @@ msgstr "已关闭（可在【硬件加速与卸载】中开启）"
 msgid "Disabled (software forwarding)"
 msgstr "已关闭（软件转发）"
 
-msgid "Disables small-packet priority and clears app classification rules on this page (without affecting device limits configured in Per-Device Rate Limiting), allowing you to add custom rules from scratch."
-msgstr "关闭小包优先并清空当前页面的应用分类规则（不会影响您在【单设备限速】中配置的设备限速），方便您从零开始自由添加规则。"
-
 msgid "Disconnected"
 msgstr "未连接"
 
-msgid "Domain & Port Signatures"
-msgstr "域名与端口特征"
+msgid "Domains"
+msgstr "域名列表"
 
-msgid "Domain List Sample"
-msgstr "域名列表示例"
+msgid "Domains (dnsmasq nftset)"
+msgstr "匹配域名（dnsmasq nftset 自动追踪）"
 
-msgid "Domain tracking: %d · Dedicated TCP: %d · UDP: %d"
-msgstr "域名追踪 %d 个 · 专用 TCP %d 项 · UDP %d 项"
-
-msgid "Done & Refresh Page"
-msgstr "完成并刷新页面"
+msgid "Done & Refresh"
+msgstr "完成并刷新"
 
 msgid "Download Burst Buffer (Bytes)"
 msgstr "下载突发缓冲大小 (Bytes)"
@@ -784,14 +796,11 @@ msgstr "下载限速"
 msgid "Download Limit (kbps)"
 msgstr "下载限速 (kbps)"
 
-msgid "Download Only / Reverse Match"
-msgstr "仅下载 / 反向匹配"
-
 msgid "Download Shaping & Queueing Mode"
 msgstr "下载限速与排队模式"
 
-msgid "Downloads / App Stores / Cloud Drives (Deprioritize)"
-msgstr "下载 / 应用商店 / 网盘（建议降权）"
+msgid "Downloads & Cloud (Low)"
+msgstr "下载与网盘（降权）"
 
 msgid "Driver"
 msgstr "驱动名称"
@@ -805,20 +814,14 @@ msgstr "目标地址: %s"
 msgid "Dst Port: %s"
 msgstr "目标端口: %s"
 
-msgid "Dynamic domain sets: %s"
-msgstr "域名动态集合：%s"
-
 msgid "Each non-zero upload or download limit consumes 1 hardware limiter; setting 0 (stats only, unlimited) does not consume a hardware limiter."
 msgstr "上传或下载限速值大于 0 时各占用 1 个硬件限速器；填 0（仅统计流量不限速）不占用硬件限速器。"
-
-msgid "Each rule must specify at least one match criterion (such as LAN device IP, MAC, game port, or DSCP mark). When \"Bidirectional (Upload + Download)\" is selected, return download traffic is automatically matched into the same priority level."
-msgstr "每条规则至少填写一项匹配条件（如内网设备 IP、设备 MAC、游戏端口或应用 DSCP 标记）。当选择“双向（上传 + 下载）”时，系统会自动把回程下载流量也归入同一优先等级。"
 
 msgid "Edit"
 msgstr "编辑"
 
-msgid "Edit App Signature: %s (%s)"
-msgstr "编辑应用特征：%s (%s)"
+msgid "Edit App: %s (%s)"
+msgstr "编辑应用：%s (%s)"
 
 msgid "Empty response"
 msgstr "返回为空"
@@ -865,8 +868,8 @@ msgstr "启用 L2TPv2 / PPTP 芯片硬件隧道卸载"
 msgid "Enable PE Offload"
 msgstr "启用 PE 卸载"
 
-msgid "Enable Smart Small-Packet Priority"
-msgstr "启用智能小包优先"
+msgid "Enable Small-Packet Priority"
+msgstr "启用小包优先"
 
 msgid "Enable Whole-Port Upload Policing"
 msgstr "启用该网口整口上传限速"
@@ -895,11 +898,14 @@ msgstr "默认开启 15 项安全洪水与畸形报文检测（硬件直接丢�
 msgid "Enables hardware TCP segmentation offload for IPv6 TCP traffic as well when TSO is enabled."
 msgstr "在开启 TCP 硬件分段加速时，同时对 IPv6 TCP 流量启用硬件分段。"
 
-msgid "Example: Cloud Gaming / Custom Boost"
-msgstr "示例：云游戏 / 自定义加速"
+msgid "Evaluated top-to-bottom; specify at least one condition."
+msgstr "按从上到下匹配，每条至少填一项条件。"
 
-msgid "Example: Custom Cloud Drive Deprioritize"
-msgstr "示例：自定义网盘降权"
+msgid "Example Boost App"
+msgstr "示例加速应用"
+
+msgid "Example Download App"
+msgstr "示例下载应用"
 
 msgid "Execution Unit"
 msgstr "执行单元"
@@ -916,29 +922,35 @@ msgstr "实验性底层硬件转发"
 msgid "Export JSON"
 msgstr "导出 JSON"
 
-msgid "Factory Catalog"
-msgstr "出厂特征库"
-
 msgid "Failed to apply preset: %s"
 msgstr "套用预设失败：%s"
 
-msgid "Failed to load signature catalog: %s"
-msgstr "读取特征库失败：%s"
+msgid "Failed to load catalog: %s"
+msgstr "加载特征库失败：%s"
 
 msgid "Failed to parse JSON: please check syntax"
 msgstr "JSON 解析失败：请检查语法格式"
 
-msgid "File exceeds the 512 KB limit; please trim it before importing."
-msgstr "文件超过 512 KB 上限，请精简后再导入。"
+msgid "File exceeds 512 KB limit."
+msgstr "文件超过 512 KB 上限。"
 
-msgid "Filter by app name / ID / domain / port…"
-msgstr "按应用名（支持中文）/ ID / 域名 / 端口筛选…"
+msgid "File or Sample"
+msgstr "本地文件或示例"
+
+msgid "Finance & Banking"
+msgstr "证券与网银"
 
 msgid "Flows bound to per-flow hardware policers: %d (in addition, 96 dedicated channels are reserved for Per-Device Rate Limiting; currently %d used)."
 msgstr "已关联硬件限速的单条连接数：%d 条（另外芯片已为【单设备限速】专属保留 96 个独立底层通道，当前已用 %d 个）。"
 
+msgid "For new group, e.g., Intranet"
+msgstr "仅新建时生效，如：公司内网"
+
 msgid "Force-Enable Low-Port SYN Block (syn1024)"
 msgstr "强制开启低端口 SYN 拦截 (syn1024)"
+
+msgid "Format"
+msgstr "数据格式"
 
 msgid "Framework Placeholder"
 msgstr "仅框架占位"
@@ -951,6 +963,12 @@ msgstr "框架保留；当前变长 SRv6 封装由内核网络栈与 FE 表项�
 
 msgid "From this port (Upload / Ingress):"
 msgstr "从该网口进入（上传 / 入站）："
+
+msgid "Gaming & Voice"
+msgstr "游戏与语音"
+
+msgid "Gaming & Voice Ports"
+msgstr "游戏与语音端口"
 
 msgid "GbE 802.3az EEE Power Saving"
 msgstr "千兆网口 802.3az EEE 节能"
@@ -1021,14 +1039,14 @@ msgstr "硬件加速与芯片卸载设置"
 msgid "Hardware Offload Active"
 msgstr "硬件卸载运行中"
 
+msgid "Hardware Path"
+msgstr "硬件通道"
+
 msgid "Hardware Policer Channels & Shared Groups"
 msgstr "硬件限速通道与共享组"
 
 msgid "Hardware Port #%s"
 msgstr "硬件端口 #%s"
-
-msgid "Hardware Priority Path"
-msgstr "硬件优先通道"
 
 msgid "Hardware Protection Details for 16 Network Attacks & Malformed Packets"
 msgstr "16 种常见网络攻击与畸形包硬件防护明细"
@@ -1082,10 +1100,13 @@ msgid "Hardware-forwarded traffic is not mirrored; zero extra port or CPU overhe
 msgstr "当前不复制硬件转发流量，网口与 CPU 零额外镜像开销。"
 
 msgid "High-Frequency Gaming & Voice Ports"
-msgstr "网络游戏与语音通话高频端口"
+msgstr "游戏与语音高频端口"
 
 msgid "High-Priority Active"
 msgstr "高优通道生效"
+
+msgid "Honor of Kings, Peacekeeper Elite, Genshin Impact, TFT Mobile, etc."
+msgstr "王者荣耀、和平精英、原神、金铲铲等"
 
 msgid "Hooked into NI TX and DMA LSO VP direct-transmit engine; coexists with other wired offloads on the same core"
 msgstr "已接入 NI TX 钩子与 DMA LSO VP 直发引擎，可与其他有线卸载同核共存"
@@ -1105,9 +1126,6 @@ msgstr "怎么用？（硬件级流量镜像抓包）"
 msgid "How to Use (Hardware-Level Automatic DoS Protection)"
 msgstr "怎么用？（硬件级网络攻击自动防护）"
 
-msgid "How to Use (Keep Gaming, Voice & Primary Devices Lag-Free)"
-msgstr "怎么用？（让游戏、语音或主力设备不卡顿）"
-
 msgid "How to Use (Per-Device Rate Limiting & Traffic Monitoring)"
 msgstr "怎么用？（单设备限速与流量监控）"
 
@@ -1119,12 +1137,6 @@ msgstr "高低优先级混合排队（高优通道绝对优先，其余通道按
 
 msgid "Hybrid priority queueing (top %s strict + remaining WRR)"
 msgstr "高低优先级混合排队（前 %s 级绝对优先 + 其余按比重分配）"
-
-msgid "ICMP (Ping)"
-msgstr "ICMP (Ping)"
-
-msgid "ICMP / Ping Test"
-msgstr "ICMP / Ping 测试"
 
 msgid "ICMP Flood (massive ping request flooding)"
 msgstr "Ping 洪水攻击（短时间大量 ICMP 请求轰炸）"
@@ -1144,17 +1156,20 @@ msgstr "IPTV 硬件组播复制"
 msgid "IPsec ESP Offload Framework"
 msgstr "IPsec ESP 卸载框架"
 
-msgid "IPv4 + IPv6 Dual Stack"
-msgstr "IPv4 + IPv6 双栈"
-
-msgid "IPv4 Only"
+msgid "IPv4"
 msgstr "仅 IPv4"
 
-msgid "IPv6 Only"
+msgid "IPv4 + IPv6"
+msgstr "IPv4 + IPv6"
+
+msgid "IPv6"
 msgstr "仅 IPv6"
 
 msgid "Idle (no active tunnels)"
 msgstr "空闲（无活跃隧道）"
+
+msgid "Import & Save"
+msgstr "导入并保存"
 
 msgid "Import Mode"
 msgstr "导入模式"
@@ -1162,17 +1177,14 @@ msgstr "导入模式"
 msgid "Import failed: %s"
 msgstr "导入失败：%s"
 
-msgid "Import from Local File (.json / .csv / .txt) or Fill Sample"
-msgstr "从本地文件导入（.json / .csv / .txt）或一键填入示例"
-
 msgid "Import payload is empty"
 msgstr "导入内容为空"
 
 msgid "Import payload is too large (512 KB limit per import)"
 msgstr "导入内容过大（单次上限 512 KB）"
 
-msgid "Import succeeded: %d added · %d updated · %d skipped (total %d apps / %d domains)"
-msgstr "导入成功：新增 %d 款 · 更新 %d 款 · 跳过 %d 项（当前共 %d 款应用 / %d 个域名）"
+msgid "Imported: %d added · %d updated · %d skipped (%d apps / %d domains)"
+msgstr "导入完成：新增 %d · 更新 %d · 跳过 %d（共 %d 款应用 / %d 个域名）"
 
 msgid "Inactive"
 msgstr "未激活"
@@ -1186,14 +1198,8 @@ msgstr "已安装（按需启动）"
 msgid "Installed · Standby"
 msgstr "已安装 · 待命"
 
-msgid "Instant Messaging"
-msgstr "即时通讯文字消息"
-
 msgid "Instant drop"
 msgstr "收到即拦截"
-
-msgid "Instant messaging connections for WeChat, QQ, TIM, DingTalk, etc."
-msgstr "微信、QQ、TIM、钉钉等即时消息连接"
 
 msgid "Interface"
 msgstr "接口名"
@@ -1201,14 +1207,17 @@ msgstr "接口名"
 msgid "Invalid app entry object"
 msgstr "无效的应用条目对象"
 
-msgid "JSON Sample"
-msgstr "JSON 示例"
+msgid "JSON"
+msgstr "JSON"
 
-msgid "JSON Signature Catalog (full export file or array of app objects)"
-msgstr "JSON 特征库（完整导出文件或应用对象数组）"
+msgid "JSON Catalog"
+msgstr "JSON 特征库"
 
 msgid "JSON root must be an object or an array of apps"
 msgstr "JSON 根节点须为对象或应用数组"
+
+msgid "Keep unchanged"
+msgstr "留空不改写"
 
 msgid "Kernel Module"
 msgstr "内核模块"
@@ -1288,29 +1297,8 @@ msgstr "Land 同地址自环攻击（源 IP 与目标 IP 完全相同）"
 msgid "LPI Active"
 msgstr "LPI激活"
 
-msgid "Lag-free connections for market quotes, trading, and online banking payments"
-msgstr "行情交易与银行支付连接防卡顿"
-
-msgid "League of Legends, Steam, WeGame, Dungeon Fighter Online, World of Warcraft, Ubisoft, etc."
-msgstr "英雄联盟、Steam、WeGame、地下城与勇士、魔兽世界、Ubisoft 等"
-
-msgid "Leave blank = any"
-msgstr "留空=不限"
-
-msgid "Leave blank = any, e.g. 192.168.2.100"
-msgstr "留空=不限，或如 192.168.2.100"
-
-msgid "Leave blank = any, or select ef / cs5 / af41"
-msgstr "留空=不限，或选 ef / cs5 / af41"
-
-msgid "Leave blank = any, or server IP/CIDR"
-msgstr "留空=不限，或填服务器 IP/网段"
-
-msgid "Leave blank = do not rewrite"
-msgstr "留空=不改写"
-
-msgid "Leave blank to auto-generate, e.g., custom_app1"
-msgstr "留空自动生成，如 custom_app1"
+msgid "League of Legends, Steam, WeGame, DNF, World of Warcraft, etc."
+msgstr "英雄联盟、Steam、WeGame、DNF、魔兽世界等"
 
 msgid "Leave blank to match sustained upload limit"
 msgstr "留空则与日常上传限速相同"
@@ -1318,8 +1306,8 @@ msgstr "留空则与日常上传限速相同"
 msgid "Legacy Copy Mode"
 msgstr "传统拷贝模式"
 
-msgid "Legacy or incomplete preset detected: missing app signatures or drifted rules; re-applying a preset is recommended"
-msgstr "检测到旧版/不完整预设：缺少应用特征库或规则已漂移，建议重新一键套用预设"
+msgid "Lines"
+msgstr "文本行"
 
 msgid "Live Check"
 msgstr "实时检测"
@@ -1336,14 +1324,11 @@ msgstr "实时状态"
 msgid "Live Upload Speed"
 msgstr "实时上传网速"
 
-msgid "Loaded & Active"
-msgstr "已加载生效"
-
 msgid "Loaded (ref %d)"
 msgstr "已加载 (ref %d)"
 
-msgid "Loading full app signature catalog…"
-msgstr "正在读取完整应用特征库…"
+msgid "Loading catalog…"
+msgstr "正在加载特征库…"
 
 msgid "Loading…"
 msgstr "加载中…"
@@ -1353,9 +1338,6 @@ msgstr "低端口 SYN 拦截（警告：会误拦外网 80/443 网站的 SYN+ACK
 
 msgid "Low-Power Active"
 msgstr "低功耗运行中"
-
-msgid "Low-latency interactive traffic for Sunlogin, TeamViewer, and Microsoft Remote Desktop"
-msgstr "向日葵、TeamViewer、Microsoft 远程桌面低延迟交互"
 
 msgid "MAC Address"
 msgstr "MAC 地址"
@@ -1372,14 +1354,17 @@ msgstr "MDB 自动同步硬件"
 msgid "MPPE encryption detection (automatic software fallback)"
 msgstr "MPPE 加密识别（自动安全回退软件）"
 
-msgid "Manage Catalog (%d)"
-msgstr "维护特征库 (%d)"
-
 msgid "Manage NIC DMA LSO TX offload, VPN hardware offload entry, IPTV hardware multicast replication, and experimental ASIC acceleration switches."
 msgstr "统一管理网卡 DMA LSO 发包加速、VPN 硬件卸载入口、IPTV 硬件组播复制及芯片底层实验性加速开关。"
 
 msgid "Manage RTL9617C chip-level automatic blocking for 16 attack & malformed packet types, flood thresholds, and per-type exemptions."
 msgstr "管理 RTL9617C 芯片级 16 类网络攻击与畸形包硬件自动拦截、洪水阈值与单项豁免。"
+
+msgid "Manage RTL9617C hardware QoS, Host Policing, 8-VoQ ports, and DoS status"
+msgstr "管理 RTL9617C 硬件 QoS、单设备限速、端口排队与攻击防护"
+
+msgid "Manual / Reset"
+msgstr "手动配置 / 重置"
 
 msgid "Maps to kernel module parameter /sys/module/rtl9617c_ni/parameters/vpn_offload. Offloads plaintext L2TPv2 (UDP/1701) and PPTP (GREv1) flows on the RTL9617C L3PE dual-header ASIC; encrypted/compressed tunnels automatically fall back to software."
 msgstr "对应内核模块参数 /sys/module/rtl9617c_ni/parameters/vpn_offload。开启后由 RTL9617C L3PE 双头隧道 ASIC 直接卸载明文 L2TPv2（UDP/1701）与 PPTP（GREv1）数据流；加密/压缩隧道自动回退软件。"
@@ -1387,35 +1372,23 @@ msgstr "对应内核模块参数 /sys/module/rtl9617c_ni/parameters/vpn_offload�
 msgid "Master Service Switch"
 msgstr "功能总开关"
 
-msgid "Match App Mark (DSCP)"
-msgstr "匹配应用标记 (DSCP)"
-
-msgid "Match Criteria"
+msgid "Match"
 msgstr "匹配条件"
+
+msgid "Match By"
+msgstr "匹配方式"
+
+msgid "Match DSCP"
+msgstr "匹配 DSCP"
 
 msgid "Match DSCP: %s"
 msgstr "匹配 DSCP: %s"
 
-msgid "Match Method"
-msgstr "识别方式"
-
-msgid "Match Specific App"
-msgstr "按单个应用精准匹配"
-
-msgid "Match by App Category"
-msgstr "按应用大类一键匹配"
+msgid "Match by category or app via DNS tracking and ports (per-app overrides category)."
+msgstr "按应用分类或单个应用自动匹配域名与端口（单应用优先于分类）。"
 
 msgid "Matched Hardware-Offloaded Flows"
 msgstr "已命中硬件加速连接"
-
-msgid "Matched Packets"
-msgstr "已命中数据包"
-
-msgid "Matched Traffic"
-msgstr "已命中流量"
-
-msgid "Matching Domains (auto-tracked via dnsmasq nftset)"
-msgstr "匹配域名（dnsmasq nftset 自动追踪服务器 IP）"
 
 msgid "Max Mirrored Packet Snapshot Length (Bytes)"
 msgstr "每个镜像包最大截取长度 (Bytes)"
@@ -1423,8 +1396,17 @@ msgstr "每个镜像包最大截取长度 (Bytes)"
 msgid "Max Port Download Speed (kbps)"
 msgstr "网口最高下载速度 (kbps)"
 
-msgid "Merge & Update (keep existing signatures, add or update matches)"
-msgstr "合并更新（保留现有特征，新增或更新匹配项）"
+msgid "Max packet size treated as small (64–1024; default 256)."
+msgstr "≤ 该字节数判定为小包（64–1024，默认 256）。"
+
+msgid "Meetings & Voice"
+msgstr "视频会议与语音"
+
+msgid "Merge & Update"
+msgstr "合并更新"
+
+msgid "Messaging"
+msgstr "即时通讯"
 
 msgid "Mirror Copy Active"
 msgstr "镜像复制运行中"
@@ -1443,6 +1425,9 @@ msgstr "正在镜像抓包"
 
 msgid "Missing"
 msgstr "缺失"
+
+msgid "Mobile Games"
+msgstr "热门手游"
 
 msgid "Module params: CSUM %s · TSO %s · TSO6 %s"
 msgstr "模块参数: CSUM %s · TSO %s · TSO6 %s"
@@ -1486,6 +1471,9 @@ msgstr "网卡发包与组播加速"
 msgid "NIC live (%s): TX-CSUM %s · SG %s · TSO %s · TSO6 %s · GSO %s"
 msgstr "网卡实况 (%s): TX-CSUM %s · SG %s · TSO %s · TSO6 %s · GSO %s"
 
+msgid "Name"
+msgstr "名称"
+
 msgid "Network → Hardware DoS Protection"
 msgstr "网络 → 硬件网络攻击防护"
 
@@ -1498,14 +1486,17 @@ msgstr "网络 → 接口"
 msgid "Network → VPN Hardware Offload"
 msgstr "网络 → VPN 硬件加速"
 
+msgid "New App Name"
+msgstr "新应用名称"
+
 msgid "No EEE-capable Gigabit ports (LAN2–LAN4) detected yet."
 msgstr "暂未检测到支持 EEE 的千兆端口（LAN2 ~ LAN4）。"
 
 msgid "No L2TP or PPTP interfaces configured in /etc/config/network yet. Go to Network → Interfaces to add one with the L2TP or PPTP protocol."
 msgstr "尚未在 /etc/config/network 中配置 L2TP 或 PPTP 接口。请前往【网络 → 接口】添加新接口并选择 L2TP 或 PPTP 协议。"
 
-msgid "No Preset Active"
-msgstr "当前未开启预设"
+msgid "No Preset"
+msgstr "未启用预设"
 
 msgid "No active L2TP / PPTP hardware offload slots. Once a plaintext L2TPv2 or PPTP tunnel connects and forwards traffic, allocated Control / Content / EIF slots appear here in real time."
 msgstr "当前没有活跃的 L2TP / PPTP 硬件卸载槽位。建立明文 L2TPv2 或 PPTP 隧道并产生转发流量后，此处会实时显示分配的 Control / Content / EIF 槽位。"
@@ -1522,20 +1513,23 @@ msgstr "当前没有占用的单连接硬件限速通道（160 个通道全部�
 msgid "No app ID specified for deletion"
 msgstr "未指定要删除的应用 ID"
 
-msgid "No app or game priority rules added yet. Click \"Add\" below to set higher priority for your main PC, gaming console, or specific game ports."
-msgstr "当前还没有添加任何应用或游戏优先规则。您可以在下方点击“添加”，为主力电脑、游戏机或特定游戏端口设置更高优先级。"
-
-msgid "No app signatures match the current filter."
-msgstr "没有匹配当前筛选条件的应用特征。"
+msgid "No app or port rules; enables small-packet priority, LAN1 strict queueing, and WRED."
+msgstr "不加规则，仅开启小包优先、LAN1 严格排队与 WRED。"
 
 msgid "No apps array or valid app object found in JSON"
 msgstr "JSON 中未找到 apps 数组或有效应用对象"
+
+msgid "No matching app signatures."
+msgstr "没有匹配的应用特征。"
 
 msgid "No online RTL9617C physical ports found yet."
 msgstr "暂未发现在线的 RTL9617C 物理网口。"
 
 msgid "No ports detected"
 msgstr "未检测到网口"
+
+msgid "No rules yet. Apply a preset above or click \"Add\" below."
+msgstr "暂无规则，可在上方套用预设或在下方点击“添加”。"
 
 msgid "No valid app signatures parsed"
 msgstr "未解析到任何有效应用特征"
@@ -1591,29 +1585,29 @@ msgstr "片内加密引擎 (90500000.crypto)"
 msgid "On-Chip HW Engine"
 msgstr "片内硬件引擎"
 
-msgid "One domain per line or comma-separated; supports *.example.com and Clash DOMAIN-SUFFIX,example.com"
-msgstr "每行一个域名，或逗号分隔；支持 *.example.com 与 Clash DOMAIN-SUFFIX,example.com"
+msgid "One domain per line or comma-separated; supports *.example.com and DOMAIN-SUFFIX"
+msgstr "每行一个域名或逗号分隔；支持 *.example.com 与 DOMAIN-SUFFIX"
 
-msgid "One-Click Scenario Presets (rules can still be customized freely below after applying)"
-msgstr "一键套用场景预设方案（套用后仍可在下方自由修改或增删规则）"
+msgid "One-Way (Src -> Dst)"
+msgstr "单向（源→目标）"
 
-msgid "Online Education & Courses"
-msgstr "在线教育与网课"
+msgid "Online Education"
+msgstr "在线教育"
 
-msgid "Only for new domain group, e.g., Company Intranet"
-msgstr "仅新建域名组时生效，如：公司内网加速"
+msgid "Online classroom and live course platforms"
+msgstr "常见在线课堂与网课直播平台"
 
 msgid "Open PE Dashboard ↗"
 msgstr "打开 PE 看板 ↗"
 
-msgid "Or New App Name (for plain domain list)"
-msgstr "或新建应用名称（纯域名列表时）"
+msgid "Optional, e.g., custom_app1"
+msgstr "选填，如：custom_app1"
 
 msgid "Owner"
 msgstr "归属"
 
-msgid "PC Games & Platforms"
-msgstr "电脑端游与游戏平台"
+msgid "PC Games"
+msgstr "电脑端游"
 
 msgid "PE Clock %s / AXI %s"
 msgstr "PE 主频 %s / AXI %s"
@@ -1660,11 +1654,8 @@ msgstr "PPPoL2TP 数据面驱动"
 msgid "PPTP (GREv1) data-plane driver"
 msgstr "PPTP (GREv1) 数据面驱动"
 
-msgid "Packet size <= %s Bytes · %s"
-msgstr "包大小 ≤ %s Bytes · %s"
-
-msgid "Packets whose total length is less than or equal to this value are classified as small packets (range 64 ~ 1024; recommended default 256 bytes)."
-msgstr "数据包总长度小于或等于该字节数时判定为小包（范围 64 ~ 1024，默认推荐 256 字节）。"
+msgid "Packets"
+msgstr "包数"
 
 msgid "Param On · NIC Inactive"
 msgstr "参数已开 · 网卡未生效"
@@ -1678,8 +1669,8 @@ msgstr "通过 · 备用"
 msgid "Passed · Kernel Default"
 msgstr "通过 · 内核默认选用"
 
-msgid "Paste JSON, tabular lines (Category|Name|Domains|TCP|UDP), or Clash/plain domain list here, or choose a local file above…"
-msgstr "在此粘贴 JSON、表格文本行（分类|名称|域名|TCP|UDP）或 Clash/纯域名列表，或点击上方选择本地文件导入…"
+msgid "Paste JSON, lines (Category|Name|Domains|TCP|UDP), or domains, or pick a file above…"
+msgstr "在此粘贴 JSON、文本行（分类|名称|域名|TCP|UDP）或域名列表，或点击上方选择文件…"
 
 msgid "Pause refresh"
 msgstr "暂停刷新"
@@ -1735,8 +1726,8 @@ msgstr "物理口已设防（丢弃动作）"
 msgid "Ping of Death (oversized fragmented ping > 65535 bytes)"
 msgstr "超长死亡之 Ping（分片重组后超 65535 字节的恶意包）"
 
-msgid "Plain Domain List into Target App (deduplicated & merged)"
-msgstr "纯域名列表导入到指定应用（自动去重合并）"
+msgid "Plain Domain List"
+msgstr "纯域名列表"
 
 msgid "Please enter a MAC address"
 msgstr "请输入 MAC 地址"
@@ -1744,20 +1735,14 @@ msgstr "请输入 MAC 地址"
 msgid "Please enter a valid physical interface name (e.g., lan1)"
 msgstr "请输入有效的物理网口名称（如 lan1）"
 
-msgid "Please paste import content or select a local file first."
-msgstr "请先粘贴导入内容或选择本地文件。"
+msgid "Please paste content or select a file first."
+msgstr "请先粘贴内容或选择文件。"
 
 msgid "Policer %d"
 msgstr "限速器 %d"
 
 msgid "Policers & Shared Groups"
 msgstr "限速通道与共享组"
-
-msgid "Popular Mobile Games"
-msgstr "热门手机游戏"
-
-msgid "Popular online classroom and live course streaming platforms"
-msgstr "常见在线课堂与网课直播平台"
 
 msgid "Port Download Shaping & Queueing (Router → Port)"
 msgstr "网口下载限速与优先排队（路由器发往该网口）"
@@ -1786,14 +1771,11 @@ msgstr "整口上传限速 %s（缓冲 %s）"
 msgid "Pre-configure the ASIC's 160 per-flow hardware policer channels (in kbps, 100000 = 100 Mbps; burst buffer range 1 ~ 4095)."
 msgstr "可手动预配置芯片的 160 个单连接硬件限速通道（单位 kbps，100000 = 100 Mbps；突发缓冲范围 1 ~ 4095）。"
 
-msgid "Preset 1: Esports Gaming & Voice Anti-Lag"
-msgstr "方案一：电竞游戏与语音防卡顿"
+msgid "Preset drifted · Re-apply"
+msgstr "预设已偏移 · 建议重套"
 
-msgid "Preset 2: Work-From-Home & Video Conferencing Priority"
-msgstr "方案二：居家办公与视频会议优先"
-
-msgid "Preset 3: Minimalist Smart Small-Packet Priority (Zero Rules)"
-msgstr "方案三：极简智能小包优先（零规则）"
+msgid "Prioritize key apps, small packets, or custom rules (CoS 0–7) with hardware offload."
+msgstr "按应用特征、小包或自定义规则分配硬件优先级（0 ~ 7 级）。"
 
 msgid "Priority"
 msgstr "优先级"
@@ -1801,20 +1783,17 @@ msgstr "优先级"
 msgid "Priority 150 (fallback); IPsec/TLS defaults to faster CPU ARMv8 CE (priority 300)."
 msgstr "优先级 150（备用）；IPsec/TLS 默认走更快的 CPU ARMv8 CE（优先级 300）。"
 
-msgid "Priority Classification Engine"
-msgstr "优先转发识别引擎"
+msgid "Priority Engine"
+msgstr "优先引擎"
 
-msgid "Priority Level"
-msgstr "优先等级"
+msgid "Priority Flows"
+msgstr "高优加速流"
 
 msgid "Priority Level %d Weight (Bytes · WRR queues only)"
 msgstr "优先等级 %d 调度比重 (Bytes · 仅非绝对优先时生效)"
 
-msgid "Priority Level (0~7)"
-msgstr "优先等级 (0~7)"
-
-msgid "Priority Level for Small Packets"
-msgstr "小包分配的优先等级"
+msgid "Priority for unmatched traffic (2 recommended so CoS 0–1 downloads stay lowest)."
+msgstr "未命中规则的普通流量等级（推荐 2，使 0/1 级后台下载保持最低）。"
 
 msgid "Protection Active"
 msgstr "防护已激活"
@@ -1825,8 +1804,14 @@ msgstr "协议: %s"
 msgid "Protocol"
 msgstr "协议"
 
+msgid "Quick Guide"
+msgstr "使用说明"
+
 msgid "Range 64 ~ 4095 bytes. Use 128 for headers only, or 2048 for full Ethernet frames."
 msgstr "范围 64 ~ 4095 字节。填 128 仅抓取包头，填 2048 抓取完整以太网帧。"
+
+msgid "Re-apply"
+msgstr "重新套用"
 
 msgid "Read failed: %s"
 msgstr "读取失败：%s"
@@ -1834,56 +1819,56 @@ msgstr "读取失败：%s"
 msgid "Ready · Running"
 msgstr "就绪 · 运行中"
 
-msgid "Recommended · One-click anti-ping-spike for gaming & voice"
-msgstr "推荐 · 游戏与语音一键防跳 Ping"
+msgid "Recommended · Lower game latency"
+msgstr "推荐 · 游戏语音防卡顿"
 
-msgid "Recommended: \"Smart Mode\", which boosts UDP gaming/voice small packets, Ping, DNS, and SSH control packets while preventing large TCP download ACKs from boosting an entire bulk download flow."
-msgstr "推荐使用“智能模式”，专门提权 UDP 游戏/语音小包、Ping、DNS 与 SSH 控制包，同时避免大文件 TCP 下载的确认包把整条下载连接误提权。"
+msgid "Remote Desktop"
+msgstr "远程桌面"
 
-msgid "Remaining direct traffic not matching rules above defaults to this baseline queue"
-msgstr "其余未命中上方规则的直连流量默认归入此基线队列"
+msgid "Remove \"%s\" (%s) from catalog?"
+msgstr "确认从特征库移除「%s」(%s) 吗？"
 
-msgid "Remote Desktop & Control"
-msgstr "远程桌面与远控"
-
-msgid "Remote Work · Smooth video meetings & web browsing"
-msgstr "远程办公 · 视频会议与网页不卡顿"
-
-msgid "Remove \"%s\" (%s) from the signature catalog?"
-msgstr "确认从特征库中删除「%s」(%s) 吗？"
-
-msgid "Replace All (clear current list and replace with imported content)"
-msgstr "覆盖替换（清空现有列表，完全替换为导入内容）"
+msgid "Replace All"
+msgstr "覆盖替换"
 
 msgid "Replace import produced an empty result; cancelled to avoid clearing the catalog"
 msgstr "覆盖导入结果为空，已取消以防止清空特征库"
 
+msgid "Replace the entire catalog with imported data? You can restore defaults anytime."
+msgstr "确认用导入内容覆盖当前特征库？可随时恢复默认。"
+
 msgid "Requires IGMP Snooping enabled in:"
 msgstr "需配合以下页面开启 IGMP Snooping："
 
-msgid "Restore Defaults · Clear preset rules and configure from scratch"
-msgstr "恢复默认 · 清空预设规则从零自由配置"
+msgid "Reset"
+msgstr "可重置"
 
-msgid "Restore Factory Catalog"
-msgstr "恢复出厂库"
+msgid "Reset Rules"
+msgstr "清空规则"
+
+msgid "Restore Defaults"
+msgstr "恢复默认"
 
 msgid "Restore failed: %s"
 msgstr "恢复失败：%s"
 
-msgid "Restored factory app signature catalog (%d apps total)."
-msgstr "已恢复固件出厂应用特征库（共 %d 款应用）。"
+msgid "Restored built-in catalog (%d apps)."
+msgstr "已恢复内置特征库（共 %d 款应用）。"
 
 msgid "Resume refresh"
 msgstr "恢复刷新"
 
+msgid "Reverse (Dst -> Src)"
+msgstr "反向（目标→源）"
+
+msgid "Rewrite DSCP"
+msgstr "改写 DSCP"
+
 msgid "Rewrite DSCP -> %s"
 msgstr "改写 DSCP→%s"
 
-msgid "Rewrite Outbound Mark (DSCP)"
-msgstr "改写发出标记 (DSCP)"
-
-msgid "Rule Name"
-msgstr "规则名称"
+msgid "Rule"
+msgstr "规则"
 
 msgid "Running"
 msgstr "运行中"
@@ -1897,8 +1882,8 @@ msgstr "在 PE 旁路运行 64 队列 FQ-CoDel（支持 1ns PTP 定时整形与 
 msgid "SRv6 / Variable Tunnel Header Framework"
 msgstr "SRv6 / 变长隧道头框架"
 
-msgid "Save & Add to Catalog"
-msgstr "保存并加入特征库"
+msgid "Save"
+msgstr "保存"
 
 msgid "Save Changes"
 msgstr "保存修改"
@@ -1909,11 +1894,17 @@ msgstr "保存异常：%s"
 msgid "Save failed"
 msgstr "保存失败"
 
-msgid "Saved app signature \"%s\" (written to persistent custom catalog)."
-msgstr "已保存应用特征「%s」（写入持久自定义特征库）。"
+msgid "Saved \"%s\" and synced hardware rules."
+msgstr "已保存「%s」并同步硬件规则。"
 
-msgid "Saved app signature \"%s\" and synced running hardware QoS rules."
-msgstr "已保存应用特征「%s」并已同步更新运行中的硬件流控规则。"
+msgid "Saved \"%s\" to custom catalog."
+msgstr "已保存「%s」至自定义特征库。"
+
+msgid "Scenario Presets"
+msgstr "场景预设"
+
+msgid "Search name, ID, domain, or port…"
+msgstr "搜索名称、ID、域名或端口…"
 
 msgid "Select or enter a hardware WRED curve profile ID (built-in: 1=Gentle, 2=Balanced, 3=Aggressive Low-Latency; advanced: 1–31)."
 msgstr "选择或输入硬件 WRED 曲线模板号（内置 1=温和均衡、2=标准平衡、3=激进低延迟，高级可填 1~31）。"
@@ -1924,9 +1915,6 @@ msgstr "自检与选用状态"
 msgid "Self-test passed (%d/%d)"
 msgstr "自检通过 (%d/%d)"
 
-msgid "Sets a baseline priority for normal traffic that does not match rules above or small-packet detection (recommended: 2, so BT/background downloads set to CoS 0/1 stay strictly below normal browsing)."
-msgstr "为未命中上方规则与小包的普通流量设置基线优先等级（推荐设为 2，使设成等级 0/1 的 BT 或后台下载真正低于普通上网流量）。"
-
 msgid "Shared Committed Rate CIR (kbps)"
 msgstr "共享保证网速 (kbps)"
 
@@ -1936,44 +1924,50 @@ msgstr "共享限速组号 (0 ~ 63)"
 msgid "Shared Peak Rate PIR (kbps)"
 msgstr "共享最高网速 (kbps)"
 
-msgid "Show all %d entries (showing first %d)"
-msgstr "显示全部 %d 条（当前展示前 %d 条）"
+msgid "Show all %d (showing %d)"
+msgstr "显示全部 %d 条（当前 %d 条）"
 
-msgid "Signature List & Maintenance (%d)"
-msgstr "特征列表与维护 (%d)"
+msgid "Signatures"
+msgstr "域名与端口特征"
+
+msgid "Signatures (%d)"
+msgstr "特征列表 (%d)"
+
+msgid "Size Threshold (Bytes)"
+msgstr "小包阈值（字节）"
 
 msgid "Slot"
 msgstr "通道号"
 
-msgid "Small-Packet Detection Mode"
-msgstr "小包识别模式"
+msgid "Small-Packet Only"
+msgstr "极简小包优先"
 
-msgid "Small-Packet Size Threshold (Bytes)"
-msgstr "小包大小判定阈值 (Bytes)"
+msgid "Small-Packet Priority"
+msgstr "智能小包优先"
 
-msgid "Smart Mode (Recommended · UDP gaming/voice small packets + Ping + DNS + SSH)"
-msgstr "智能模式（推荐 · UDP 游戏/语音小包 + Ping + DNS + SSH）"
+msgid "Smart (Recommended · UDP/ICMP/DNS/SSH)"
+msgstr "智能模式（推荐 · UDP/Ping/DNS/SSH）"
+
+msgid "Smart (UDP/ICMP/DNS/SSH)"
+msgstr "智能 (UDP/Ping/DNS/SSH)"
+
+msgid "Smart Mode boosts UDP/ICMP/DNS/SSH without boosting bulk TCP download ACKs."
+msgstr "智能模式仅提权游戏/语音/控制小包，避免大文件下载 ACK 误提权。"
 
 msgid "Smart QoS & Rate Limiting"
 msgstr "智能流控与限速"
 
-msgid "Smart Small-Packet Priority (Zero-Config Boost for Gaming / Voice / Web Responsiveness)"
-msgstr "智能小包优先（免配规则，一键提升游戏 / 语音 / 网页反应速度）"
-
-msgid "Smart mode (UDP gaming/voice + Ping + DNS + SSH)"
-msgstr "智能模式 (UDP游戏/语音 + Ping + DNS + SSH)"
+msgid "Smooth meetings, remote desk & web"
+msgstr "会议、远控与网页优先"
 
 msgid "Snapshot length can be adjusted from 64 to 4095 bytes: 128 captures protocol headers only, while 2048 retains full standard Ethernet frames."
 msgstr "截断长度可在 64 ~ 4095 字节间调整：填 128 仅保留协议包头，填 2048 可完整保留标准以太网帧。"
 
-msgid "Source IP (LAN Device Address)"
-msgstr "源 IP（内网设备地址）"
+msgid "Source IP"
+msgstr "源 IP"
 
 msgid "Source Port"
 msgstr "源端口"
-
-msgid "Specific App"
-msgstr "具体应用"
 
 msgid "Src IP: %s"
 msgstr "源地址: %s"
@@ -1990,9 +1984,6 @@ msgstr "日常普通宽带上网与 PPPoE 转发已默认全速硬件卸载，�
 msgid "Standby"
 msgstr "待机"
 
-msgid "Start Batch Import & Save"
-msgstr "开始批量导入并保存"
-
 msgid "Stats only"
 msgstr "仅统计"
 
@@ -2005,8 +1996,8 @@ msgstr "仅状态占位（实机密码由内核 ARMv8 AES-CE 执行，未绑定 
 msgid "Status placeholder only (not currently bound to PE DMA TX path)"
 msgstr "仅状态占位（当前未绑定 PE DMA TX 路径）"
 
-msgid "Stock Quotes & Online Banking"
-msgstr "证券行情与网银支付"
+msgid "Stock quotes, trading, and banking payments"
+msgstr "行情交易与网银支付"
 
 msgid "Stopped"
 msgstr "已停止"
@@ -2020,8 +2011,8 @@ msgstr "按优先级严格排队（等级 7 → 0 高优先级绝对优先，推
 msgid "Strict priority queueing (8 priority queues)"
 msgstr "按优先级严格排队（8 级优先通道）"
 
-msgid "Successfully applied \"%s\" and pushed to hardware ASIC; refreshing page…"
-msgstr "已成功套用【%s】并下发到硬件芯片，正在刷新页面…"
+msgid "Sunlogin, TeamViewer, Microsoft Remote Desktop"
+msgstr "向日葵、TeamViewer、Microsoft 远程桌面"
 
 msgid "Supports up to 32 LAN devices with independent rate limits or traffic counters (each device gets dedicated hardware upload and download accounting channels)."
 msgstr "最多同时支持 32 台局域网设备独立限速或统计流量（每台设备自动分配独立的上传与下载硬件统计通道）。"
@@ -2029,14 +2020,11 @@ msgstr "最多同时支持 32 台局域网设备独立限速或统计流量（�
 msgid "Sustained Upload Limit (kbps)"
 msgstr "网口日常上传限速 (kbps)"
 
+msgid "Synced to nftables and dnsmasq."
+msgstr "已同步至 nftables 与 dnsmasq。"
+
 msgid "System Netdev"
 msgstr "系统网卡"
-
-msgid "TCP (Web / Office / Video)"
-msgstr "TCP（网页/办公/视频）"
-
-msgid "TCP + UDP"
-msgstr "TCP + UDP"
 
 msgid "TCP FIN Flood (forged connection teardown packets)"
 msgstr "TCP FIN 洪水攻击（大量伪造断开连接请求）"
@@ -2049,6 +2037,9 @@ msgstr "TCP 分片偏移过小异常（逃避防火墙检测的畸形分片）"
 
 msgid "TCP NULL Stealth Scan (illegal probe with all flags zero)"
 msgstr "TCP NULL 隐蔽端口扫描（标志位全 0 的非法探测包）"
+
+msgid "TCP Ports"
+msgstr "TCP 端口"
 
 msgid "TCP SYN Flood (half-open connection table exhaustion)"
 msgstr "TCP SYN 半连接洪水（耗尽服务器/路由器连接表）"
@@ -2068,14 +2059,11 @@ msgstr "TCP 头部过短畸形包（不足 20 字节的损坏包）"
 msgid "TCP Xmas Scan (malicious probe with FIN+URG+PSH set)"
 msgstr "TCP 圣诞树恶意扫描（FIN+URG+PSH 同时置位的探测包）"
 
-msgid "Tabular / Text Lines (Category|Name|Domains|TCP|UDP or CSV)"
-msgstr "表格 / 文本行（分类|名称|域名|TCP|UDP 或 CSV）"
+msgid "Tags traffic on first packet and offloads matching flows to hardware."
+msgstr "首包匹配后写入硬件表，后续流量线速转发。"
 
 msgid "Takes over host-originated multicast/broadcast packets via PE and a dedicated DMA LSO VP with optional rate pacing"
 msgstr "接管主机侧发送的组播/广播报文，经 PE 与独立 DMA LSO VP 发送并支持可选速率平滑"
-
-msgid "Target LAN Device MAC"
-msgstr "指定内网设备 MAC"
 
 msgid "Target Physical Port"
 msgstr "目标物理网口"
@@ -2083,23 +2071,17 @@ msgstr "目标物理网口"
 msgid "Tencent Meeting / Zoom / Teams Video Conferencing"
 msgstr "腾讯会议 / Zoom / Teams 视频会议"
 
-msgid "Tencent Meeting, WeChat/QQ/DingTalk/WeCom voice and multimedia calls"
-msgstr "腾讯会议、微信/QQ/钉钉/企业微信语音与多媒体通话"
+msgid "Tencent Meeting, WeChat/QQ/DingTalk/WeCom voice & video calls"
+msgstr "腾讯会议、微信/QQ/钉钉/企微音视频通话"
 
-msgid "Text Lines Sample"
-msgstr "文本行示例"
-
-msgid "The router identifies app/device priority on the first packet of a connection and programs it into the hardware acceleration table immediately, so all subsequent packets are forwarded at ASIC line rate."
-msgstr "路由器在连接首包自动识别应用/设备优先级，并立即写入硬件加速表，后续数据包全程由芯片线速转发。"
+msgid "Text Lines (Cat|Name|Domains|TCP|UDP or CSV)"
+msgstr "文本行（分类|名称|域名|TCP|UDP 或 CSV）"
 
 msgid "This MAC address already exists in the list; please do not add duplicates"
 msgstr "该 MAC 地址已在列表中存在，请勿重复添加"
 
 msgid "Threshold"
 msgstr "触发阈值"
-
-msgid "Tip: supports adding/editing/deleting individual entries, batch merge/replace import, and JSON backup export."
-msgstr "提示：支持增删改单项、批量合并/覆盖导入与导出备份。"
 
 msgid "To this port (Download / Egress):"
 msgstr "发往该网口（下载 / 出站）："
@@ -2110,23 +2092,29 @@ msgstr "开关"
 msgid "Top %d priority queues (CoS 7 → %d) strict, CoS %d → 0 WRR"
 msgstr "前 %d 个高优通道（等级 7 → %d）绝对优先，等级 %d → 0 按比重分配"
 
+msgid "Total %d · High (5–7): %d · Normal (2–4): %d · Low (0–1): %d"
+msgstr "共 %d 条 · 高优(5–7): %d · 普通(2–4): %d · 低优(0–1): %d"
+
 msgid "Total Upload / Download"
 msgstr "累计上传 / 下载总流量"
+
+msgid "Traffic"
+msgstr "流量"
 
 msgid "Trap to CPU"
 msgstr "上送 CPU"
 
+msgid "Turns off small-packet boost and clears rules on this page (keeps device rate limits)."
+msgstr "关闭小包优先并清空本页规则（保留单设备限速）。"
+
 msgid "Type / Refs"
 msgstr "类型 / 引用"
 
-msgid "UDP (Gaming / Voice / Live)"
-msgstr "UDP（游戏/语音/直播）"
-
-msgid "UDP (Gaming / Voice Calls / Live)"
-msgstr "UDP（游戏/语音通话/直播）"
-
 msgid "UDP Bomb (malformed UDP length mismatching IP length)"
 msgstr "UDP 畸形炸弹包（UDP 长度字段与 IP 长度不一致）"
+
+msgid "UDP Ports"
+msgstr "UDP 端口"
 
 msgid "UL #%d (%s) / DL #%d (%s)"
 msgstr "上传 #%d (%s) / 下载 #%d (%s)"
@@ -2143,14 +2131,14 @@ msgstr "未设防"
 msgid "Unavailable"
 msgstr "不可用"
 
-msgid "Unidirectional (Match Source -> Destination Only)"
-msgstr "单向（仅按所填源→目标方向匹配）"
-
 msgid "Unknown error"
 msgstr "未知错误"
 
 msgid "Unlimited (stats only)"
 msgstr "不限速（仅统计流量）"
+
+msgid "Unmatched traffic fallback"
+msgstr "未命中规则的默认流量"
 
 msgid "Unnamed Device"
 msgstr "未命名设备"
@@ -2173,14 +2161,11 @@ msgstr "上传限速"
 msgid "Upload Limit (kbps)"
 msgstr "上传限速 (kbps)"
 
-msgid "Upload Only / Forward Match"
-msgstr "仅上传 / 正向匹配"
-
 msgid "User Guide"
 msgstr "使用说明"
 
-msgid "User-maintained or batch-imported custom app signatures"
-msgstr "用户手动维护或批量导入的自定义应用特征"
+msgid "User-defined or batch-imported app signatures"
+msgstr "用户新增或批量导入的应用特征"
 
 msgid "Userspace Tool"
 msgstr "用户态工具"
@@ -2200,17 +2185,26 @@ msgstr "VPN 硬件隧道卸载 (L2TP / PPTP)"
 msgid "VPN Kernel Modules & Userspace Dialer Self-Check"
 msgstr "VPN 内核模块与用户态拨号工具自检"
 
-msgid "Video & Live Streaming"
-msgstr "影音与视频直播"
+msgid "Validated & deduplicated; saved to /etc/rtl9617c-qos/app_signatures.json."
+msgstr "自动校验去重并保存至 /etc/rtl9617c-qos/app_signatures.json（升级保留）。"
 
-msgid "Video Conferencing & Voice Calls"
-msgstr "视频会议与语音通话"
+msgid "Video & Live"
+msgstr "视频与直播"
+
+msgid "Video Conferencing"
+msgstr "视频会议"
+
+msgid "Video streaming and live broadcast platforms"
+msgstr "抖音、B站、优酷、爱奇艺、虎牙、斗鱼等"
 
 msgid "View low-level hardware queue details"
 msgstr "查看底层硬件队列详情"
 
+msgid "Voice & Low-Latency (DSCP EF)"
+msgstr "语音低延迟 (DSCP EF)"
+
 msgid "Voice & Ultra-Low-Latency Apps (DSCP EF)"
-msgstr "语音与极低延迟应用标记 (EF)"
+msgstr "语音与低延迟应用 (EF)"
 
 msgid "WRED Congestion Curve Profile"
 msgstr "WRED 拥塞控制曲线模板"
@@ -2227,8 +2221,14 @@ msgstr "等待网卡统计就绪（驱动已启用 page_pool + napi_build_skb）
 msgid "Warning: This hardware rule matches all TCP packets with source port < 1024 and SYN flag set, which drops normal SYN+ACK replies from WAN HTTP/HTTPS/DNS (80/443/53) servers and breaks web browsing! Keep disabled unless in a special LAN-only environment."
 msgstr "警告：该芯片规则匹配所有源端口 < 1024 且置位 SYN 的报文，会拦截外网 80/443/53 网站的正常 SYN+ACK 握手回包导致无法打开网页！仅建议在特殊纯内网环境开启，正常上网务必保持关闭。"
 
+msgid "WeChat, QQ, TIM, DingTalk messaging"
+msgstr "微信、QQ、TIM、钉钉消息"
+
+msgid "Web & HTTPS Traffic"
+msgstr "网页与 HTTPS 流量"
+
 msgid "Web Browsing & HTTPS Office Traffic"
-msgstr "网页浏览与 HTTPS 办公访问"
+msgstr "网页与 HTTPS 办公流量"
 
 msgid "What Is This? (Hardware Acceleration & Silicon Offload)"
 msgstr "这是什么？（硬件加速与芯片卸载）"
@@ -2248,20 +2248,17 @@ msgstr "开启后，芯片启用 L3TE WRED 引擎保护高优队列 (VoQ 5~7 不
 msgid "When enabled, the RTL9617C forwarding ASIC automatically blocks the 16 attack and malformed packet types listed above (ICMP/SYN/FIN floods, Ping of Death, UDP bomb, stealth port scans, etc.) directly in hardware with zero CPU overhead."
 msgstr "开启后，RTL9617C 硬件转发芯片将自动启用上方列表中的 16 类网络攻击与畸形数据包防护（包括 Ping 洪水、TCP SYN/FIN 洪水、死亡之 Ping、UDP 炸弹及隐蔽端口扫描等），在硬件层直接丢弃恶意流量，完全不占用 CPU。"
 
-msgid "When enabled, the router automatically detects small packets and assigns higher hardware forwarding priority, avoiding manual port lookups."
-msgstr "开启后，系统会自动识别小数据包并分配更高硬件转发优先级，省去手动一条条查端口配规则的麻烦。"
+msgid "Work & Meetings"
+msgstr "办公与会议"
 
-msgid "Xigua Video, Youku, Huya, DouYu, YY, and other video streaming platforms"
-msgstr "西瓜、优酷、虎牙、斗鱼、YY 等视频直播平台"
+msgid "Xunlei, app stores, bulk downloads, and cloud drives (deprioritized)"
+msgstr "迅雷、应用商店、大文件下载与网盘同步（降权）"
 
-msgid "Xunlei downloads, app store updates, bulk file transfers, and cloud drive sync; set to low priority to avoid saturating bandwidth"
-msgstr "迅雷下载、应用商店更新、大文件传输与网盘同步，设为低优先级防止抢占带宽（已剔除微信/QQ 图片与公共 DNS 域名）"
+msgid "Zero rules · Auto-boost small packets"
+msgstr "零规则 · 小包自动加速"
 
 msgid "Zero-CPU HW Drop Active"
 msgstr "硬件零 CPU 丢弃中"
-
-msgid "Zero-Config · Pure hardware small-packet auto-detection"
-msgstr "免配规则 · 纯靠芯片自动识别小包"
 
 msgid "Zero-Copy + 128B Fast Copybreak"
 msgstr "零拷贝 + 128B 小包快路径"
@@ -2284,52 +2281,34 @@ msgstr "[入站限速策略]"
 msgid "[Unplugged]"
 msgstr "[未插线]"
 
-msgid "af41 (34 · HD video conferencing mark)"
-msgstr "af41 (34 · 高清视频会议标记)"
+msgid "af41 (34 · Video Meeting)"
+msgstr "af41 (34 · 视频会议)"
 
-msgid "af41 (34 · rewrite as video conferencing mark)"
-msgstr "af41 (34 · 改写为视频会议标记)"
+msgid "built-in"
+msgstr "内置库"
 
-msgid "cs0 (0 · clear DSCP mark to default 0)"
-msgstr "cs0 (0 · 清除标记为默认 0)"
+msgid "cs0 (0 · Clear / Default)"
+msgstr "cs0 (0 · 清除/默认)"
 
-msgid "cs0 (0 · normal default mark)"
-msgstr "cs0 (0 · 普通默认标记)"
+msgid "cs0 (0 · Default)"
+msgstr "cs0 (0 · 默认)"
 
-msgid "cs1 (8 · low-priority background download mark)"
-msgstr "cs1 (8 · 后台低优先下载标记)"
+msgid "cs1 (8 · Background)"
+msgstr "cs1 (8 · 后台低优)"
 
-msgid "cs1 (8 · rewrite as low-priority background mark)"
-msgstr "cs1 (8 · 改写为后台低优先标记)"
+msgid "cs3 (24 · Signaling)"
+msgstr "cs3 (24 · 通话信令)"
 
-msgid "cs3 (24 · call signaling mark)"
-msgstr "cs3 (24 · 通话信令标记)"
+msgid "cs5 (40 · Real-time Video)"
+msgstr "cs5 (40 · 实时视频)"
 
-msgid "cs3 (24 · rewrite as priority signaling mark)"
-msgstr "cs3 (24 · 改写为信令优先标记)"
+msgid "cs6 (48 · Control)"
+msgstr "cs6 (48 · 网络控制)"
 
-msgid "cs5 (40 · real-time video / interactive live mark)"
-msgstr "cs5 (40 · 实时视频/互动直播标记)"
+msgid "custom"
+msgstr "自定义库"
 
-msgid "cs5 (40 · rewrite as real-time video/live-streaming mark)"
-msgstr "cs5 (40 · 改写为实时视频/直播标记)"
-
-msgid "cs6 (48 · network control protocol mark)"
-msgstr "cs6 (48 · 网络控制协议标记)"
-
-msgid "cs6 (48 · rewrite as highest-priority network control mark)"
-msgstr "cs6 (48 · 改写为网络控制最高优标记)"
-
-msgid "curated factory catalog"
-msgstr "出厂精校库"
-
-msgid "custom persistent catalog"
-msgstr "自定义持久化库"
-
-msgid "dnsmasq nftset auto-captured server IPs: %d IPv4 · %d IPv6 (12h rolling cache)"
-msgstr "dnsmasq nftset 自动捕获服务器 IP：%d 个 IPv4 · %d 个 IPv6（12h 滚动缓存）"
-
-msgid "download_bulk | Example Background Download | dl.example.net;cdn.example.net | |"
+msgid "download_bulk | Example Download | dl.example.net;cdn.example.net | |"
 msgstr "download_bulk | 示例后台下载 | dl.example.net;cdn.example.net | |"
 
 msgid "e.g. 53, 3074, 27015-27030"
@@ -2341,20 +2320,17 @@ msgstr "如：31003, 50011-50016（可留空）"
 msgid "e.g., 8000-8100, 17005 (optional)"
 msgstr "如：8000-8100, 17005（可留空）"
 
-msgid "e.g., Genshin Impact / Custom Office App"
-msgstr "如：原神 / 某办公平台"
+msgid "e.g., Genshin Impact / Office App"
+msgstr "如：原神 / 办公平台"
 
 msgid "e.g., Living Room TV / Study PC"
 msgstr "例如：客厅电视 / 书房电脑"
 
-msgid "e.g., Main PC Gaming Priority / Video Conference Priority"
-msgstr "例如：主力电脑游戏优先 / 视频会议优先"
+msgid "e.g., PC Gaming / Meeting"
+msgstr "如：主机游戏 / 视频会议"
 
-msgid "ef (46 · rewrite as ultra-low-latency voice/gaming mark)"
-msgstr "ef (46 · 改写为语音/游戏极低延迟标记)"
-
-msgid "ef (46 · voice calls / ultra-low-latency gaming mark)"
-msgstr "ef (46 · 语音通话/游戏极低延迟标记)"
+msgid "ef (46 · Voice / Gaming)"
+msgstr "ef (46 · 语音/游戏)"
 
 msgid "l3_glb_ctrl: %s · Queues bound to curves: %d%s."
 msgstr "l3_glb_ctrl: %s · 已绑定曲线队列数：%d%s。"
@@ -2377,23 +2353,23 @@ msgstr "查看 L2TP / PPTP 硬件槽位、拨号工具自检与硬件加密引�
 msgid "unknown"
 msgstr "未知"
 
-msgid "voice_meeting | Example Voice Meeting | meet.example.com;rtc.example.com | 8801 | 8801-8810"
+msgid "voice_meeting | Example Meeting | meet.example.com;rtc.example.com | 8801 | 8801-8810"
 msgstr "voice_meeting | 示例语音会议 | meet.example.com;rtc.example.com | 8801 | 8801-8810"
 
 msgid "xl2tpd status: %s"
 msgstr "xl2tpd 状态: %s"
 
-msgid "⚡ Smart Small-Packet Priority (Built-in Zero-Config Boost)"
-msgstr "⚡ 智能小包优先（内置免配加速）"
+msgid "⚡ Small-Packet Boost"
+msgstr "⚡ 智能小包优先"
 
-msgid "🌐 App Domain Dynamic Tracking (CoS %d)"
-msgstr "🌐 应用域名动态追踪（等级 %d）"
+msgid "🌐 App Domain Set (CoS %d)"
+msgstr "🌐 应用域名集（%d 级）"
 
-msgid "🎮 Catalog App: %s"
-msgstr "🎮 特征库应用：%s"
+msgid "🎮 App: %s"
+msgstr "🎮 应用：%s"
 
-msgid "📌 Unmatched Normal Traffic Baseline"
-msgstr "📌 未匹配普通流量基线"
+msgid "📌 Default Baseline"
+msgstr "📌 默认基线"
 
-msgid "📦 Catalog Category: %s"
-msgstr "📦 特征库大类：%s"
+msgid "📦 Category: %s"
+msgstr "📦 分类：%s"

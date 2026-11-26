@@ -35,16 +35,16 @@ export const APP_CATALOG_CUSTOM_PATH = '/etc/rtl9617c-qos/app_signatures.json';
 export const APP_CATALOG_MAX_APPS = 2000;
 
 export const DEFAULT_APP_CATEGORIES = [
-	{ id: 'mobile_game', name: 'Popular Mobile Games', default_cos: 6, desc: 'Dedicated ports and acceleration domains for Honor of Kings, Peacekeeper Elite, Genshin Impact, Delta Force, TFT Mobile, etc.', count: 0 },
-	{ id: 'pc_game', name: 'PC Games & Platforms', default_cos: 6, desc: 'League of Legends, Steam, WeGame, Dungeon Fighter Online, World of Warcraft, Ubisoft, etc.', count: 0 },
-	{ id: 'voice_meeting', name: 'Video Conferencing & Voice Calls', default_cos: 6, desc: 'Tencent Meeting, WeChat/QQ/DingTalk/WeCom voice and multimedia calls', count: 0 },
-	{ id: 'remote_desk', name: 'Remote Desktop & Control', default_cos: 5, desc: 'Low-latency interactive traffic for Sunlogin, TeamViewer, and Microsoft Remote Desktop', count: 0 },
-	{ id: 'education', name: 'Online Education & Courses', default_cos: 5, desc: 'Popular online classroom and live course streaming platforms', count: 0 },
-	{ id: 'im_chat', name: 'Instant Messaging', default_cos: 5, desc: 'Instant messaging connections for WeChat, QQ, TIM, DingTalk, etc.', count: 0 },
-	{ id: 'video_live', name: 'Video & Live Streaming', default_cos: 4, desc: 'Xigua Video, Youku, Huya, DouYu, YY, and other video streaming platforms', count: 0 },
-	{ id: 'finance', name: 'Stock Quotes & Online Banking', default_cos: 5, desc: 'Lag-free connections for market quotes, trading, and online banking payments', count: 0 },
-	{ id: 'download_bulk', name: 'Downloads / App Stores / Cloud Drives (Deprioritize)', default_cos: 0, desc: 'Xunlei downloads, app store updates, bulk file transfers, and cloud drive sync; set to low priority to avoid saturating bandwidth', count: 0 },
-	{ id: 'custom', name: 'Custom Apps', default_cos: 5, desc: 'User-maintained or batch-imported custom app signatures', count: 0 }
+	{ id: 'mobile_game', name: 'Mobile Games', default_cos: 6, desc: 'Honor of Kings, Peacekeeper Elite, Genshin Impact, TFT Mobile, etc.', count: 0 },
+	{ id: 'pc_game', name: 'PC Games', default_cos: 6, desc: 'League of Legends, Steam, WeGame, DNF, World of Warcraft, etc.', count: 0 },
+	{ id: 'voice_meeting', name: 'Meetings & Voice', default_cos: 6, desc: 'Tencent Meeting, WeChat/QQ/DingTalk/WeCom voice & video calls', count: 0 },
+	{ id: 'remote_desk', name: 'Remote Desktop', default_cos: 5, desc: 'Sunlogin, TeamViewer, Microsoft Remote Desktop', count: 0 },
+	{ id: 'education', name: 'Online Education', default_cos: 5, desc: 'Online classroom and live course platforms', count: 0 },
+	{ id: 'im_chat', name: 'Messaging', default_cos: 5, desc: 'WeChat, QQ, TIM, DingTalk messaging', count: 0 },
+	{ id: 'video_live', name: 'Video & Live', default_cos: 4, desc: 'Video streaming and live broadcast platforms', count: 0 },
+	{ id: 'finance', name: 'Finance & Banking', default_cos: 5, desc: 'Stock quotes, trading, and banking payments', count: 0 },
+	{ id: 'download_bulk', name: 'Downloads & Cloud (Low)', default_cos: 0, desc: 'Xunlei, app stores, bulk downloads, and cloud drives (deprioritized)', count: 0 },
+	{ id: 'custom', name: 'Custom Apps', default_cos: 5, desc: 'User-defined or batch-imported app signatures', count: 0 }
 ];
 
 export function app_catalog_custom_path() {

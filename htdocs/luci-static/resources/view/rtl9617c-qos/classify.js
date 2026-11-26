@@ -7,28 +7,39 @@
 'require rtl9617c-qos.common as q';
 
 var COS_LABELS = {
-	'7': _('CoS 7 · Highest Priority (Network Control / Critical)'),
-	'6': _('CoS 6 · Very High Priority (Gaming / Voice Calls)'),
-	'5': _('CoS 5 · High Priority (Video Conferencing / Live Interactive)'),
-	'4': _('CoS 4 · Medium-High Priority (HD Video / Web Browsing)'),
-	'3': _('CoS 3 · Above-Normal Priority (Daily Office / Cloud Storage)'),
-	'2': _('CoS 2 · Normal Traffic (Default Baseline)'),
-	'1': _('CoS 1 · Low Priority (Large Downloads / Sync)'),
-	'0': _('CoS 0 · Lowest Queue (BT/Background Updates Deprioritized, or Default When No Baseline Set)')
+	'7': _('7 · Highest (Control)'),
+	'6': _('6 · Very High (Gaming / Voice)'),
+	'5': _('5 · High (Meetings / Live)'),
+	'4': _('4 · Med-High (Video / Web)'),
+	'3': _('3 · Above Normal (Office)'),
+	'2': _('2 · Normal (Baseline)'),
+	'1': _('1 · Low (Downloads / Sync)'),
+	'0': _('0 · Lowest (BT / Background)')
+};
+
+var COS_SHORT_LABELS = {
+	'7': _('CoS 7 · Highest'),
+	'6': _('CoS 6 · Very High'),
+	'5': _('CoS 5 · High'),
+	'4': _('CoS 4 · Med-High'),
+	'3': _('CoS 3 · Above Normal'),
+	'2': _('CoS 2 · Normal'),
+	'1': _('CoS 1 · Low'),
+	'0': _('CoS 0 · Lowest')
 };
 
 var PROTO_LABELS = {
-	'any': _('All Protocols'),
-	'tcp': _('TCP (Web / Office / Video)'),
-	'udp': _('UDP (Gaming / Voice / Live)'),
-	'tcp_udp': _('TCP + UDP'),
-	'icmp': _('ICMP (Ping)')
+	'any': _('All'),
+	'tcp': 'TCP',
+	'udp': 'UDP',
+	'tcp_udp': 'TCP + UDP',
+	'icmp': 'ICMP'
 };
 
 var DIR_LABELS = {
-	'both': _('Bidirectional (Upload + Download)'),
-	'src': _('Upload Only / Forward Match'),
-	'dst': _('Download Only / Reverse Match')
+	'both': _('Bidirectional'),
+	'src': _('One-Way (Src -> Dst)'),
+	'dst': _('Reverse (Dst -> Src)')
 };
 
 function applyPresetHandler(presetId, presetTitle, btn) {
@@ -43,7 +54,7 @@ function applyPresetHandler(presetId, presetTitle, btn) {
 			return;
 		}
 		ui.addNotification(null, E('p', {}, [
-			_('Successfully applied "%s" and pushed to hardware ASIC; refreshing page…').format(presetTitle)
+			_('Applied "%s". Reloading…').format(presetTitle)
 		]), 'info');
 		window.setTimeout(function() {
 			window.location.reload();
@@ -67,7 +78,7 @@ function detectActivePreset() {
 	uci.sections('rtl9617c_qos', 'classify', function(sec) {
 		if (sec.enabled !== '0') {
 			rules.push(sec);
-			if (sec.name && (sec.name.indexOf('High-Frequency Gaming') >= 0 || sec.name.indexOf('\u7f51\u7edc\u6e38\u620f') >= 0))
+			if (sec.name && (sec.name.indexOf('Gaming & Voice Ports') >= 0 || sec.name.indexOf('High-Frequency Gaming') >= 0 || sec.name.indexOf('\u6e38\u620f\u4e0e\u8bed\u97f3') >= 0 || sec.name.indexOf('\u7f51\u7edc\u6e38\u620f') >= 0))
 				hasGamingRule = true;
 			if (sec.name && (sec.name.indexOf('Video Conferencing') >= 0 || sec.name.indexOf('\u89c6\u9891\u4f1a\u8bae') >= 0))
 				hasOfficeRule = true;
@@ -101,51 +112,51 @@ function detectActivePreset() {
 function renderPresetCard() {
 	var activePreset = detectActivePreset();
 	var activeNames = {
-		'gaming': _('Currently Active: Preset 1 (Esports Gaming & Voice Anti-Lag)'),
-		'office': _('Currently Active: Preset 2 (Work-From-Home & Video Conferencing Priority)'),
-		'small_only': _('Currently Active: Preset 3 (Minimalist Smart Small-Packet Priority)'),
-		'legacy': _('Legacy or incomplete preset detected: missing app signatures or drifted rules; re-applying a preset is recommended'),
-		'custom': _('Current Status: Using Custom Rules'),
-		'clear': _('Current Status: No Preset Active')
+		'gaming': _('Active: Gaming & Voice'),
+		'office': _('Active: Work & Meetings'),
+		'small_only': _('Active: Small-Packet'),
+		'legacy': _('Preset drifted · Re-apply'),
+		'custom': _('Custom Rules'),
+		'clear': _('No Preset')
 	};
 
 	var presets = [
 		{
 			id: 'gaming',
-			title: _('Preset 1: Esports Gaming & Voice Anti-Lag'),
-			tagline: _('Recommended · One-click anti-ping-spike for gaming & voice'),
-			desc: _('Automatically enables Smart Small-Packet Priority (<=256B -> CoS 6) and default normal traffic baseline CoS 2 + enables App Signature Library priority for mobile/PC games & voice meetings while deprioritizing BT/downloads to lowest queue 0 + DNS/high-frequency port rules + enables LAN1 (2.5G) and PON0 (optical uplink) ETS hybrid queueing (CoS 7-5 strict priority, 4-0 weighted) and WRED anti-bufferbloat.'),
+			title: _('Gaming & Voice'),
+			tagline: _('Recommended · Lower game latency'),
+			desc: _('Boosts games, voice, DNS & <=256B packets; lowers downloads; enables LAN1/PON0 ETS & WRED.'),
 			btnClass: 'btn cbi-button cbi-button-apply',
-			btnText: _('Apply Gaming Preset')
+			btnText: _('Apply Gaming')
 		},
 		{
 			id: 'office',
-			title: _('Preset 2: Work-From-Home & Video Conferencing Priority'),
-			tagline: _('Remote Work · Smooth video meetings & web browsing'),
-			desc: _('Automatically enables Smart Small-Packet Priority and default normal traffic baseline CoS 2 + enables App Signature Library priority for video conferencing, remote desktop, and online education while deprioritizing BT/downloads to lowest queue 0 + DNS/SSH/web priority rules + enables LAN1 and PON0 ETS hybrid priority queueing and WRED.'),
+			title: _('Work & Meetings'),
+			tagline: _('Smooth meetings, remote desk & web'),
+			desc: _('Boosts meetings, remote desktop, SSH/DNS & web; lowers downloads; enables ETS & WRED.'),
 			btnClass: 'btn cbi-button cbi-button-action',
-			btnText: _('Apply Office Preset')
+			btnText: _('Apply Office')
 		},
 		{
 			id: 'small_only',
-			title: _('Preset 3: Minimalist Smart Small-Packet Priority (Zero Rules)'),
-			tagline: _('Zero-Config · Pure hardware small-packet auto-detection'),
-			desc: _('Adds no complex port rules; enables only the Smart Small-Packet Priority master switch and LAN1 hardware priority queueing, letting the ASIC automatically detect and prioritize small gaming, voice, Ping, and TCP handshake packets.'),
+			title: _('Small-Packet Only'),
+			tagline: _('Zero rules · Auto-boost small packets'),
+			desc: _('No app or port rules; enables small-packet priority, LAN1 strict queueing, and WRED.'),
 			btnClass: 'btn cbi-button cbi-button-action',
-			btnText: _('Apply Small-Packet Preset')
+			btnText: _('Apply Small-Packet')
 		},
 		{
 			id: 'clear',
-			title: _('Disable Preset / Full Manual Configuration'),
-			tagline: _('Restore Defaults · Clear preset rules and configure from scratch'),
-			desc: _('Disables small-packet priority and clears app classification rules on this page (without affecting device limits configured in Per-Device Rate Limiting), allowing you to add custom rules from scratch.'),
+			title: _('Manual / Reset'),
+			tagline: _('Clear rules on this page'),
+			desc: _('Turns off small-packet boost and clears rules on this page (keeps device rate limits).'),
 			btnClass: 'btn cbi-button cbi-button-reset',
-			btnText: _('Disable Preset & Clear Rules')
+			btnText: _('Reset Rules')
 		}
 	];
 
-	return q.card(_('One-Click Scenario Presets (rules can still be customized freely below after applying)'),
-		q.badge(activeNames[activePreset] || _('4 presets available'),
+	return q.card(_('Scenario Presets'),
+		q.badge(activeNames[activePreset] || _('4 presets'),
 			activePreset === 'legacy' ? 'warn' : (activePreset !== 'clear' ? 'good' : '')),
 		[
 			E('div', { class: 'rq-preset-grid' }, presets.map(function(p) {
@@ -153,8 +164,8 @@ function renderPresetCard() {
 				var statusBadge;
 				if (p.id === 'clear') {
 					statusBadge = isCurrent
-						? q.badge(_('No Preset Active'), '')
-						: q.badge(_('Click to Disable Preset'), 'warn');
+						? q.badge(_('Default'), '')
+						: q.badge(_('Reset'), 'warn');
 				} else {
 					statusBadge = isCurrent
 						? q.badge(_('Active'), 'good')
@@ -162,7 +173,7 @@ function renderPresetCard() {
 				}
 
 				var btnLabel = isCurrent
-					? (p.id === 'clear' ? _('Currently Default') : _('Active · Re-apply'))
+					? (p.id === 'clear' ? _('Current Default') : _('Re-apply'))
 					: p.btnText;
 
 				var btn = L.hasViewPermission() ? E('button', {
@@ -174,7 +185,7 @@ function renderPresetCard() {
 				}, [btnLabel]) : null;
 
 				return q.card(p.title, statusBadge, [
-					E('p', { class: 'rq-note rq-preset-tagline' }, [_('Best For: %s').format(p.tagline)]),
+					E('p', { class: 'rq-note rq-preset-tagline' }, [p.tagline]),
 					E('p', { class: 'rq-note rq-preset-desc' }, [p.desc]),
 					btn
 				], 'rq-preset-card');
@@ -186,14 +197,14 @@ function getSampleJsonImport() {
 	return JSON.stringify([
 		{
 			id: 'custom_geforce',
-			name: _('Example: Cloud Gaming / Custom Boost'),
+			name: _('Example Boost App'),
 			cat: 'pc_game',
 			domains: ['example-game.qq.com', 'match.example-game.com'],
 			tcp: ['31003'],
 			udp: ['17005', '27015-27030']
 		},
 		{
-			name: _('Example: Custom Cloud Drive Deprioritize'),
+			name: _('Example Download App'),
 			cat: 'download_bulk',
 			domains: ['dl.example-cloud.cn'],
 			tcp: [],
@@ -204,16 +215,16 @@ function getSampleJsonImport() {
 
 function getSampleLinesImport() {
 	return [
-		_('# Format: CategoryID | App Name | Domain List (semicolon or space separated) | TCP Ports | UDP Ports'),
-		_('# Common categories: mobile_game / pc_game / voice_meeting / remote_desk / education / im_chat / video_live / finance / download_bulk / custom'),
-		_('voice_meeting | Example Voice Meeting | meet.example.com;rtc.example.com | 8801 | 8801-8810'),
-		_('download_bulk | Example Background Download | dl.example.net;cdn.example.net | |')
+		_('# Format: Category | Name | Domains (;/space) | TCP | UDP'),
+		_('# Categories: mobile_game / pc_game / voice_meeting / remote_desk / education / im_chat / video_live / finance / download_bulk / custom'),
+		_('voice_meeting | Example Meeting | meet.example.com;rtc.example.com | 8801 | 8801-8810'),
+		_('download_bulk | Example Download | dl.example.net;cdn.example.net | |')
 	].join('\n');
 }
 
 function getSampleDomainsImport() {
 	return [
-		_('# One domain per line; also supports Clash DOMAIN-SUFFIX / *.wildcard / +.prefix'),
+		_('# One domain per line (supports DOMAIN-SUFFIX, *.wildcard, +.prefix)'),
 		'DOMAIN-SUFFIX,pvp.qq.com',
 		'*.smoba.qq.com',
 		'match.example-game.cn'
@@ -234,7 +245,7 @@ function openCatalogManager(initialTab, onDirtyClose) {
 	};
 
 	var modalRoot = E('div', { class: 'rq-cat-modal' }, [
-		E('p', { class: 'rq-note' }, [_('Loading full app signature catalog…')])
+		E('p', { class: 'rq-note' }, [_('Loading catalog…')])
 	]);
 
 	function closeModal() {
@@ -266,7 +277,7 @@ function openCatalogManager(initialTab, onDirtyClose) {
 		}).catch(function(err) {
 			dom.content(modalRoot, [
 				E('div', { class: 'rq-cat-result is-error' }, [
-					_('Failed to load signature catalog: %s').format(err && err.message ? err.message : String(err))
+					_('Failed to load catalog: %s').format(err && err.message ? err.message : String(err))
 				]),
 				E('div', { class: 'rq-cat-footer' }, [
 					E('span'),
@@ -352,7 +363,7 @@ function openCatalogManager(initialTab, onDirtyClose) {
 								class: 'btn cbi-button cbi-button-remove rq-btn-sm',
 								click: function() {
 									if (state.busy) return;
-									if (!window.confirm(_('Remove "%s" (%s) from the signature catalog?').format(a.name ? _(a.name) : a.id, a.id)))
+									if (!window.confirm(_('Remove "%s" (%s) from catalog?').format(a.name ? _(a.name) : a.id, a.id)))
 										return;
 									state.busy = true;
 									q.callAppCatalogDeleteApp(a.id).then(function(res) {
@@ -376,7 +387,7 @@ function openCatalogManager(initialTab, onDirtyClose) {
 
 			if (!rows.length) {
 				rows.push(E('tr', {}, [
-					E('td', { colspan: canWrite ? 3 : 2, class: 'rq-note' }, [_('No app signatures match the current filter.')])
+					E('td', { colspan: canWrite ? 3 : 2, class: 'rq-note' }, [_('No matching app signatures.')])
 				]));
 			}
 
@@ -388,10 +399,10 @@ function openCatalogManager(initialTab, onDirtyClose) {
 					state.limit = filtered.length;
 					renderList();
 				}
-			}, [_('Show all %d entries (showing first %d)').format(filtered.length, visible.length)]) : null;
+			}, [_('Show all %d (showing %d)').format(filtered.length, visible.length)]) : null;
 
 			var colTitle = (qLower || state.filterCat)
-				? _('App / Category (%d matched)').format(filtered.length)
+				? _('App / Category (%d)').format(filtered.length)
 				: _('App / Category');
 
 			dom.content(listMount, [
@@ -399,7 +410,7 @@ function openCatalogManager(initialTab, onDirtyClose) {
 					E('thead', {}, [
 						E('tr', {}, [
 							E('th', {}, [colTitle]),
-							E('th', {}, [_('Domain & Port Signatures')]),
+							E('th', {}, [_('Signatures')]),
 							canWrite ? E('th', {}, [_('Action')]) : null
 						])
 					]),
@@ -415,7 +426,7 @@ function openCatalogManager(initialTab, onDirtyClose) {
 				state.limit = 80;
 				renderList();
 			}
-		}, [E('option', { value: '' }, [_('All Categories (%d apps)').format(apps.length)])].concat(cats.map(function(c) {
+		}, [E('option', { value: '' }, [_('All Categories (%d)').format(apps.length)])].concat(cats.map(function(c) {
 			return E('option', {
 				value: c.id,
 				title: c.desc ? _(c.desc) : null,
@@ -426,7 +437,7 @@ function openCatalogManager(initialTab, onDirtyClose) {
 		var searchInput = E('input', {
 			type: 'search',
 			value: state.query,
-			placeholder: _('Filter by app name / ID / domain / port…'),
+			placeholder: _('Search name, ID, domain, or port…'),
 			compositionstart: function() {
 				composing = true;
 			},
@@ -460,12 +471,12 @@ function openCatalogManager(initialTab, onDirtyClose) {
 				};
 				renderModal();
 			}
-		}, [_('+ Add App Signature')]) : null;
+		}, [_('+ Add App')]) : null;
 
 		var editorNode = null;
 		if (state.editing && canWrite) {
 			var ed = state.editing;
-			var inpName = E('input', { type: 'text', value: ed.name || '', placeholder: _('e.g., Genshin Impact / Custom Office App') });
+			var inpName = E('input', { type: 'text', value: ed.name || '', placeholder: _('e.g., Genshin Impact / Office App') });
 			var selCat = E('select', {}, cats.map(function(c) {
 				return E('option', {
 					value: c.id,
@@ -473,8 +484,8 @@ function openCatalogManager(initialTab, onDirtyClose) {
 					selected: (ed.cat || 'custom') === c.id ? 'selected' : null
 				}, [(c.name ? _(c.name) : c.id) + ' (' + c.id + ')']);
 			}));
-			var inpId = E('input', { type: 'text', value: ed.id || '', placeholder: _('Leave blank to auto-generate, e.g., custom_app1') });
-			var inpDoms = E('textarea', { placeholder: _('One domain per line or comma-separated; supports *.example.com and Clash DOMAIN-SUFFIX,example.com') }, [ed.domains || '']);
+			var inpId = E('input', { type: 'text', value: ed.id || '', placeholder: _('Optional, e.g., custom_app1') });
+			var inpDoms = E('textarea', { placeholder: _('One domain per line or comma-separated; supports *.example.com and DOMAIN-SUFFIX') }, [ed.domains || '']);
 			var inpTcp = E('input', { type: 'text', value: ed.tcp || '', placeholder: _('e.g., 31003, 50011-50016 (optional)') });
 			var inpUdp = E('input', { type: 'text', value: ed.udp || '', placeholder: _('e.g., 8000-8100, 17005 (optional)') });
 			var edErr = E('div', { class: 'rq-cat-result is-error', style: 'display:none' });
@@ -507,8 +518,8 @@ function openCatalogManager(initialTab, onDirtyClose) {
 						state.editing = null;
 						ui.addNotification(null, E('p', {}, [
 							res.applied
-								? _('Saved app signature "%s" and synced running hardware QoS rules.').format(res.entry.name)
-								: _('Saved app signature "%s" (written to persistent custom catalog).').format(res.entry.name)
+								? _('Saved "%s" and synced hardware rules.').format(res.entry.name)
+								: _('Saved "%s" to custom catalog.').format(res.entry.name)
 						]), 'info');
 						return reloadCatalog();
 					}).catch(function(err) {
@@ -518,19 +529,19 @@ function openCatalogManager(initialTab, onDirtyClose) {
 						edErr.style.display = 'block';
 					});
 				}
-			}, [ed.orig_id ? _('Save Changes') : _('Save & Add to Catalog')]);
+			}, [ed.orig_id ? _('Save Changes') : _('Save')]);
 
 			editorNode = E('div', { class: 'rq-cat-editor' }, [
-				E('strong', {}, [ed.orig_id ? _('Edit App Signature: %s (%s)').format(ed.name, ed.orig_id) : _('Add App Signature')]),
+				E('strong', {}, [ed.orig_id ? _('Edit App: %s (%s)').format(ed.name, ed.orig_id) : _('Add App')]),
 				E('div', { class: 'rq-cat-form-grid' }, [
 					E('div', { class: 'rq-cat-field' }, [E('label', {}, [_('App Name *')]), inpName]),
 					E('div', { class: 'rq-cat-field' }, [E('label', {}, [_('Category *')]), selCat]),
 					E('div', { class: 'rq-cat-field' }, [E('label', {}, [_('App ID (Optional)')]), inpId])
 				]),
-				E('div', { class: 'rq-cat-field' }, [E('label', {}, [_('Matching Domains (auto-tracked via dnsmasq nftset)')]), inpDoms]),
+				E('div', { class: 'rq-cat-field' }, [E('label', {}, [_('Domains (dnsmasq nftset)')]), inpDoms]),
 				E('div', { class: 'rq-cat-form-grid' }, [
-					E('div', { class: 'rq-cat-field' }, [E('label', {}, [_('Dedicated TCP Ports / Ranges')]), inpTcp]),
-					E('div', { class: 'rq-cat-field' }, [E('label', {}, [_('Dedicated UDP Ports / Ranges')]), inpUdp])
+					E('div', { class: 'rq-cat-field' }, [E('label', {}, [_('TCP Ports')]), inpTcp]),
+					E('div', { class: 'rq-cat-field' }, [E('label', {}, [_('UDP Ports')]), inpUdp])
 				]),
 				edErr,
 				E('div', { class: 'rq-actions-row', style: 'padding-top:2px' }, [
@@ -556,14 +567,14 @@ function openCatalogManager(initialTab, onDirtyClose) {
 	function buildImportPanel(cats, apps) {
 		var canWrite = L.hasViewPermission();
 		var modeSel = E('select', {}, [
-			E('option', { value: 'merge' }, [_('Merge & Update (keep existing signatures, add or update matches)')]),
-			E('option', { value: 'replace' }, [_('Replace All (clear current list and replace with imported content)')])
+			E('option', { value: 'merge' }, [_('Merge & Update')]),
+			E('option', { value: 'replace' }, [_('Replace All')])
 		]);
 		var fmtSel = E('select', {}, [
-			E('option', { value: 'auto' }, [_('Auto-Detect (Recommended · JSON / Tabular Text / Clash Domain Rules)')]),
-			E('option', { value: 'json' }, [_('JSON Signature Catalog (full export file or array of app objects)')]),
-			E('option', { value: 'lines' }, [_('Tabular / Text Lines (Category|Name|Domains|TCP|UDP or CSV)')]),
-			E('option', { value: 'domains' }, [_('Plain Domain List into Target App (deduplicated & merged)')])
+			E('option', { value: 'auto' }, [_('Auto-Detect (JSON / Lines / Domains)')]),
+			E('option', { value: 'json' }, [_('JSON Catalog')]),
+			E('option', { value: 'lines' }, [_('Text Lines (Cat|Name|Domains|TCP|UDP or CSV)')]),
+			E('option', { value: 'domains' }, [_('Plain Domain List')])
 		]);
 		var defCatSel = E('select', {}, cats.map(function(c) {
 			return E('option', {
@@ -573,14 +584,14 @@ function openCatalogManager(initialTab, onDirtyClose) {
 			}, [(c.name ? _(c.name) : c.id) + ' (' + c.id + ')']);
 		}));
 		var targetAppSel = E('select', {}, [
-			E('option', { value: '' }, [_('Create New App (enter new app name on the right)')])
+			E('option', { value: '' }, [_('Create New App (enter name on right)')])
 		].concat(apps.map(function(a) {
 			return E('option', { value: a.id }, [(a.name ? _(a.name) : a.id) + ' (' + a.id + ')']);
 		})));
-		var targetNameInp = E('input', { type: 'text', placeholder: _('Only for new domain group, e.g., Company Intranet') });
+		var targetNameInp = E('input', { type: 'text', placeholder: _('For new group, e.g., Intranet') });
 		var textArea = E('textarea', {
 			style: 'min-height:170px',
-			placeholder: _('Paste JSON, tabular lines (Category|Name|Domains|TCP|UDP), or Clash/plain domain list here, or choose a local file above…')
+			placeholder: _('Paste JSON, lines (Category|Name|Domains|TCP|UDP), or domains, or pick a file above…')
 		});
 		var fileInput = E('input', {
 			type: 'file',
@@ -589,7 +600,7 @@ function openCatalogManager(initialTab, onDirtyClose) {
 				var file = ev.target.files && ev.target.files[0];
 				if (!file) return;
 				if (file.size > 524288) {
-					state.importResult = { ok: false, error: _('File exceeds the 512 KB limit; please trim it before importing.') };
+					state.importResult = { ok: false, error: _('File exceeds 512 KB limit.') };
 					renderModal();
 					return;
 				}
@@ -602,9 +613,9 @@ function openCatalogManager(initialTab, onDirtyClose) {
 		});
 
 		var targetWrap = E('div', { class: 'rq-cat-form-grid' }, [
-			E('div', { class: 'rq-cat-field' }, [E('label', {}, [_('Default Category (used when category is omitted)')]), defCatSel]),
-			E('div', { class: 'rq-cat-field' }, [E('label', {}, [_('Append Domain List to Existing App (Optional)')]), targetAppSel]),
-			E('div', { class: 'rq-cat-field' }, [E('label', {}, [_('Or New App Name (for plain domain list)')]), targetNameInp])
+			E('div', { class: 'rq-cat-field' }, [E('label', {}, [_('Default Category')]), defCatSel]),
+			E('div', { class: 'rq-cat-field' }, [E('label', {}, [_('Append to Existing App (Optional)')]), targetAppSel]),
+			E('div', { class: 'rq-cat-field' }, [E('label', {}, [_('New App Name')]), targetNameInp])
 		]);
 
 		var resBox = null;
@@ -613,7 +624,7 @@ function openCatalogManager(initialTab, onDirtyClose) {
 			if (r.ok) {
 				resBox = E('div', { class: 'rq-cat-result is-good' }, [
 					E('strong', {}, [
-						_('Import succeeded: %d added · %d updated · %d skipped (total %d apps / %d domains)').format(
+						_('Imported: %d added · %d updated · %d skipped (%d apps / %d domains)').format(
 							r.added || 0,
 							r.updated || 0,
 							r.skipped || 0,
@@ -621,7 +632,7 @@ function openCatalogManager(initialTab, onDirtyClose) {
 							r.total_domains || 0
 						)
 					]),
-					r.applied ? E('div', {}, [_('Automatically hot-synced to nftables and dnsmasq rules.')]) : null,
+					r.applied ? E('div', {}, [_('Synced to nftables and dnsmasq.')]) : null,
 					(r.warnings && r.warnings.length) ? E('div', { class: 'rq-note', style: 'margin:4px 0 0' }, [
 						_('Notes: %s').format(r.warnings.slice(0, 5).map(function(w) { return _(w); }).join('; '))
 					]) : null
@@ -639,11 +650,11 @@ function openCatalogManager(initialTab, onDirtyClose) {
 			click: function() {
 				if (state.busy) return;
 				if (!textArea.value.trim()) {
-					state.importResult = { ok: false, error: _('Please paste import content or select a local file first.') };
+					state.importResult = { ok: false, error: _('Please paste content or select a file first.') };
 					renderModal();
 					return;
 				}
-				if (modeSel.value === 'replace' && !window.confirm(_('Confirm replacing the entire current signature catalog with the imported content? You can restore the factory catalog at any time via "Restore Factory Catalog".')))
+				if (modeSel.value === 'replace' && !window.confirm(_('Replace the entire catalog with imported data? You can restore defaults anytime.')))
 					return;
 				state.busy = true;
 				runBtn.disabled = true;
@@ -670,31 +681,31 @@ function openCatalogManager(initialTab, onDirtyClose) {
 					renderModal();
 				});
 			}
-		}, [_('Start Batch Import & Save')]) : null;
+		}, [_('Import & Save')]) : null;
 
 		return [
 			E('div', { class: 'rq-cat-form-grid' }, [
 				E('div', { class: 'rq-cat-field' }, [E('label', {}, [_('Import Mode')]), modeSel]),
-				E('div', { class: 'rq-cat-field' }, [E('label', {}, [_('Data Format')]), fmtSel])
+				E('div', { class: 'rq-cat-field' }, [E('label', {}, [_('Format')]), fmtSel])
 			]),
 			targetWrap,
 			E('div', { class: 'rq-cat-field' }, [
-				E('label', {}, [_('Import from Local File (.json / .csv / .txt) or Fill Sample')]),
+				E('label', {}, [_('File or Sample')]),
 				E('div', { class: 'rq-cat-file-row' }, [
 					fileInput,
-					E('button', { type: 'button', class: 'btn cbi-button rq-btn-sm', click: function() { fmtSel.value = 'json'; textArea.value = getSampleJsonImport(); } }, [_('JSON Sample')]),
-					E('button', { type: 'button', class: 'btn cbi-button rq-btn-sm', click: function() { fmtSel.value = 'lines'; textArea.value = getSampleLinesImport(); } }, [_('Text Lines Sample')]),
-					E('button', { type: 'button', class: 'btn cbi-button rq-btn-sm', click: function() { fmtSel.value = 'domains'; textArea.value = getSampleDomainsImport(); } }, [_('Domain List Sample')])
+					E('button', { type: 'button', class: 'btn cbi-button rq-btn-sm', click: function() { fmtSel.value = 'json'; textArea.value = getSampleJsonImport(); } }, [_('JSON')]),
+					E('button', { type: 'button', class: 'btn cbi-button rq-btn-sm', click: function() { fmtSel.value = 'lines'; textArea.value = getSampleLinesImport(); } }, [_('Lines')]),
+					E('button', { type: 'button', class: 'btn cbi-button rq-btn-sm', click: function() { fmtSel.value = 'domains'; textArea.value = getSampleDomainsImport(); } }, [_('Domains')])
 				])
 			]),
 			E('div', { class: 'rq-cat-field' }, [
-				E('label', {}, [_('Batch Import Content')]),
+				E('label', {}, [_('Content')]),
 				textArea
 			]),
 			resBox,
 			E('div', { class: 'rq-actions-row', style: 'padding-top:2px' }, [
 				runBtn,
-				E('span', { class: 'rq-note', style: 'margin:0' }, [_('All domains and ports are validated and deduplicated; saved persistently to /etc/rtl9617c-qos/app_signatures.json (survives sysupgrade).')])
+				E('span', { class: 'rq-note', style: 'margin:0' }, [_('Validated & deduplicated; saved to /etc/rtl9617c-qos/app_signatures.json.')])
 			])
 		];
 	}
@@ -713,7 +724,7 @@ function openCatalogManager(initialTab, onDirtyClose) {
 			class: 'btn cbi-button cbi-button-reset rq-btn-sm',
 			click: function() {
 				if (state.busy) return;
-				if (!window.confirm(_('Delete the custom override file and restore the factory signature catalog?')))
+				if (!window.confirm(_('Delete custom overrides and restore built-in catalog?')))
 					return;
 				state.busy = true;
 				q.callAppCatalogReset().then(function(res) {
@@ -722,7 +733,7 @@ function openCatalogManager(initialTab, onDirtyClose) {
 						state.dirty = true;
 						state.editing = null;
 						state.importResult = null;
-						ui.addNotification(null, E('p', {}, [_('Restored factory app signature catalog (%d apps total).').format(res.total_apps || 0)]), 'info');
+						ui.addNotification(null, E('p', {}, [_('Restored built-in catalog (%d apps).').format(res.total_apps || 0)]), 'info');
 						return reloadCatalog();
 					}
 				}).catch(function(err) {
@@ -730,7 +741,7 @@ function openCatalogManager(initialTab, onDirtyClose) {
 					ui.addNotification(null, E('p', {}, [_('Restore failed: %s').format(err && err.message ? err.message : String(err))]), 'error');
 				});
 			}
-		}, [_('Restore Factory Catalog')]) : null;
+		}, [_('Restore Defaults')]) : null;
 
 		var body = state.tab === 'import'
 			? buildImportPanel(cats, apps)
@@ -739,8 +750,8 @@ function openCatalogManager(initialTab, onDirtyClose) {
 		dom.content(modalRoot, [
 			E('div', { class: 'rq-cat-topbar' }, [
 				E('div', { class: 'rq-cat-meta' }, [
-					cat.custom ? q.badge(_('Custom Persistent Catalog'), 'warn') : q.badge(_('Factory Catalog'), 'good'),
-					E('span', {}, [_('%d apps total · %d domains').format(apps.length, domCount)]),
+					cat.custom ? q.badge(_('Custom Catalog'), 'warn') : q.badge(_('Built-in Catalog'), 'good'),
+					E('span', {}, [_('%d apps · %d domains').format(apps.length, domCount)]),
 					cat.version ? E('span', { class: 'rq-mono' }, ['v' + cat.version]) : null
 				]),
 				E('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
@@ -753,30 +764,30 @@ function openCatalogManager(initialTab, onDirtyClose) {
 					type: 'button',
 					class: 'rq-cat-tab' + (state.tab === 'manage' ? ' is-active' : ''),
 					click: function() { state.tab = 'manage'; renderModal(); }
-				}, [_('Signature List & Maintenance (%d)').format(apps.length)]),
+				}, [_('Signatures (%d)').format(apps.length)]),
 				E('button', {
 					type: 'button',
 					class: 'rq-cat-tab' + (state.tab === 'import' ? ' is-active' : ''),
 					click: function() { state.tab = 'import'; renderModal(); }
-				}, [_('Batch Import (JSON / Text / Domains)')])
+				}, [_('Batch Import')])
 			])
 		].concat(body).concat([
 			E('div', { class: 'rq-cat-footer' }, [
 				E('span', { class: 'rq-note', style: 'margin:0' }, [
 					state.dirty
-						? _('Catalog changed; closing this dialog will refresh the page to update dropdown lists.')
-						: _('Tip: supports adding/editing/deleting individual entries, batch merge/replace import, and JSON backup export.')
+						? _('Catalog updated; closing will refresh the page.')
+						: _('Add, edit, delete, batch import, or export JSON.')
 				]),
 				E('div', {}, [
 					E('button', { type: 'button', class: 'btn cbi-button cbi-button-action', click: closeModal }, [
-						state.dirty ? _('Done & Refresh Page') : _('Close')
+						state.dirty ? _('Done & Refresh') : _('Close')
 					])
 				])
 			])
 		]));
 	}
 
-	ui.showModal(_('App Signature Catalog Maintenance & Batch Import'), [modalRoot]);
+	ui.showModal(_('App Signature Catalog'), [modalRoot]);
 	reloadCatalog();
 }
 
@@ -797,22 +808,22 @@ function renderLiveClassify(container, data, catIndex) {
 
 	if (spEnabled || spStat.instances > 0) {
 		rows.push(E('tr', {}, [
-			E('td', {}, [E('strong', {}, [_('⚡ Smart Small-Packet Priority (Built-in Zero-Config Boost)')])]),
+			E('td', {}, [E('strong', {}, [_('⚡ Small-Packet Boost')])]),
 			E('td', {}, [
 				spEnabled
 					? (spStat.instances > 0 ? q.badge(_('Active'), 'good') : q.badge(_('Pending Apply'), 'warn'))
 					: q.badge(_('Disabled'), '')
 			]),
 			E('td', {}, [
-				q.badge(COS_LABELS[spCos] || _('CoS %s').format(spCos), Number(spCos) >= 5 ? 'good' : '')
+				q.badge(COS_SHORT_LABELS[spCos] || _('CoS %s').format(spCos), Number(spCos) >= 5 ? 'good' : '')
 			]),
 			E('td', { class: 'rq-mono rq-wrap' }, [
-				_('Packet size <= %s Bytes · %s').format(
+				_('<= %s B · %s').format(
 					spBytes,
-					spMode === 'all' ? _('All protocols (TCP+UDP+ICMP)') : _('Smart mode (UDP gaming/voice + Ping + DNS + SSH)')
+					spMode === 'all' ? _('All protocols') : _('Smart (UDP/ICMP/DNS/SSH)')
 				)
 			]),
-			E('td', {}, [_('Bidirectional (Upload + Download)')]),
+			E('td', {}, [_('Bidirectional')]),
 			E('td', { class: 'rq-mono' }, [_('%d pkts').format(spStat.packets || 0)]),
 			E('td', { class: 'rq-mono' }, [q.formatBytes(spStat.bytes || 0)])
 		]));
@@ -826,15 +837,15 @@ function renderLiveClassify(container, data, catIndex) {
 			continue;
 		var sc = appSets['c' + String(c)] || { v4: 0, v6: 0 };
 		rows.push(E('tr', {}, [
-			E('td', {}, [E('strong', {}, [_('🌐 App Domain Dynamic Tracking (CoS %d)').format(c)])]),
+			E('td', {}, [E('strong', {}, [_('🌐 App Domain Set (CoS %d)').format(c)])]),
 			E('td', {}, [q.badge(_('Active'), 'good')]),
 			E('td', {}, [
-				q.badge(COS_LABELS[String(c)] || _('CoS %s').format(String(c)), c >= 5 ? 'good' : '')
+				q.badge(COS_SHORT_LABELS[String(c)] || _('CoS %s').format(String(c)), c >= 5 ? 'good' : '')
 			]),
 			E('td', { class: 'rq-mono rq-wrap' }, [
-				_('dnsmasq nftset auto-captured server IPs: %d IPv4 · %d IPv6 (12h rolling cache)').format(sc.v4 || 0, sc.v6 || 0)
+				_('%d IPv4 · %d IPv6 (12h cache)').format(sc.v4 || 0, sc.v6 || 0)
 			]),
-			E('td', {}, [_('Bidirectional (Upload + Download)')]),
+			E('td', {}, [_('Bidirectional')]),
 			E('td', { class: 'rq-mono' }, [_('%d pkts').format(ds.packets || 0)]),
 			E('td', { class: 'rq-mono' }, [q.formatBytes(ds.bytes || 0)])
 		]));
@@ -855,15 +866,15 @@ function renderLiveClassify(container, data, catIndex) {
 
 		if (mtype === 'app') {
 			var ap = appById[sec.app_id];
-			title = _('🎮 Catalog App: %s').format(ap ? _(ap.name) : (sec.app_id || id));
+			title = _('🎮 App: %s').format(ap ? _(ap.name) : (sec.app_id || id));
 			detail = ap
-				? _('Domain tracking: %d · Dedicated TCP: %d · UDP: %d').format(ap.d_cnt, ap.t_cnt, ap.u_cnt)
+				? _('%d domains · %d TCP · %d UDP').format(ap.d_cnt, ap.t_cnt, ap.u_cnt)
 				: _('App ID: %s').format(sec.app_id || _('Not selected'));
 		} else {
 			var ct = catById[sec.category];
-			title = _('📦 Catalog Category: %s').format(ct ? (ct.name ? _(ct.name) : ct.id) : (sec.category || id));
+			title = _('📦 Category: %s').format(ct ? (ct.name ? _(ct.name) : ct.id) : (sec.category || id));
 			detail = ct
-				? _('Covers %d apps (auto-merges dynamic domain tracking + dedicated narrow ports)').format(ct.count)
+				? _('%d apps (domains + ports)').format(ct.count)
 				: _('Category: %s').format(sec.category || _('Not selected'));
 		}
 		if (sec.dscp_set)
@@ -878,12 +889,12 @@ function renderLiveClassify(container, data, catIndex) {
 					: q.badge(_('Disabled'), '')
 			]),
 			E('td', {}, [
-				q.badge(COS_LABELS[cos] || _('CoS %s').format(cos), Number(cos) >= 5 ? 'good' : '')
+				q.badge(COS_SHORT_LABELS[cos] || _('CoS %s').format(cos), Number(cos) >= 5 ? 'good' : '')
 			]),
 			E('td', { class: 'rq-mono rq-wrap' }, [detail]),
-			E('td', {}, [_('Bidirectional (Upload + Download)')]),
+			E('td', {}, [_('Bidirectional')]),
 			E('td', { class: 'rq-mono' }, [
-				st.instances > 0 ? _('%d pkts (ports)').format(st.packets || 0) : _('Counted in domain tracking above')
+				st.instances > 0 ? _('%d pkts (ports)').format(st.packets || 0) : _('Counted in domain set')
 			]),
 			E('td', { class: 'rq-mono' }, [
 				st.instances > 0 ? q.formatBytes(st.bytes || 0) : '—'
@@ -922,9 +933,9 @@ function renderLiveClassify(container, data, catIndex) {
 					: q.badge(_('Disabled'), '')
 			]),
 			E('td', {}, [
-				q.badge(COS_LABELS[cos] || _('CoS %s').format(cos), Number(cos) >= 5 ? 'good' : '')
+				q.badge(COS_SHORT_LABELS[cos] || _('CoS %s').format(cos), Number(cos) >= 5 ? 'good' : '')
 			]),
-			E('td', { class: 'rq-mono rq-wrap' }, [criteria.length ? criteria.join(' · ') : _('(No match criteria specified)')]),
+			E('td', { class: 'rq-mono rq-wrap' }, [criteria.length ? criteria.join(' · ') : _('(No criteria)')]),
 			E('td', {}, [DIR_LABELS[sec.direction || 'both'] || _('Bidirectional')]),
 			E('td', { class: 'rq-mono' }, [_('%d pkts').format(st.packets || 0)]),
 			E('td', { class: 'rq-mono' }, [q.formatBytes(st.bytes || 0)])
@@ -935,17 +946,17 @@ function renderLiveClassify(container, data, catIndex) {
 	var defStat = ruleMap['__default'] || { packets: 0, bytes: 0, instances: 0 };
 	if (Number(defCos) > 0 || defStat.instances > 0) {
 		rows.push(E('tr', {}, [
-			E('td', {}, [E('strong', {}, [_('📌 Unmatched Normal Traffic Baseline')])]),
+			E('td', {}, [E('strong', {}, [_('📌 Default Baseline')])]),
 			E('td', {}, [
 				Number(defCos) > 0
 					? (defStat.instances > 0 ? q.badge(_('Active'), 'good') : q.badge(_('Pending Apply'), 'warn'))
 					: q.badge(_('Disabled'), '')
 			]),
 			E('td', {}, [
-				q.badge(COS_LABELS[defCos] || _('CoS %s').format(defCos), Number(defCos) >= 5 ? 'good' : '')
+				q.badge(COS_SHORT_LABELS[defCos] || _('CoS %s').format(defCos), Number(defCos) >= 5 ? 'good' : '')
 			]),
-			E('td', { class: 'rq-mono rq-wrap' }, [_('Remaining direct traffic not matching rules above defaults to this baseline queue')]),
-			E('td', {}, [_('Bidirectional (Upload + Download)')]),
+			E('td', { class: 'rq-mono rq-wrap' }, [_('Unmatched traffic fallback')]),
+			E('td', {}, [_('Bidirectional')]),
 			E('td', { class: 'rq-mono' }, [_('%d pkts').format(defStat.packets || 0)]),
 			E('td', { class: 'rq-mono' }, [q.formatBytes(defStat.bytes || 0)])
 		]));
@@ -954,7 +965,7 @@ function renderLiveClassify(container, data, catIndex) {
 	if (!rows.length) {
 		rows.push(E('tr', {}, [
 			E('td', { colspan: 7, class: 'rq-note' }, [
-				_('No app or game priority rules added yet. Click "Add" below to set higher priority for your main PC, gaming console, or specific game ports.')
+				_('No rules yet. Apply a preset above or click "Add" below.')
 			])
 		]));
 	}
@@ -969,38 +980,38 @@ function renderLiveClassify(container, data, catIndex) {
 	});
 
 	dom.content(container, [
-		q.guideCard(_('How to Use (Keep Gaming, Voice & Primary Devices Lag-Free)'), [
-			_('1. Easiest setup: click "Esports Gaming & Voice Anti-Lag" or "Work-From-Home & Video Conferencing Priority" under "One-Click Scenario Presets" below to automatically enable small-packet priority, load the app signature catalog, and configure port hardware queueing.'),
-			_('2. Smart App Signature Detection: %d app signatures loaded (%s), using dnsmasq nftset to dynamically track domain server IPs + dedicated narrow-port matching with zero ongoing CPU overhead and full ASIC hardware acceleration. Click "Manage Catalog / Batch Import" below to add, edit, or import rules freely (applies to direct or proxy-bypassed traffic).').format(
+		q.guideCard(_('Quick Guide'), [
+			_('1. Quick start: pick a preset below to configure small-packet boost, app rules, and port queueing.'),
+			_('2. App signatures (%d · %s): matched via DNS tracking and ports in hardware (direct or bypass traffic only).').format(
 				(catIndex && catIndex.appCount) || 302,
-				(catIndex && catIndex.custom) ? _('custom persistent catalog') : _('curated factory catalog')
+				(catIndex && catIndex.custom) ? _('custom') : _('built-in')
 			),
-			_('3. Advanced customization: you can also add, edit, or delete rules by LAN device IP (e.g. 192.168.2.100), MAC, or specific game ports in the "Custom Priority Forwarding Rules" section at the bottom.')
+			_('3. Custom rules: fine-tune by IP, MAC, port, or DSCP in the table at the bottom.')
 		]),
 		renderPresetCard(),
 		E('div', { class: 'rq-grid' }, [
-			q.card(_('Priority Classification Engine'),
-				nft.active ? q.badge(_('Loaded & Active'), 'good') : q.badge(_('Not enabled'), ''),
+			q.card(_('Priority Engine'),
+				nft.active ? q.badge(_('Active'), 'good') : q.badge(_('Not enabled'), ''),
 				[
 					E('div', { class: 'rq-kpi' }, [
-						_('%d rules active').format(Object.keys(ruleMap).length)
+						_('%d active rules').format(Object.keys(ruleMap).length)
 					]),
 					E('p', { class: 'rq-note' }, [
-						_('The router identifies app/device priority on the first packet of a connection and programs it into the hardware acceleration table immediately, so all subsequent packets are forwarded at ASIC line rate.')
+						_('Tags traffic on first packet and offloads matching flows to hardware.')
 					])
 				]),
-			q.card(_('App Signature Detection'),
+			q.card(_('App Signatures'),
 				activeAppRules > 0
-					? q.badge((catIndex && catIndex.custom) ? _('%d signature rules · Custom').format(activeAppRules) : _('%d signature rules').format(activeAppRules), 'good')
+					? q.badge((catIndex && catIndex.custom) ? _('%d rules · Custom').format(activeAppRules) : _('%d rules').format(activeAppRules), 'good')
 					: q.badge((catIndex && catIndex.custom) ? _('Custom Catalog') : _('Not enabled'), (catIndex && catIndex.custom) ? 'warn' : ''),
 				[
 					E('div', { class: 'rq-kpi' }, [
-						_('%d server IPs captured').format(nft.app_ip_total || 0)
+						_('%d tracked IPs').format(nft.app_ip_total || 0)
 					]),
 					E('p', { class: 'rq-note' }, [
 						appSetSummary.length
-							? _('Dynamic domain sets: %s').format(appSetSummary.join(' · '))
-							: _('%d app signatures loaded; once enabled, auto-detects via dnsmasq nftset + dedicated ports.').format((catIndex && catIndex.appCount) || 302)
+							? _('Active sets: %s').format(appSetSummary.join(' · '))
+							: _('%d apps ready (DNS nftset + ports).').format((catIndex && catIndex.appCount) || 302)
 					]),
 					E('div', { class: 'rq-actions-row' }, [
 						E('button', {
@@ -1009,7 +1020,7 @@ function renderLiveClassify(container, data, catIndex) {
 							click: function() {
 								openCatalogManager('manage', function() { window.location.reload(); });
 							}
-						}, [_('Manage Catalog (%d)').format((catIndex && catIndex.appCount) || 302)]),
+						}, [_('Catalog (%d)').format((catIndex && catIndex.appCount) || 302)]),
 						L.hasViewPermission() ? E('button', {
 							type: 'button',
 							class: 'btn cbi-button cbi-button-apply rq-btn-sm',
@@ -1019,14 +1030,14 @@ function renderLiveClassify(container, data, catIndex) {
 						}, [_('Batch Import')]) : null
 					])
 				]),
-			q.card(_('Accelerated High-Priority Flows'),
+			q.card(_('Priority Flows'),
 				highFlows > 0
 					? q.badge(_('High-Priority Active'), 'good')
-					: q.badge(_('Hardware Priority Path'), ''),
+					: q.badge(_('Hardware Path'), ''),
 				q.activeFlowSummary(
 					highFlows,
 					totalFlows,
-					_('Currently %d live hardware-accelerated flows (varying dynamically as connections open/age): High-priority (CoS 5-7): %d · Normal (CoS 2-4): %d · Low-priority (CoS 0-1): %d.').format(
+					_('Total %d · High (5–7): %d · Normal (2–4): %d · Low (0–1): %d').format(
 						totalFlows,
 						highFlows,
 						fe.cos_normal || 0,
@@ -1034,18 +1045,18 @@ function renderLiveClassify(container, data, catIndex) {
 					)
 				))
 		]),
-		q.card(_('Active Priority Forwarding Rules & Hit Statistics'), null, [
+		q.card(_('Active Rules & Hit Stats'), null, [
 			E('div', { class: 'rq-table-wrap' }, [
 				E('table', { class: 'rq-table' }, [
 					E('thead', {}, [
 						E('tr', {}, [
-							E('th', {}, [_('Rule Name')]),
+							E('th', {}, [_('Rule')]),
 							E('th', {}, [_('Status')]),
-							E('th', {}, [_('Priority Level')]),
-							E('th', {}, [_('Match Criteria')]),
+							E('th', {}, [_('Priority')]),
+							E('th', {}, [_('Match')]),
 							E('th', {}, [_('Direction')]),
-							E('th', {}, [_('Matched Packets')]),
-							E('th', {}, [_('Matched Traffic')])
+							E('th', {}, [_('Packets')]),
+							E('th', {}, [_('Traffic')])
 						])
 					]),
 					E('tbody', {}, rows)
@@ -1081,50 +1092,50 @@ return view.extend({
 		var m = new form.Map('rtl9617c_qos', null, null);
 
 		var sg = m.section(form.NamedSection, 'global', 'global',
-			_('Smart Small-Packet Priority (Zero-Config Boost for Gaming / Voice / Web Responsiveness)'));
+			_('Small-Packet Priority'));
 		sg.anonymous = true;
 		sg.addremove = false;
 
 		var go;
-		go = sg.option(form.Flag, 'small_pkt_prio', _('Enable Smart Small-Packet Priority'),
-			_('When enabled, the router automatically detects small packets and assigns higher hardware forwarding priority, avoiding manual port lookups.'));
+		go = sg.option(form.Flag, 'small_pkt_prio', _('Enable Small-Packet Priority'),
+			_('Auto-prioritizes small packets without port rules.'));
 		go.default = '0';
 		go.rmempty = false;
 
-		go = sg.option(form.ListValue, 'small_pkt_mode', _('Small-Packet Detection Mode'),
-			_('Recommended: "Smart Mode", which boosts UDP gaming/voice small packets, Ping, DNS, and SSH control packets while preventing large TCP download ACKs from boosting an entire bulk download flow.'));
+		go = sg.option(form.ListValue, 'small_pkt_mode', _('Detection Mode'),
+			_('Smart Mode boosts UDP/ICMP/DNS/SSH without boosting bulk TCP download ACKs.'));
 		go.depends('small_pkt_prio', '1');
 		go.default = 'udp_icmp';
-		go.value('udp_icmp', _('Smart Mode (Recommended · UDP gaming/voice small packets + Ping + DNS + SSH)'));
-		go.value('all', _('All-Protocol Mode (prioritize all TCP + UDP + ICMP packets below threshold)'));
+		go.value('udp_icmp', _('Smart (Recommended · UDP/ICMP/DNS/SSH)'));
+		go.value('all', _('All Protocols (TCP + UDP + ICMP)'));
 
-		go = sg.option(form.Value, 'small_pkt_bytes', _('Small-Packet Size Threshold (Bytes)'),
-			_('Packets whose total length is less than or equal to this value are classified as small packets (range 64 ~ 1024; recommended default 256 bytes).'));
+		go = sg.option(form.Value, 'small_pkt_bytes', _('Size Threshold (Bytes)'),
+			_('Max packet size treated as small (64–1024; default 256).'));
 		go.depends('small_pkt_prio', '1');
 		go.datatype = 'range(64,1024)';
 		go.default = '256';
-		go.value('128', _('128 bytes (tiny control / voice frames only)'));
-		go.value('256', _('256 bytes (recommended · covers most gaming & voice packets)'));
-		go.value('384', _('384 bytes (covers larger game state sync packets)'));
-		go.value('512', _('512 bytes (relaxed small-packet threshold)'));
+		go.value('128', _('128 B (Tiny control / voice)'));
+		go.value('256', _('256 B (Recommended · Gaming / voice)'));
+		go.value('384', _('384 B (Larger game sync)'));
+		go.value('512', _('512 B (Relaxed)'));
 
-		go = sg.option(form.ListValue, 'small_pkt_cos', _('Priority Level for Small Packets'));
+		go = sg.option(form.ListValue, 'small_pkt_cos', _('Small-Packet Priority'));
 		go.depends('small_pkt_prio', '1');
 		go.default = '6';
 		for (var sp = 7; sp >= 1; sp--)
 			go.value(String(sp), COS_LABELS[String(sp)]);
 
-		go = sg.option(form.ListValue, 'default_cos', _('Baseline Priority Level for Unmatched Normal Traffic'),
-			_('Sets a baseline priority for normal traffic that does not match rules above or small-packet detection (recommended: 2, so BT/background downloads set to CoS 0/1 stay strictly below normal browsing).'));
+		go = sg.option(form.ListValue, 'default_cos', _('Default Baseline Priority'),
+			_('Priority for unmatched traffic (2 recommended so CoS 0–1 downloads stay lowest).'));
 		go.default = '0';
 		go.rmempty = false;
-		go.value('0', _('0 (No extra marking · keep unmatched traffic in lowest queue 0)'));
+		go.value('0', _('0 (Default · keep queue 0)'));
 		for (var dc = 7; dc >= 1; dc--)
 			go.value(String(dc), COS_LABELS[String(dc)]);
 
 		var sa = m.section(form.GridSection, 'app_rule',
-			_('App Signature Smart Detection (%d built-in apps · dynamic domain tracking + dedicated ports)').format(catIndex.appCount || 302),
-			_('Add rules directly by app category (e.g., mobile games, PC games, video conferencing, download/cloud-drive deprioritize) or by specific app name without looking up port numbers. Per-app rules take precedence over category rules; once enabled, dnsmasq nftset tracks server IPs and syncs with ASIC hardware acceleration.'));
+			_('App Signature Rules (%d)').format(catIndex.appCount || 302),
+			_('Match by category or app via DNS tracking and ports (per-app overrides category).'));
 		sa.addremove = true;
 		sa.anonymous = true;
 		sa.sortable = true;
@@ -1136,49 +1147,49 @@ return view.extend({
 		ao.rmempty = false;
 		ao.editable = true;
 
-		ao = sa.option(form.ListValue, 'match_type', _('Match Method'));
+		ao = sa.option(form.ListValue, 'match_type', _('Match By'));
 		ao.default = 'category';
 		ao.rmempty = false;
-		ao.value('category', _('Match by App Category'));
-		ao.value('app', _('Match Specific App'));
+		ao.value('category', _('By Category'));
+		ao.value('app', _('By App'));
 
-		ao = sa.option(form.ListValue, 'category', _('App Category'));
+		ao = sa.option(form.ListValue, 'category', _('Category'));
 		ao.depends('match_type', 'category');
 		ao.default = 'mobile_game';
 		(catalog.categories || []).forEach(function(c) {
-			ao.value(c.id, _('%s (%d apps · recommended CoS %d)').format(c.name ? _(c.name) : c.id, c.count, c.default_cos));
+			ao.value(c.id, _('%s (%d · CoS %d)').format(c.name ? _(c.name) : c.id, c.count, c.default_cos));
 		});
 
-		ao = sa.option(form.ListValue, 'app_id', _('Specific App'));
+		ao = sa.option(form.ListValue, 'app_id', _('App'));
 		ao.depends('match_type', 'app');
 		(catalog.apps || []).forEach(function(a) {
 			var cname = catById[a.cat] ? (catById[a.cat].name ? _(catById[a.cat].name) : a.cat) : a.cat;
 			ao.value(a.id, _('[%s] %s (%d domains / %d ports)').format(cname, a.name ? _(a.name) : a.id, a.d_cnt, a.t_cnt + a.u_cnt));
 		});
 
-		ao = sa.option(form.ListValue, 'cos', _('Priority Level (0~7)'));
+		ao = sa.option(form.ListValue, 'cos', _('Priority'));
 		ao.default = '6';
 		ao.rmempty = false;
 		for (var ap = 7; ap >= 0; ap--)
 			ao.value(String(ap), COS_LABELS[String(ap)]);
 
-		ao = sa.option(form.Value, 'dscp_set', _('Rewrite Outbound Mark (DSCP)'));
+		ao = sa.option(form.Value, 'dscp_set', _('Rewrite DSCP'));
 		ao.modalonly = true;
-		ao.placeholder = _('Leave blank = do not rewrite');
+		ao.placeholder = _('Keep unchanged');
 		ao.rmempty = true;
 		[
-			['ef', _('ef (46 · rewrite as ultra-low-latency voice/gaming mark)')],
-			['cs6', _('cs6 (48 · rewrite as highest-priority network control mark)')],
-			['cs5', _('cs5 (40 · rewrite as real-time video/live-streaming mark)')],
-			['af41', _('af41 (34 · rewrite as video conferencing mark)')],
-			['cs1', _('cs1 (8 · rewrite as low-priority background mark)')],
-			['cs0', _('cs0 (0 · clear DSCP mark to default 0)')]
+			['ef', _('ef (46 · Voice / Gaming)')],
+			['cs6', _('cs6 (48 · Control)')],
+			['cs5', _('cs5 (40 · Real-time Video)')],
+			['af41', _('af41 (34 · Video Meeting)')],
+			['cs1', _('cs1 (8 · Background)')],
+			['cs0', _('cs0 (0 · Clear / Default)')]
 		].forEach(function(pair) {
 			ao.value(pair[0], pair[1]);
 		});
 
-		var s = m.section(form.GridSection, 'classify', _('Custom Priority Forwarding Rules (Evaluated Top-to-Bottom; Freely Editable)'),
-			_('Each rule must specify at least one match criterion (such as LAN device IP, MAC, game port, or DSCP mark). When "Bidirectional (Upload + Download)" is selected, return download traffic is automatically matched into the same priority level.'));
+		var s = m.section(form.GridSection, 'classify', _('Custom Rules'),
+			_('Evaluated top-to-bottom; specify at least one condition.'));
 		s.addremove = true;
 		s.anonymous = true;
 		s.sortable = true;
@@ -1191,11 +1202,11 @@ return view.extend({
 		o.rmempty = false;
 		o.editable = true;
 
-		o = s.option(form.Value, 'name', _('Rule Name'));
-		o.placeholder = _('e.g., Main PC Gaming Priority / Video Conference Priority');
+		o = s.option(form.Value, 'name', _('Name'));
+		o.placeholder = _('e.g., PC Gaming / Meeting');
 		o.rmempty = false;
 
-		o = s.option(form.ListValue, 'cos', _('Priority Level (0~7)'));
+		o = s.option(form.ListValue, 'cos', _('Priority'));
 		o.default = '6';
 		o.rmempty = false;
 		for (var p = 7; p >= 0; p--)
@@ -1203,66 +1214,66 @@ return view.extend({
 
 		o = s.option(form.ListValue, 'family', _('IP Family'));
 		o.default = 'any';
-		o.value('any', _('IPv4 + IPv6 Dual Stack'));
-		o.value('ip', _('IPv4 Only'));
-		o.value('ip6', _('IPv6 Only'));
+		o.value('any', _('IPv4 + IPv6'));
+		o.value('ip', _('IPv4'));
+		o.value('ip6', _('IPv6'));
 
 		o = s.option(form.ListValue, 'proto', _('Protocol'));
 		o.default = 'any';
-		o.value('any', _('All Protocols'));
-		o.value('tcp', _('TCP (Web / Office / Video)'));
-		o.value('udp', _('UDP (Gaming / Voice Calls / Live)'));
-		o.value('tcp_udp', _('TCP + UDP'));
-		o.value('icmp', _('ICMP / Ping Test'));
+		o.value('any', _('All'));
+		o.value('tcp', 'TCP');
+		o.value('udp', 'UDP');
+		o.value('tcp_udp', 'TCP + UDP');
+		o.value('icmp', 'ICMP');
 
-		o = s.option(form.Value, 'src_ip', _('Source IP (LAN Device Address)'));
-		o.placeholder = _('Leave blank = any, e.g. 192.168.2.100');
+		o = s.option(form.Value, 'src_ip', _('Source IP'));
+		o.placeholder = _('Any, e.g. 192.168.2.100');
 		o.rmempty = true;
 
-		o = s.option(form.Value, 'dst_ip', _('Destination IP (Remote Server)'));
-		o.placeholder = _('Leave blank = any, or server IP/CIDR');
+		o = s.option(form.Value, 'dst_ip', _('Dest IP'));
+		o.placeholder = _('Any, or IP/CIDR');
 		o.rmempty = true;
 
 		o = s.option(form.Value, 'src_port', _('Source Port'));
-		o.placeholder = _('Leave blank = any');
+		o.placeholder = _('Any');
 		o.rmempty = true;
 
-		o = s.option(form.Value, 'dst_port', _('Destination Port (Game / App Port)'));
+		o = s.option(form.Value, 'dst_port', _('Dest Port'));
 		o.placeholder = _('e.g. 53, 3074, 27015-27030');
 		o.rmempty = true;
 
-		o = s.option(form.Value, 'dscp', _('Match App Mark (DSCP)'));
-		o.placeholder = _('Leave blank = any, or select ef / cs5 / af41');
+		o = s.option(form.Value, 'dscp', _('Match DSCP'));
+		o.placeholder = _('Any, or select DSCP');
 		o.rmempty = true;
 		[
-			['ef', _('ef (46 · voice calls / ultra-low-latency gaming mark)')],
-			['cs6', _('cs6 (48 · network control protocol mark)')],
-			['cs5', _('cs5 (40 · real-time video / interactive live mark)')],
-			['af41', _('af41 (34 · HD video conferencing mark)')],
-			['cs3', _('cs3 (24 · call signaling mark)')],
-			['cs1', _('cs1 (8 · low-priority background download mark)')],
-			['cs0', _('cs0 (0 · normal default mark)')]
+			['ef', _('ef (46 · Voice / Gaming)')],
+			['cs6', _('cs6 (48 · Control)')],
+			['cs5', _('cs5 (40 · Real-time Video)')],
+			['af41', _('af41 (34 · Video Meeting)')],
+			['cs3', _('cs3 (24 · Signaling)')],
+			['cs1', _('cs1 (8 · Background)')],
+			['cs0', _('cs0 (0 · Default)')]
 		].forEach(function(pair) {
 			o.value(pair[0], pair[1]);
 		});
 
-		o = s.option(form.Value, 'dscp_set', _('Rewrite Outbound Mark (DSCP)'));
-		o.placeholder = _('Leave blank = do not rewrite');
+		o = s.option(form.Value, 'dscp_set', _('Rewrite DSCP'));
+		o.placeholder = _('Keep unchanged');
 		o.rmempty = true;
 		[
-			['ef', _('ef (46 · rewrite as ultra-low-latency voice/gaming mark)')],
-			['cs6', _('cs6 (48 · rewrite as highest-priority network control mark)')],
-			['cs5', _('cs5 (40 · rewrite as real-time video/live-streaming mark)')],
-			['af41', _('af41 (34 · rewrite as video conferencing mark)')],
-			['cs3', _('cs3 (24 · rewrite as priority signaling mark)')],
-			['cs1', _('cs1 (8 · rewrite as low-priority background mark)')],
-			['cs0', _('cs0 (0 · clear DSCP mark to default 0)')]
+			['ef', _('ef (46 · Voice / Gaming)')],
+			['cs6', _('cs6 (48 · Control)')],
+			['cs5', _('cs5 (40 · Real-time Video)')],
+			['af41', _('af41 (34 · Video Meeting)')],
+			['cs3', _('cs3 (24 · Signaling)')],
+			['cs1', _('cs1 (8 · Background)')],
+			['cs0', _('cs0 (0 · Clear / Default)')]
 		].forEach(function(pair) {
 			o.value(pair[0], pair[1]);
 		});
 
-		o = s.option(form.Value, 'src_mac', _('Target LAN Device MAC'));
-		o.placeholder = _('Leave blank = any');
+		o = s.option(form.Value, 'src_mac', _('Device MAC'));
+		o.placeholder = _('Any');
 		o.rmempty = true;
 		Object.keys(hints).sort().forEach(function(mac) {
 			o.value(mac, hints[mac].label);
@@ -1275,13 +1286,13 @@ return view.extend({
 
 		o = s.option(form.ListValue, 'direction', _('Direction'));
 		o.default = 'both';
-		o.value('both', _('Bidirectional (Auto-match Upload + Download)'));
-		o.value('src', _('Unidirectional (Match Source -> Destination Only)'));
+		o.value('both', _('Bidirectional'));
+		o.value('src', _('One-Way (Src -> Dst)'));
 
 		return m.render().then(function(formNode) {
 			return q.setupLivePage(
-				_('App, Game & Device Priority Forwarding'),
-				_('Assign higher forwarding priority levels (CoS 0-7) to critical traffic via the built-in app signature catalog (dynamic domain tracking + dedicated ports), smart small-packet priority, or custom IP/MAC/port rules, synced automatically to the RTL9617C hardware forwarding engine upon connection establishment.'),
+				_('App & Game Priority'),
+				_('Prioritize key apps, small packets, or custom rules (CoS 0–7) with hardware offload.'),
 				liveMount,
 				function(next) {
 					renderLiveClassify(liveMount, next, catIndex);
