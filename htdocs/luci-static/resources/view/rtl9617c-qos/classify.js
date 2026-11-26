@@ -271,28 +271,140 @@ function openCatalogManager(initialTab, onDirtyClose) {
 
 	function buildManagePanel(cats, catNameMap, apps) {
 		var canWrite = L.hasViewPermission();
-		var qLower = (state.query || '').trim().toLowerCase();
-		var filtered = apps.filter(function(a) {
-			if (state.filterCat && a.cat !== state.filterCat)
+		var listMount = E('div', { class: 'rq-cat-list-wrap' });
+		var composing = false;
+
+		function renderList() {
+			var qLower = (state.query || '').trim().toLowerCase();
+			var filtered = apps.filter(function(a) {
+				if (state.filterCat && a.cat !== state.filterCat)
+					return false;
+				if (!qLower)
+					return true;
+				if ((a.name || '').toLowerCase().indexOf(qLower) >= 0)
+					return true;
+				if ((a.id || '').toLowerCase().indexOf(qLower) >= 0)
+					return true;
+				if ((catNameMap[a.cat] || '').toLowerCase().indexOf(qLower) >= 0)
+					return true;
+				if ((a.domains || []).some(function(d) { return d.toLowerCase().indexOf(qLower) >= 0; }))
+					return true;
+				if ((a.tcp || []).concat(a.udp || []).some(function(p) { return String(p).toLowerCase().indexOf(qLower) >= 0; }))
+					return true;
 				return false;
-			if (!qLower)
-				return true;
-			if ((a.name || '').toLowerCase().indexOf(qLower) >= 0)
-				return true;
-			if ((a.id || '').toLowerCase().indexOf(qLower) >= 0)
-				return true;
-			if ((a.domains || []).some(function(d) { return d.toLowerCase().indexOf(qLower) >= 0; }))
-				return true;
-			if ((a.tcp || []).concat(a.udp || []).some(function(p) { return String(p).toLowerCase().indexOf(qLower) >= 0; }))
-				return true;
-			return false;
-		});
+			});
+
+			var visible = filtered.slice(0, state.limit);
+			var rows = visible.map(function(a) {
+				var doms = a.domains || [];
+				var tcp = a.tcp || [];
+				var udp = a.udp || [];
+				var chips = [];
+				doms.slice(0, 4).forEach(function(d) {
+					chips.push(E('span', { class: 'rq-cat-chip rq-mono' }, [d]));
+				});
+				if (doms.length > 4)
+					chips.push(E('span', { class: 'rq-cat-chip' }, ['+' + (doms.length - 4) + ' 域名']));
+				if (tcp.length)
+					chips.push(E('span', { class: 'rq-cat-chip rq-mono' }, ['TCP: ' + tcp.slice(0, 3).join(',') + (tcp.length > 3 ? '…' : '')]));
+				if (udp.length)
+					chips.push(E('span', { class: 'rq-cat-chip rq-mono' }, ['UDP: ' + udp.slice(0, 3).join(',') + (udp.length > 3 ? '…' : '')]));
+
+				return E('tr', {}, [
+					E('td', { class: 'rq-wrap' }, [
+						E('strong', {}, [a.name]),
+						E('div', { class: 'rq-note', style: 'margin:2px 0 0' }, [
+							(catNameMap[a.cat] || a.cat) + ' · ID: ' + a.id
+						])
+					]),
+					E('td', { class: 'rq-wrap' }, [
+						E('div', { class: 'rq-cat-chips' }, chips.length ? chips : [E('span', { class: 'rq-note', style: 'margin:0' }, ['—'])])
+					]),
+					canWrite ? E('td', {}, [
+						E('div', { style: 'display:flex;gap:6px;flex-wrap:wrap' }, [
+							E('button', {
+								type: 'button',
+								class: 'btn cbi-button rq-btn-sm',
+								click: function() {
+									state.editing = {
+										orig_id: a.id,
+										id: a.id,
+										name: a.name,
+										cat: a.cat,
+										domains: doms.join('\n'),
+										tcp: tcp.join(', '),
+										udp: udp.join(', ')
+									};
+									renderModal();
+								}
+							}, ['编辑']),
+							E('button', {
+								type: 'button',
+								class: 'btn cbi-button cbi-button-remove rq-btn-sm',
+								click: function() {
+									if (state.busy) return;
+									if (!window.confirm('确认从特征库中删除「' + a.name + '」(' + a.id + ') 吗？'))
+										return;
+									state.busy = true;
+									q.callAppCatalogDeleteApp(a.id).then(function(res) {
+										state.busy = false;
+										if (!res || !res.ok) {
+											ui.addNotification(null, E('p', {}, ['删除失败：', (res && res.error) || 'unknown']), 'error');
+											return;
+										}
+										state.dirty = true;
+										return reloadCatalog();
+									}).catch(function(err) {
+										state.busy = false;
+										ui.addNotification(null, E('p', {}, ['删除异常：', err && err.message ? err.message : String(err)]), 'error');
+									});
+								}
+							}, ['删除'])
+						])
+					]) : null
+				]);
+			});
+
+			if (!rows.length) {
+				rows.push(E('tr', {}, [
+					E('td', { colspan: canWrite ? 3 : 2, class: 'rq-note' }, ['没有匹配当前筛选条件的应用特征。'])
+				]));
+			}
+
+			var moreBtn = filtered.length > visible.length ? E('button', {
+				type: 'button',
+				class: 'btn cbi-button rq-btn-sm',
+				style: 'margin:8px auto;display:flex',
+				click: function() {
+					state.limit = filtered.length;
+					renderList();
+				}
+			}, ['显示全部 ' + filtered.length + ' 条（当前展示前 ' + visible.length + ' 条）']) : null;
+
+			var colTitle = (qLower || state.filterCat)
+				? ('应用 / 分类（匹配 ' + filtered.length + ' 条）')
+				: '应用 / 分类';
+
+			dom.content(listMount, [
+				E('table', { class: 'rq-table' }, [
+					E('thead', {}, [
+						E('tr', {}, [
+							E('th', {}, [colTitle]),
+							E('th', {}, ['域名与端口特征']),
+							canWrite ? E('th', {}, ['操作']) : null
+						])
+					]),
+					E('tbody', {}, rows)
+				]),
+				moreBtn
+			]);
+		}
 
 		var catSel = E('select', {
 			change: function(ev) {
 				state.filterCat = ev.target.value;
 				state.limit = 80;
-				renderModal();
+				renderList();
 			}
 		}, [E('option', { value: '' }, ['全部分类（' + apps.length + ' 款）'])].concat(cats.map(function(c) {
 			return E('option', {
@@ -304,11 +416,22 @@ function openCatalogManager(initialTab, onDirtyClose) {
 		var searchInput = E('input', {
 			type: 'search',
 			value: state.query,
-			placeholder: '按应用名 / ID / 域名 / 端口筛选…',
-			input: function(ev) {
+			placeholder: '按应用名（支持中文）/ ID / 域名 / 端口筛选…',
+			compositionstart: function() {
+				composing = true;
+			},
+			compositionend: function(ev) {
+				composing = false;
 				state.query = ev.target.value;
 				state.limit = 80;
-				renderModal();
+				renderList();
+			},
+			input: function(ev) {
+				if (composing)
+					return;
+				state.query = ev.target.value;
+				state.limit = 80;
+				renderList();
 			}
 		});
 
@@ -406,109 +529,12 @@ function openCatalogManager(initialTab, onDirtyClose) {
 			]);
 		}
 
-		var visible = filtered.slice(0, state.limit);
-		var rows = visible.map(function(a) {
-			var doms = a.domains || [];
-			var tcp = a.tcp || [];
-			var udp = a.udp || [];
-			var chips = [];
-			doms.slice(0, 4).forEach(function(d) {
-				chips.push(E('span', { class: 'rq-cat-chip rq-mono' }, [d]));
-			});
-			if (doms.length > 4)
-				chips.push(E('span', { class: 'rq-cat-chip' }, ['+' + (doms.length - 4) + ' 域名']));
-			if (tcp.length)
-				chips.push(E('span', { class: 'rq-cat-chip rq-mono' }, ['TCP: ' + tcp.slice(0, 3).join(',') + (tcp.length > 3 ? '…' : '')]));
-			if (udp.length)
-				chips.push(E('span', { class: 'rq-cat-chip rq-mono' }, ['UDP: ' + udp.slice(0, 3).join(',') + (udp.length > 3 ? '…' : '')]));
-
-			return E('tr', {}, [
-				E('td', { class: 'rq-wrap' }, [
-					E('strong', {}, [a.name]),
-					E('div', { class: 'rq-note', style: 'margin:2px 0 0' }, [
-						(catNameMap[a.cat] || a.cat) + ' · ID: ' + a.id
-					])
-				]),
-				E('td', { class: 'rq-wrap' }, [
-					E('div', { class: 'rq-cat-chips' }, chips.length ? chips : [E('span', { class: 'rq-note', style: 'margin:0' }, ['—'])])
-				]),
-				canWrite ? E('td', {}, [
-					E('div', { style: 'display:flex;gap:6px;flex-wrap:wrap' }, [
-						E('button', {
-							type: 'button',
-							class: 'btn cbi-button rq-btn-sm',
-							click: function() {
-								state.editing = {
-									orig_id: a.id,
-									id: a.id,
-									name: a.name,
-									cat: a.cat,
-									domains: doms.join('\n'),
-									tcp: tcp.join(', '),
-									udp: udp.join(', ')
-								};
-								renderModal();
-							}
-						}, ['编辑']),
-						E('button', {
-							type: 'button',
-							class: 'btn cbi-button cbi-button-remove rq-btn-sm',
-							click: function() {
-								if (state.busy) return;
-								if (!window.confirm('确认从特征库中删除「' + a.name + '」(' + a.id + ') 吗？'))
-									return;
-								state.busy = true;
-								q.callAppCatalogDeleteApp(a.id).then(function(res) {
-									state.busy = false;
-									if (!res || !res.ok) {
-										ui.addNotification(null, E('p', {}, ['删除失败：', (res && res.error) || 'unknown']), 'error');
-										return;
-									}
-									state.dirty = true;
-									return reloadCatalog();
-								}).catch(function(err) {
-									state.busy = false;
-									ui.addNotification(null, E('p', {}, ['删除异常：', err && err.message ? err.message : String(err)]), 'error');
-								});
-							}
-						}, ['删除'])
-					])
-				]) : null
-			]);
-		});
-
-		if (!rows.length) {
-			rows.push(E('tr', {}, [
-				E('td', { colspan: canWrite ? 3 : 2, class: 'rq-note' }, ['没有匹配当前筛选条件的应用特征。'])
-			]));
-		}
-
-		var moreBtn = filtered.length > visible.length ? E('button', {
-			type: 'button',
-			class: 'btn cbi-button rq-btn-sm',
-			style: 'margin:8px auto;display:flex',
-			click: function() {
-				state.limit = filtered.length;
-				renderModal();
-			}
-		}, ['显示全部 ' + filtered.length + ' 条（当前展示前 ' + visible.length + ' 条）']) : null;
+		renderList();
 
 		return [
 			E('div', { class: 'rq-cat-toolbar' }, [catSel, searchInput, addBtn]),
 			editorNode,
-			E('div', { class: 'rq-cat-list-wrap' }, [
-				E('table', { class: 'rq-table' }, [
-					E('thead', {}, [
-						E('tr', {}, [
-							E('th', {}, ['应用 / 分类']),
-							E('th', {}, ['域名与端口特征']),
-							canWrite ? E('th', {}, ['操作']) : null
-						])
-					]),
-					E('tbody', {}, rows)
-				]),
-				moreBtn
-			])
+			listMount
 		];
 	}
 
