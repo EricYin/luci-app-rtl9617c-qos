@@ -161,7 +161,7 @@ function renderPresetCard() {
 				}
 
 				var btnLabel = isCurrent
-					? (p.id === 'clear' ? '当前已处于默认无预设状态' : '当前已开启（点击重新套用默认项）')
+					? (p.id === 'clear' ? '当前为默认状态' : '已开启 · 重新套用')
 					: p.btnText;
 
 				var btn = L.hasViewPermission() ? E('button', {
