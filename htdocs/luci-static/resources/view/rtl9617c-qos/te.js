@@ -20,7 +20,7 @@ function renderLiveTe(container, data) {
 	});
 	if (!flowRows.length) {
 		flowRows.push(E('tr', {}, [
-			E('td', { colspan: 4, class: 'rq-note' }, ['当前没有占用的单连接硬件限速通道（160 个通道全部空闲）。'])
+			E('td', { colspan: 4, class: 'rq-note' }, [_('No active per-flow hardware policer channels (all 160 slots free).')])
 		]));
 	}
 
@@ -34,91 +34,97 @@ function renderLiveTe(container, data) {
 	});
 	if (!grpRows.length) {
 		grpRows.push(E('tr', {}, [
-			E('td', { colspan: 4, class: 'rq-note' }, ['当前没有占用的多连接共享限速组。'])
+			E('td', { colspan: 4, class: 'rq-note' }, [_('No active multi-flow shared policer groups.')])
 		]));
 	}
 
 	dom.content(container, [
-		q.guideCard('怎么用？（硬件限速通道与共享组资源）', [
-			'1. 本页管理 RTL9617C 硬件转发引擎中的“单连接限速通道 (0 ~ 159)”和“多连接共享限速组 (0 ~ 63)”，用于在硬件层对特定连接或共享分组做精确限速与突发缓冲控制。',
-			'2. 按设备固定 IP 限速请前往【单设备限速】（芯片额外为其专属保留了 96 个底层通道）；本页的 160 个通道与 64 个共享组主要用于连接级精细限速。',
+		q.guideCard(_('How to Use (Hardware Policer Channels & Shared Groups)'), [
+			_('1. Manage the RTL9617C forwarding ASIC\'s per-flow policer channels (0–159) and multi-flow shared policer groups (0–63) for precise hardware rate limiting and burst control.'),
+			_('2. For per-device rate limiting, use Per-Device Rate Limiting (which has 96 dedicated reserved hardware channels); the 160 channels and 64 shared groups here are for fine-grained flow-level policing.'),
 			E('span', {}, [
-				'3. 原“硬件级网络攻击防护”和“硬件流量镜像抓包”已分别拆分至侧边栏【',
-				E('a', { href: L.url('admin/network/rtl9617c_dos') }, ['网络 → 硬件网络攻击防护']),
-				'】与【',
-				E('a', { href: L.url('admin/network/rtl9617c_mirror') }, ['网络 → 硬件流量镜像抓包']),
-				'】。'
+				_('3. Hardware DoS Protection and Hardware Traffic Mirroring are now separate pages:'), ' ',
+				E('a', { href: L.url('admin/network/rtl9617c_dos') }, [_('Network → Hardware DoS Protection')]),
+				' / ',
+				E('a', { href: L.url('admin/network/rtl9617c_mirror') }, [_('Network → Hardware Traffic Mirroring')])
 			])
 		]),
 		E('div', { class: 'rq-grid' }, [
-			q.card('单连接硬件限速通道余量',
-				tf.available ? q.badge('共 160 个通道', 'good') : q.badge('不可用', 'danger'),
+			q.card(_('Per-Flow Hardware Policer Channels'),
+				tf.available ? q.badge(_('160 channels total'), 'good') : q.badge(_('Unavailable'), 'danger'),
 				[
 					E('div', { class: 'rq-kpi' }, [
-						String(tf.flow_slots_used || 0) + ' / ' + String(tf.flow_slots_total || 160) + ' 个已用'
+						_('%d / %d used').format(tf.flow_slots_used || 0, tf.flow_slots_total || 160)
 					]),
 					q.meterBar(tf.flow_slots_used || 0, tf.flow_slots_total || 160),
 					E('p', { class: 'rq-note' }, [
-						'已关联硬件限速的单条连接数：' + String(fe.pol_flow || 0) +
-						' 条（另外芯片已为【单设备限速】专属保留 96 个独立底层通道，当前已用 ' +
-						String((hp.entries_used || 0) * 2) + ' 个）。'
+						_('Flows bound to per-flow hardware policers: %d (in addition, 96 dedicated channels are reserved for Per-Device Rate Limiting; currently %d used).').format(
+							fe.pol_flow || 0,
+							(hp.entries_used || 0) * 2
+						)
 					])
 				]),
-			q.card('多连接共享限速组余量',
-				tf.group64_ready ? q.badge('64 组就绪', 'good') : q.badge('标准模式', 'warn'),
+			q.card(_('Multi-Flow Shared Policer Groups'),
+				tf.group64_ready ? q.badge(_('64 groups ready'), 'good') : q.badge(_('Standard Mode'), 'warn'),
 				[
 					E('div', { class: 'rq-kpi' }, [
-						String(tf.group_slots_used || 0) + ' / ' + String(tf.group_slots_total || 64) + ' 组已用'
+						_('%d / %d groups used').format(tf.group_slots_used || 0, tf.group_slots_total || 64)
 					]),
 					q.meterBar(tf.group_slots_used || 0, tf.group_slots_total || 64),
 					E('p', { class: 'rq-note' }, [
-						'用于多条网络连接共享同一个总带宽上限的硬件限速池。'
+						_('Hardware rate-limiting pools allowing multiple connections to share a single combined bandwidth cap.')
 					])
 				]),
-			q.card('硬件队列 WRED / ECN 全局状态',
+			q.card(_('Hardware Queue WRED / ECN Global Status'),
 				(tf.wred_hw_en && tf.wred_port_active && (tf.wred_queues || []).length > 0)
-					? q.badge('硬件已激活', 'good')
-					: (((tf.wred_queues || []).length > 0 || tf.wred_hw_en) ? q.badge('端口未使能', 'warn') : q.badge('未开启', '')),
+					? q.badge(_('Hardware Active'), 'good')
+					: (((tf.wred_queues || []).length > 0 || tf.wred_hw_en) ? q.badge(_('Port Not Enabled'), 'warn') : q.badge(_('Not enabled'), '')),
 				[
 					E('div', { class: 'rq-kpi' }, [
-						'WRED: ' + (tf.wred_hw_en ? '开启' : '关闭') +
-						' · ECN: ' + (tf.wred_ecn_hw_en ? '开启' : '关闭')
+						_('WRED: %s · ECN: %s').format(
+							tf.wred_hw_en ? _('On') : _('Off'),
+							tf.wred_ecn_hw_en ? _('On') : _('Off')
+						)
 					]),
 					E('p', { class: 'rq-note' }, [
-						'l3_glb_ctrl: ' + (tf.l3_glb_ctrl || '未知') +
-						' · 已绑定曲线队列数：' + String((tf.wred_queues || []).length) +
-						(tf.te_pm
-							? (' · WRED 丢包：' + String((tf.te_pm.wred_g_drop || 0) + (tf.te_pm.wred_y_drop || 0)) +
-							   ' · ECN 标记：' + String(tf.te_pm.ce_mark || 0))
-							: '') + '。'
+						_('l3_glb_ctrl: %s · Queues bound to curves: %d%s.').format(
+							tf.l3_glb_ctrl || _('unknown'),
+							(tf.wred_queues || []).length,
+							tf.te_pm
+								? ' · ' + _('WRED drop: %d · ECN mark: %d').format(
+									(tf.te_pm.wred_g_drop || 0) + (tf.te_pm.wred_y_drop || 0),
+									tf.te_pm.ce_mark || 0
+								)
+								: ''
+						)
 					])
 				])
 		]),
 		E('div', { class: 'rq-grid' }, [
-			q.card('活跃的单连接硬件限速通道（0 ~ 159）', null, [
+			q.card(_('Active Per-Flow Hardware Policers (0 ~ 159)'), null, [
 				E('div', { class: 'rq-table-wrap' }, [
 					E('table', { class: 'rq-table' }, [
 						E('thead', {}, [
 							E('tr', {}, [
-								E('th', {}, ['通道号']),
-								E('th', {}, ['保证网速']),
-								E('th', {}, ['最高网速']),
-								E('th', {}, ['突发缓冲 (Bytes)'])
+								E('th', {}, [_('Slot')]),
+								E('th', {}, [_('Committed Rate (CIR)')]),
+								E('th', {}, [_('Peak Rate (PIR)')]),
+								E('th', {}, [_('Burst Buffer (Bytes)')])
 							])
 						]),
 						E('tbody', {}, flowRows)
 					])
 				])
 			]),
-			q.card('活跃的多连接共享限速组（0 ~ 63）', null, [
+			q.card(_('Active Multi-Flow Shared Policer Groups (0 ~ 63)'), null, [
 				E('div', { class: 'rq-table-wrap' }, [
 					E('table', { class: 'rq-table' }, [
 						E('thead', {}, [
 							E('tr', {}, [
-								E('th', {}, ['组号']),
-								E('th', {}, ['保证网速']),
-								E('th', {}, ['最高网速']),
-								E('th', {}, ['突发缓冲 (Bytes)'])
+								E('th', {}, [_('Group')]),
+								E('th', {}, [_('Committed Rate (CIR)')]),
+								E('th', {}, [_('Peak Rate (PIR)')]),
+								E('th', {}, [_('Burst Buffer (Bytes)')])
 							])
 						]),
 						E('tbody', {}, grpRows)
@@ -139,82 +145,82 @@ return view.extend({
 		var m = new form.Map('rtl9617c_qos', null, null);
 		var o;
 
-		var sf = m.section(form.GridSection, 'flow_policer', '单连接硬件限速通道预置表（通道 0 ~ 159）',
-			'可手动预配置芯片的 160 个单连接硬件限速通道（单位 kbps，100000 = 100 Mbps；突发缓冲范围 1 ~ 4095）。');
+		var sf = m.section(form.GridSection, 'flow_policer', _('Per-Flow Hardware Policer Presets (Slots 0 ~ 159)'),
+			_('Pre-configure the ASIC\'s 160 per-flow hardware policer channels (in kbps, 100000 = 100 Mbps; burst buffer range 1 ~ 4095).'));
 		sf.addremove = true;
 		sf.anonymous = true;
 		sf.nodescriptions = true;
 
-		o = sf.option(form.Flag, 'enabled', '启用');
+		o = sf.option(form.Flag, 'enabled', _('Enable'));
 		o.default = '1';
 		o.rmempty = false;
 		o.editable = true;
 
-		o = sf.option(form.Value, 'slot', '硬件通道号 (0 ~ 159)');
+		o = sf.option(form.Value, 'slot', _('Hardware Slot (0 ~ 159)'));
 		o.datatype = 'range(0,159)';
 		o.rmempty = false;
 		o.placeholder = '0';
 
-		o = sf.option(form.Value, 'cir_kbps', '保证网速 (kbps)');
+		o = sf.option(form.Value, 'cir_kbps', _('Committed Rate CIR (kbps)'));
 		o.datatype = 'range(1,32767999)';
 		o.default = '50000';
 		o.rmempty = false;
 
-		o = sf.option(form.Value, 'pir_kbps', '最高网速 (kbps)');
+		o = sf.option(form.Value, 'pir_kbps', _('Peak Rate PIR (kbps)'));
 		o.datatype = 'range(1,32767999)';
 		o.default = '50000';
 		o.rmempty = false;
 
-		o = sf.option(form.Value, 'cbs', '常规缓冲 (1~4095)');
+		o = sf.option(form.Value, 'cbs', _('Committed Burst CBS (1~4095)'));
 		o.datatype = 'range(1,4095)';
 		o.default = '2048';
 		o.rmempty = false;
 
-		o = sf.option(form.Value, 'pbs', '峰值缓冲 (1~4095)');
+		o = sf.option(form.Value, 'pbs', _('Peak Burst PBS (1~4095)'));
 		o.datatype = 'range(1,4095)';
 		o.default = '4095';
 		o.rmempty = false;
 
-		var sgrp = m.section(form.GridSection, 'group_policer', '多连接共享限速组配置表（组 0 ~ 63）',
-			'配置芯片的 64 个多连接共享带宽限速组（单位 kbps，100000 = 100 Mbps；突发缓冲范围 1 ~ 4095）。');
+		var sgrp = m.section(form.GridSection, 'group_policer', _('Multi-Flow Shared Policer Groups (Groups 0 ~ 63)'),
+			_('Configure the ASIC\'s 64 multi-flow shared bandwidth policer groups (in kbps, 100000 = 100 Mbps; burst buffer range 1 ~ 4095).'));
 		sgrp.addremove = true;
 		sgrp.anonymous = true;
 		sgrp.nodescriptions = true;
 
-		o = sgrp.option(form.Flag, 'enabled', '启用');
+		o = sgrp.option(form.Flag, 'enabled', _('Enable'));
 		o.default = '1';
 		o.rmempty = false;
 		o.editable = true;
 
-		o = sgrp.option(form.Value, 'group', '共享限速组号 (0 ~ 63)');
+		o = sgrp.option(form.Value, 'group', _('Shared Group ID (0 ~ 63)'));
 		o.datatype = 'range(0,63)';
 		o.rmempty = false;
 		o.placeholder = '0';
 
-		o = sgrp.option(form.Value, 'cir_kbps', '共享保证网速 (kbps)');
+		o = sgrp.option(form.Value, 'cir_kbps', _('Shared Committed Rate CIR (kbps)'));
 		o.datatype = 'range(1,32767999)';
 		o.default = '100000';
 		o.rmempty = false;
 
-		o = sgrp.option(form.Value, 'pir_kbps', '共享最高网速 (kbps)');
+		o = sgrp.option(form.Value, 'pir_kbps', _('Shared Peak Rate PIR (kbps)'));
 		o.datatype = 'range(1,32767999)';
 		o.default = '100000';
 		o.rmempty = false;
 
-		o = sgrp.option(form.Value, 'cbs', '常规缓冲 (1~4095)');
+		o = sgrp.option(form.Value, 'cbs', _('Committed Burst CBS (1~4095)'));
 		o.datatype = 'range(1,4095)';
 		o.default = '2048';
 		o.rmempty = false;
 
-		o = sgrp.option(form.Value, 'pbs', '峰值缓冲 (1~4095)');
+		o = sgrp.option(form.Value, 'pbs', _('Peak Burst PBS (1~4095)'));
 		o.datatype = 'range(1,4095)';
 		o.default = '4095';
 		o.rmempty = false;
 
 		return m.render().then(function(formNode) {
 			return q.setupLivePage(
-				'硬件限速通道与共享组',
-				'监控与预配置 RTL9617C 的 160 个单连接硬件限速通道及 64 个多连接共享限速组资源。',
+				_('Hardware Policer Channels & Shared Groups'),
+				_('Monitor and pre-configure RTL9617C\'s 160 per-flow hardware policer channels and 64 multi-flow shared policer groups.'),
 				liveMount,
 				function(next) {
 					renderLiveTe(liveMount, next);

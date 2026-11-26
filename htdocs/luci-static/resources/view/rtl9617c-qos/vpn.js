@@ -53,7 +53,7 @@ function renderLiveVpn(container, data) {
 	(tun.eif_items || []).forEach(function(item) {
 		slotRows.push(E('tr', {}, [
 			E('td', {}, ['EIF Hash #' + item.hash + ' → Phys #' + item.phys]),
-			E('td', {}, [q.badge('引用 ' + item.refs + ' 条流', 'good')]),
+			E('td', {}, [q.badge(_('%d flow refs').format(item.refs), 'good')]),
 			E('td', {}, ['FE']),
 			E('td', { class: 'rq-mono' }, ['param=0x' + item.param])
 		]));
@@ -63,26 +63,26 @@ function renderLiveVpn(container, data) {
 	kmods.forEach(function(m) {
 		envRows.push(E('tr', {}, [
 			E('td', { class: 'rq-mono' }, [m.name]),
-			E('td', {}, ['内核模块']),
-			E('td', {}, [m.loaded ? q.badge('已加载 (ref ' + m.refcnt + ')', 'good') : q.badge('未加载', 'warn')]),
-			E('td', { class: 'rq-wrap' }, [m.role || '—'])
+			E('td', {}, [_('Kernel Module')]),
+			E('td', {}, [m.loaded ? q.badge(_('Loaded (ref %d)').format(m.refcnt), 'good') : q.badge(_('Not loaded'), 'warn')]),
+			E('td', { class: 'rq-wrap' }, [m.role ? _(m.role) : '—'])
 		]));
 	});
 	tools.forEach(function(t) {
 		var statusBadge;
 		if (!t.present)
-			statusBadge = q.badge('缺失', 'danger');
+			statusBadge = q.badge(_('Missing'), 'danger');
 		else if (t.running === true)
-			statusBadge = q.badge('就绪 · 运行中', 'good');
+			statusBadge = q.badge(_('Ready · Running'), 'good');
 		else if (t.running === false)
-			statusBadge = q.badge('已安装 · 待命', 'good');
+			statusBadge = q.badge(_('Installed · Standby'), 'good');
 		else
-			statusBadge = q.badge('已安装', 'good');
+			statusBadge = q.badge(_('Installed'), 'good');
 		envRows.push(E('tr', {}, [
 			E('td', { class: 'rq-mono' }, [t.name]),
-			E('td', {}, ['用户态工具']),
+			E('td', {}, [_('Userspace Tool')]),
 			E('td', {}, [statusBadge]),
-			E('td', { class: 'rq-wrap' }, [(t.role || '') + ' (' + (t.path || '') + ')'])
+			E('td', { class: 'rq-wrap' }, [(t.role ? _(t.role) : '') + ' (' + (t.path || '') + ')'])
 		]));
 	});
 
@@ -93,8 +93,8 @@ function renderLiveVpn(container, data) {
 			E('td', { class: 'rq-mono' }, [i.server || '—']),
 			E('td', { class: 'rq-mono' }, [i.netdev || '—']),
 			E('td', {}, [
-				i.disabled ? q.badge('已禁用', '') :
-				i.up ? q.badge('已连接 (' + i.operstate + ')', 'good') : q.badge('未连接', 'warn')
+				i.disabled ? q.badge(_('Disabled'), '') :
+				i.up ? q.badge(_('Connected (%s)').format(i.operstate), 'good') : q.badge(_('Disconnected'), 'warn')
 			])
 		]);
 	});
@@ -109,28 +109,28 @@ function renderLiveVpn(container, data) {
 		return E('tr', {}, [
 			E('td', { class: 'rq-mono' }, [a.name]),
 			E('td', { class: 'rq-mono' }, [a.driver]),
-			E('td', {}, [a.hw_engine ? q.badge('片内硬件引擎', 'good') : q.badge('CPU ARMv8 CE', '')]),
+			E('td', {}, [a.hw_engine ? q.badge(_('On-Chip HW Engine'), 'good') : q.badge('CPU ARMv8 CE', '')]),
 			E('td', {}, [String(a.priority)]),
 			E('td', {}, [
 				a.selftest === 'passed'
-					? q.badge(isDefault ? '通过 · 内核默认选用' : '通过 · 备用', isDefault ? 'good' : '')
-					: q.badge(a.selftest || '未知', 'warn')
+					? q.badge(isDefault ? _('Passed · Kernel Default') : _('Passed · Fallback'), isDefault ? 'good' : '')
+					: q.badge(a.selftest || _('unknown'), 'warn')
 			])
 		]);
 	});
 
 	dom.content(container, [
-		q.guideCard('这是什么？（RTL9617C VPN 硬件加速与加密引擎）', [
-			'1. 开启「L2TPv2 / PPTP 硬件卸载」后，明文 PPP 封装的 L2TPv2（UDP 1701）与 PPTP（GREv1）数据面会由 RTL9617C 的 L3PE 双头隧道 ASIC 直接硬件封装/解封装，显著降低 CPU 占用。',
-			'2. 若隧道协商了 MPPE 加密、CCP 压缩、VJ 压缩或 IPsec 封装，内核会自动安全回退到软件处理，不会影响正常连通性。',
-			'3. 路由器已预置 l2tp_ppp、pptp 内核模块及 xl2tpd / pppd 插件；在【网络 → 接口】新建 L2TP 或 PPTP 客户端接口并拨通后，本页会自动显示芯片槽位分配与流引用情况。',
-			'4. 片内加密引擎 90500000.crypto（100 MHz）已完成自检并注册（prio=150）；因 Cortex-A55 自带 ARMv8 CE 指令集（prio=300，单核 AES-GCM 已超 2.6 Gbps），内核默认优先使用更快的 CPU 加密指令。'
+		q.guideCard(_('What Is This? (RTL9617C VPN Hardware Offload & Crypto Engine)'), [
+			_('1. With "L2TPv2 / PPTP Hardware Offload" enabled, plaintext PPP-encapsulated L2TPv2 (UDP 1701) and PPTP (GREv1) data planes are encapsulated/decapsulated directly by the RTL9617C L3PE dual-header tunnel ASIC, sharply reducing CPU usage.'),
+			_('2. If a tunnel negotiates MPPE encryption, CCP compression, VJ compression, or IPsec encapsulation, the kernel safely falls back to software processing without affecting connectivity.'),
+			_('3. The router includes l2tp_ppp and pptp kernel modules plus xl2tpd/pppd plugins; once you add and connect an L2TP or PPTP client interface under Network → Interfaces, ASIC slot allocations and flow references appear here automatically.'),
+			_('4. The on-chip crypto engine 90500000.crypto (100 MHz) passes self-tests and registers at prio=150; because Cortex-A55 includes ARMv8 CE instructions (prio=300, >2.6 Gbps single-core AES-GCM), the kernel prefers the faster CPU crypto instructions by default.')
 		]),
 		E('div', { class: 'rq-grid' }, [
-			q.card('L2TP / PPTP 芯片卸载',
+			q.card(_('L2TP / PPTP ASIC Offload'),
 				vpn.vpn_offload
-					? q.badge(tun.ready ? '已开启 · 引擎就绪' : '已开启', 'good')
-					: q.badge('已关闭', 'warn'),
+					? q.badge(tun.ready ? _('Enabled · Engine Ready') : _('Enabled'), 'good')
+					: q.badge(_('Disabled'), 'warn'),
 				[
 					E('div', { class: 'rq-kpi' }, [
 						'Control ' + (tun.control_used || 0) + '/' + (tun.control_max || 16) +
@@ -138,85 +138,87 @@ function renderLiveVpn(container, data) {
 					]),
 					q.meterBar((tun.control_used || 0) + (tun.content_used || 0), (tun.control_max || 16) + (tun.content_max || 16), true),
 					E('p', { class: 'rq-note' }, [
-						'L2TP 槽位: ' + (tun.l2tp_slots || 0) +
-						' · PPTP 槽位: ' + (tun.pptp_slots || 0) +
-						' · EIF 活跃引用流: ' + (tun.eif_refs || 0) +
-						' · 释放清表: ' + (vpn.clear_on_free ? '开' : '关')
+						_('L2TP slots: %d · PPTP slots: %d · EIF active flow refs: %d · Clear on free: %s').format(
+							tun.l2tp_slots || 0,
+							tun.pptp_slots || 0,
+							tun.eif_refs || 0,
+							vpn.clear_on_free ? _('On') : _('Off')
+						)
 					])
 				]),
-			q.card('内核模块与拨号工具',
+			q.card(_('Kernel Modules & Dialer Tools'),
 				(kmodReady === kmods.length && toolReady === tools.length)
-					? q.badge('全部就绪', 'good')
-					: q.badge('部分缺失', 'warn'),
+					? q.badge(_('All Ready'), 'good')
+					: q.badge(_('Partially Missing'), 'warn'),
 				[
 					E('div', { class: 'rq-kpi' }, [
-						'模块 ' + kmodReady + '/' + kmods.length + ' · 工具 ' + toolReady + '/' + tools.length
+						_('Modules %d/%d · Tools %d/%d').format(kmodReady, kmods.length, toolReady, tools.length)
 					]),
 					E('p', { class: 'rq-note' }, [
-						'xl2tpd 状态: ' + (!xl2tpd || !xl2tpd.present ? '未安装' : (xl2tpd.running ? '运行中' : '已安装（按需启动）'))
+						_('xl2tpd status: %s').format(!xl2tpd || !xl2tpd.present ? _('Not installed') : (xl2tpd.running ? _('Running') : _('Installed (on-demand)')))
 					])
 				]),
-			q.card('已配置 VPN 拨号接口',
-				upIfaces > 0 ? q.badge(upIfaces + ' 个在线', 'good')
-					: (ifaces.length > 0 ? q.badge('均未连接', 'warn') : q.badge('尚未配置', '')),
+			q.card(_('Configured VPN Dialer Interfaces'),
+				upIfaces > 0 ? q.badge(_('%d online').format(upIfaces), 'good')
+					: (ifaces.length > 0 ? q.badge(_('All Disconnected'), 'warn') : q.badge(_('Not configured'), '')),
 				[
 					E('div', { class: 'rq-kpi' }, [
-						ifaces.length > 0 ? (upIfaces + ' / ' + ifaces.length + ' 个已连接') : '0 个接口'
+						ifaces.length > 0 ? _('%d / %d connected').format(upIfaces, ifaces.length) : _('0 interfaces')
 					]),
 					E('p', { class: 'rq-note' }, [
-						'前往 ',
-						E('a', { href: L.url('admin/network/network') }, ['网络 → 接口']),
-						' 新建 L2TP 或 PPTP 拨号接口即可自动接入硬件卸载。'
+						_('Go to'), ' ',
+						E('a', { href: L.url('admin/network/network') }, [_('Network → Interfaces')]),
+						' ', _('to add an L2TP or PPTP interface; hardware offload activates automatically.')
 					])
 				]),
-			q.card('片内加密引擎 (90500000.crypto)',
+			q.card(_('On-Chip Crypto Engine (90500000.crypto)'),
 				(crypto.available && crypto.rtk_passed > 0)
-					? q.badge('自检通过 (' + crypto.rtk_passed + '/' + crypto.rtk_total + ')', 'good')
-					: q.badge('未就绪', 'warn'),
+					? q.badge(_('Self-test passed (%d/%d)').format(crypto.rtk_passed, crypto.rtk_total), 'good')
+					: q.badge(_('Not ready'), 'warn'),
 				[
 					E('div', { class: 'rq-kpi' }, [
 						(crypto.clk_mhz != null ? crypto.clk_mhz + ' MHz' : '—') +
 						' · IRQ ' + (crypto.irqs || 0)
 					]),
 					E('p', { class: 'rq-note' }, [
-						'优先级 150（备用）；IPsec/TLS 默认走更快的 CPU ARMv8 CE（优先级 300）。'
+						_('Priority 150 (fallback); IPsec/TLS defaults to faster CPU ARMv8 CE (priority 300).')
 					])
 				])
 		]),
-		q.card('L3PE 双头隧道硬件槽位实况',
-			slotRows.length ? q.badge(slotRows.length + ' 条活跃硬件项', 'good') : q.badge('空闲（无活跃隧道）', ''),
+		q.card(_('Live L3PE Dual-Header Tunnel Hardware Slots'),
+			slotRows.length ? q.badge(_('%d active hardware entries').format(slotRows.length), 'good') : q.badge(_('Idle (no active tunnels)'), ''),
 			[
 				makeTable(
-					['硬件槽位', '类型 / 引用', 'Owner', '硬件寄存器回读 / 参数'],
+					[_('Hardware Slot'), _('Type / Refs'), _('Owner'), _('Hardware Register Readback / Params')],
 					slotRows,
-					'当前没有活跃的 L2TP / PPTP 硬件卸载槽位。建立明文 L2TPv2 或 PPTP 隧道并产生转发流量后，此处会实时显示分配的 Control / Content / EIF 槽位。'
+					_('No active L2TP / PPTP hardware offload slots. Once a plaintext L2TPv2 or PPTP tunnel connects and forwards traffic, allocated Control / Content / EIF slots appear here in real time.')
 				)
 			]),
-		q.card('已配置的 L2TP / PPTP 接口',
-			ifaces.length ? q.badge(ifaces.length + ' 个接口', 'good') : q.badge('未配置', ''),
+		q.card(_('Configured L2TP / PPTP Interfaces'),
+			ifaces.length ? q.badge(_('%d interfaces').format(ifaces.length), 'good') : q.badge(_('Not configured'), ''),
 			[
 				makeTable(
-					['接口名', '协议', '对端服务器', '系统网卡', '连接状态'],
+					[_('Interface'), _('Protocol'), _('Peer Server'), _('System Netdev'), _('Connection Status')],
 					ifaceRows,
-					'尚未在 /etc/config/network 中配置 L2TP 或 PPTP 接口。请前往【网络 → 接口】添加新接口并选择 L2TP 或 PPTP 协议。'
+					_('No L2TP or PPTP interfaces configured in /etc/config/network yet. Go to Network → Interfaces to add one with the L2TP or PPTP protocol.')
 				)
 			]),
-		q.card('VPN 内核模块与用户态拨号工具自检',
-			q.badge('实时检测', ''),
+		q.card(_('VPN Kernel Modules & Userspace Dialer Self-Check'),
+			q.badge(_('Live Check'), ''),
 			[
 				makeTable(
-					['组件', '类别', '状态', '说明 / 路径'],
+					[_('Component'), _('Category'), _('Status'), _('Description / Path')],
 					envRows,
-					'未读取到模块与工具状态。'
+					_('Unable to read module and tool status.')
 				)
 			]),
-		q.card('加解密算法优先级对照（片内硬件引擎 vs CPU ARMv8 CE）',
+		q.card(_('Crypto Algorithm Priority Comparison (On-Chip HW Engine vs CPU ARMv8 CE)'),
 			q.badge('/proc/crypto', ''),
 			[
 				makeTable(
-					['算法', '驱动名称', '执行单元', '优先级', '自检与选用状态'],
+					[_('Algorithm'), _('Driver'), _('Execution Unit'), _('Priority'), _('Self-Test & Selection')],
 					cryptoRows,
-					'未读取到 /proc/crypto 算法列表。'
+					_('Unable to read /proc/crypto algorithm list.')
 				)
 			])
 	]);
@@ -231,22 +233,22 @@ return view.extend({
 		var liveMount = E('div');
 		var m = new form.Map('rtl9617c_qos', null, null);
 
-		var sg = m.section(form.NamedSection, 'global', 'global', 'VPN 硬件加速开关');
+		var sg = m.section(form.NamedSection, 'global', 'global', _('VPN Hardware Offload Switch'));
 		sg.anonymous = true;
 		sg.addremove = false;
 
-		var o = sg.option(form.Flag, 'vpn_offload', '启用 L2TPv2 / PPTP 芯片硬件隧道卸载',
-			'对应内核模块参数 /sys/module/rtl9617c_ni/parameters/vpn_offload。开启后由 RTL9617C L3PE 双头隧道 ASIC 直接卸载明文 L2TPv2（UDP/1701）与 PPTP（GREv1）数据流；加密/压缩隧道自动回退软件。');
+		var o = sg.option(form.Flag, 'vpn_offload', _('Enable L2TPv2 / PPTP ASIC Tunnel Hardware Offload'),
+			_('Maps to kernel module parameter /sys/module/rtl9617c_ni/parameters/vpn_offload. Offloads plaintext L2TPv2 (UDP/1701) and PPTP (GREv1) flows on the RTL9617C L3PE dual-header ASIC; encrypted/compressed tunnels automatically fall back to software.'));
 		o.default = '1';
 		o.rmempty = false;
 
 		return m.render().then(function(formNode) {
 			var peMount = E('div');
-			var refreshPe = peHook.mount(peMount, [ 'ipsec', 'srv6' ], 'PE 协处理器隧道与加密卸载（非独占）', false);
+			var refreshPe = peHook.mount(peMount, [ 'ipsec', 'srv6' ], _('PE Coprocessor Tunnel & Crypto Offload (Non-Exclusive)'), false);
 			var combinedLive = E('div', {}, [ liveMount, peMount ]);
 			return q.setupLivePage(
-				'VPN 硬件加速与加密模块',
-				'集中管理 RTL9617C 的 L2TPv2 / PPTP ASIC 隧道硬件卸载、拨号工具栈自检及片内加解密引擎状态。',
+				_('VPN Hardware Offload & Crypto Engine'),
+				_('Centrally manage RTL9617C L2TPv2 / PPTP ASIC tunnel offload, dialer stack diagnostics, and on-chip crypto engine status.'),
 				combinedLive,
 				function(next) {
 					renderLiveVpn(liveMount, next);

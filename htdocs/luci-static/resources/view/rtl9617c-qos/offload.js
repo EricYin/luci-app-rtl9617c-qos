@@ -29,21 +29,26 @@ function renderLiveOffload(container, data) {
 	var nicMismatch = nic && paramActive && !nicActive;
 
 	var txBadge = nicMismatch
-		? q.badge('参数已开 · 网卡未生效', 'warn')
-		: (nicActive ? q.badge('网卡已生效', 'good') : q.badge('未开启', ''));
+		? q.badge(_('Param On · NIC Inactive'), 'warn')
+		: (nicActive ? q.badge(_('Active on NIC'), 'good') : q.badge(_('Not enabled'), ''));
 
 	var txDetails = [
-		'模块参数: CSUM ' + (txOffload.tx_csum ? '开' : '关') +
-		' · TSO ' + (txOffload.tso ? '开' : '关') +
-		' · TSO6 ' + (txOffload.tso_v6 ? '开' : '关')
+		_('Module params: CSUM %s · TSO %s · TSO6 %s').format(
+			txOffload.tx_csum ? _('On') : _('Off'),
+			txOffload.tso ? _('On') : _('Off'),
+			txOffload.tso_v6 ? _('On') : _('Off')
+		)
 	];
 	if (nic) {
 		txDetails.push(
-			'网卡实况 (' + nic.device + '): TX-CSUM ' + (nic.tx_csum ? 'on' : 'off') +
-			' · SG ' + (nic.sg ? 'on' : 'off') +
-			' · TSO ' + (nic.tso ? 'on' : 'off') +
-			' · TSO6 ' + (nic.tso_v6 ? 'on' : 'off') +
-			' · GSO ' + (nic.gso ? 'on' : 'off')
+			_('NIC live (%s): TX-CSUM %s · SG %s · TSO %s · TSO6 %s · GSO %s').format(
+				nic.device,
+				nic.tx_csum ? 'on' : 'off',
+				nic.sg ? 'on' : 'off',
+				nic.tso ? 'on' : 'off',
+				nic.tso_v6 ? 'on' : 'off',
+				nic.gso ? 'on' : 'off'
+			)
 		);
 	}
 
@@ -73,97 +78,105 @@ function renderLiveOffload(container, data) {
 	var eeeSummary = eeePorts.length
 		? eeePorts.map(function(p) {
 			return p.device.toUpperCase() + ':' +
-				(p.eee.enabled ? (p.eee.active ? 'LPI激活' : '已开') : '关');
+				(p.eee.enabled ? (p.eee.active ? _('LPI Active') : _('On')) : _('Off'));
 		}).join(' · ')
-		: '暂未检测到支持 EEE 的千兆端口（LAN2 ~ LAN4）。';
+		: _('No EEE-capable Gigabit ports (LAN2–LAN4) detected yet.');
 
 	dom.content(container, [
-		q.guideCard('这是什么？（硬件加速与芯片卸载）', [
-			'1. 这里集中管理 RTL9617C 网卡与硬件转发引擎的底层加速特性（与限速、排队功能独立开来，避免混杂）。',
-			'2. 「网卡本机发包硬件加速」适合路由器本机跑大流量上传（如路由器上的 Samba/Web/代理/iperf3 服务端），由 DMA LSO 硬件计算校验和及分段；状态卡片会同时核验 ethtool 网卡层是否真实生效。',
-			'3. 「零拷贝收包 (page_pool)」消除 CPU 收包时的整包内存拷贝，降低非硬件流转发（如代理/VPN/Wi-Fi 桥接）的 CPU 占用；「多核收包调度」将 NI 硬中断独立绑核并让 PON 光口与 LAN 口均衡利用多核 RPS+RFS。',
-			'4. 「VPN 硬件加速 (L2TP / PPTP)」由芯片 L3PE 双头隧道引擎直接卸载明文 L2TPv2 与 PPTP；「IPTV 硬件组播复制」与「GE 网口 802.3az EEE 节能」均可按需开启。'
+		q.guideCard(_('What Is This? (Hardware Acceleration & Silicon Offload)'), [
+			_('1. Centrally manage low-level RTL9617C NIC and forwarding ASIC offload features, kept separate from QoS shaping and queueing.'),
+			_('2. "Host TX Offload (DMA LSO)" accelerates heavy local router uploads (such as Samba, web server, proxy, or iperf3 server on the router) by offloading checksumming and TCP segmentation to DMA LSO hardware; the status card verifies live ethtool NIC flags.'),
+			_('3. "Zero-Copy RX (page_pool)" eliminates full-packet CPU memcpy on receive to lower CPU usage for non-offloaded flows (proxy/VPN/Wi-Fi bridging); "Multi-Core RX Steering" pins NI IRQs and distributes PON & LAN receive across CPU cores with RPS+RFS.'),
+			_('4. "VPN Hardware Offload (L2TP / PPTP)" uses the L3PE dual-header ASIC to offload plaintext L2TPv2 and PPTP; "IPTV Hardware Multicast Replication" and "GbE 802.3az EEE Power Saving" can be enabled on demand.')
 		]),
 		E('div', { class: 'rq-grid' }, [
-			q.card('本机发包加速 (DMA LSO)', txBadge, [
+			q.card(_('Host TX Offload (DMA LSO)'), txBadge, [
 				E('div', { class: 'rq-kpi' }, [
-					nicActive ? '硬件卸载运行中' : (paramActive ? '等待网卡同步' : '未开启（软件计算）')
+					nicActive ? _('Hardware Offload Active') : (paramActive ? _('Awaiting NIC Sync') : _('Not enabled (software)'))
 				]),
 				E('p', { class: 'rq-note' }, [txDetails.join(' ｜ ')])
 			]),
-			q.card('零拷贝收包 (page_pool RX)',
-				txOffload.rx_zerocopy ? q.badge('已开启', 'good') : q.badge('已关闭', 'warn'),
+			q.card(_('Zero-Copy RX (page_pool RX)'),
+				txOffload.rx_zerocopy ? q.badge(_('Enabled'), 'good') : q.badge(_('Disabled'), 'warn'),
 				[
 					E('div', { class: 'rq-kpi' }, [
-						txOffload.rx_zerocopy ? '零拷贝 + 128B 小包快路径' : '传统拷贝模式'
+						txOffload.rx_zerocopy ? _('Zero-Copy + 128B Fast Copybreak') : _('Legacy Copy Mode')
 					]),
 					E('p', { class: 'rq-note' }, [
 						rxStats
-							? ('零拷贝包: ' + fmtCount(zcPkts) +
-								' · 小包快拷贝: ' + fmtCount(cbPkts) +
-								' · 内存回退: ' + fmtCount(fbPkts))
-							: '等待网卡统计就绪（驱动已启用 page_pool + napi_build_skb）。'
+							? _('Zero-copy pkts: %s · Small-pkt copybreak: %s · Alloc fallback: %s').format(
+								fmtCount(zcPkts),
+								fmtCount(cbPkts),
+								fmtCount(fbPkts)
+							)
+							: _('Waiting for NIC counters (driver uses page_pool + napi_build_skb).')
 					])
 				]),
-			q.card('多核收包调度 (IRQ / RPS / RFS)',
-				(ponMulti && rfsOk) ? q.badge('多核均衡 + RFS', 'good') : q.badge('默认调度', 'warn'),
+			q.card(_('Multi-Core RX Steering (IRQ / RPS / RFS)'),
+				(ponMulti && rfsOk) ? q.badge(_('Multi-Core + RFS'), 'good') : q.badge(_('Default Scheduling'), 'warn'),
 				[
 					E('div', { class: 'rq-kpi' }, [
-						'NI IRQ: CPU' + (steer.irq_cpu != null ? steer.irq_cpu : '-') +
-						' · RFS ' + (rfsOk ? String(steer.rfs_global) : '关')
+						_('NI IRQ: CPU%s · RFS %s').format(
+							steer.irq_cpu != null ? steer.irq_cpu : '-',
+							rfsOk ? String(steer.rfs_global) : _('Off')
+						)
 					]),
 					E('p', { class: 'rq-note' }, [
-						'LAN RPS: 0x' + (lanSteer ? lanSteer.rps_cpus : '0') +
-						' · PON RPS: 0x' + (ponSteer ? ponSteer.rps_cpus : '0') +
-						' · 队列流表: ' + (ponSteer ? String(ponSteer.rps_flow_cnt) : '0')
+						_('LAN RPS: 0x%s · PON RPS: 0x%s · Queue flow entries: %s').format(
+							lanSteer ? lanSteer.rps_cpus : '0',
+							ponSteer ? ponSteer.rps_cpus : '0',
+							ponSteer ? String(ponSteer.rps_flow_cnt) : '0'
+						)
 					])
 				]),
-			q.card('VPN 硬件隧道卸载 (L2TP / PPTP)',
-				txOffload.vpn_offload ? q.badge('已开启', 'good') : q.badge('已关闭', 'warn'),
+			q.card(_('VPN Hardware Tunnel Offload (L2TP / PPTP)'),
+				txOffload.vpn_offload ? q.badge(_('Enabled'), 'good') : q.badge(_('Disabled'), 'warn'),
 				[
 					E('div', { class: 'rq-kpi' }, [
 						txOffload.vpn_offload
-							? ('活跃槽位 ' + (tun.control_used || 0) + '/16')
-							: '已关闭（软件转发）'
+							? _('Active slots %d/16').format(tun.control_used || 0)
+							: _('Disabled (software forwarding)')
 					]),
 					E('p', { class: 'rq-note' }, [
-						'前往 ',
-						E('a', { href: L.url('admin/network/rtl9617c_vpn') }, ['网络 → VPN 硬件加速']),
-						' 查看 L2TP / PPTP 硬件槽位、拨号工具自检与硬件加密引擎状态。'
+						_('Go to'), ' ',
+						E('a', { href: L.url('admin/network/rtl9617c_vpn') }, [_('Network → VPN Hardware Offload')]),
+						' ', _('to view L2TP / PPTP hardware slots, dialer diagnostics, and crypto engine status.')
 					])
 				]),
-			q.card('千兆网口 802.3az EEE 节能',
+			q.card(_('GbE 802.3az EEE Power Saving'),
 				eeeEnabledCnt > 0
-					? q.badge(eeeActiveCnt > 0 ? '低功耗运行中' : '已开启', 'good')
-					: q.badge('默认关闭', ''),
+					? q.badge(eeeActiveCnt > 0 ? _('Low-Power Active') : _('Enabled'), 'good')
+					: q.badge(_('Off by Default'), ''),
 				[
 					E('div', { class: 'rq-kpi' }, [
 						eeePorts.length
-							? (eeeEnabledCnt + ' / ' + eeePorts.length + ' 口已开启')
-							: '不支持'
+							? _('%d / %d ports enabled').format(eeeEnabledCnt, eeePorts.length)
+							: _('Unsupported')
 					]),
 					E('p', { class: 'rq-note' }, [eeeSummary])
 				]),
-			q.card('IPTV 硬件组播复制',
-				txOffload.mcast_hw ? q.badge('已开启', 'good') : q.badge('未开启', ''),
+			q.card(_('IPTV Hardware Multicast Replication'),
+				txOffload.mcast_hw ? q.badge(_('Enabled'), 'good') : q.badge(_('Not enabled'), ''),
 				[
 					E('div', { class: 'rq-kpi' }, [
-						txOffload.mcast_hw ? 'MDB 自动同步硬件' : '纯网桥转发'
+						txOffload.mcast_hw ? _('MDB Auto-Synced to Hardware') : _('Bridge Software Forwarding')
 					]),
 					E('p', { class: 'rq-note' }, [
-						'需配合 ',
-						E('a', { href: L.url('admin/onu/iptv') }, ['ONU → IPTV 与组播']),
-						' 中的 IGMP Snooping 使用。'
+						_('Requires IGMP Snooping enabled in:'), ' ',
+						E('a', { href: L.url('admin/onu/iptv') }, [_('ONU → IPTV & Multicast')])
 					])
 				]),
-			q.card('实验性底层硬件转发',
-				(txOffload.napt6 || txOffload.dual_hdr) ? q.badge('已开启', 'warn') : q.badge('默认关闭', 'good'),
+			q.card(_('Experimental Low-Level Hardware Offload'),
+				(txOffload.napt6 || txOffload.dual_hdr) ? q.badge(_('Enabled'), 'warn') : q.badge(_('Off by Default'), 'good'),
 				[
 					E('div', { class: 'rq-kpi' }, [
-						'NAT66 ' + (txOffload.napt6 ? '开' : '关') + ' · 双头隧道 ' + (txOffload.dual_hdr ? '开' : '关')
+						_('NAT66 %s · Dual-Header %s').format(
+							txOffload.napt6 ? _('On') : _('Off'),
+							txOffload.dual_hdr ? _('On') : _('Off')
+						)
 					]),
 					E('p', { class: 'rq-note' }, [
-						'日常普通宽带上网与 PPPoE 转发已默认全速硬件卸载，以下实验项无特殊需求请保持关闭。'
+						_('Standard broadband routing and PPPoE forwarding are already hardware-offloaded at line rate. Leave experimental options off unless needed.')
 					])
 				])
 		])
@@ -179,62 +192,62 @@ return view.extend({
 		var liveMount = E('div');
 		var m = new form.Map('rtl9617c_qos', null, null);
 
-		var sg = m.section(form.NamedSection, 'global', 'global', '硬件加速与芯片卸载设置');
+		var sg = m.section(form.NamedSection, 'global', 'global', _('Hardware Offload & Silicon Acceleration Settings'));
 		sg.anonymous = true;
 		sg.addremove = false;
 
-		sg.tab('offload', '网卡发包与组播加速');
-		sg.tab('experimental', '实验性底层特性（仅供开发/测试）');
+		sg.tab('offload', _('NIC TX/RX & Multicast Offload'));
+		sg.tab('experimental', _('Experimental Low-Level Features (Dev/Test Only)'));
 
 		var o;
-		o = sg.taboption('offload', form.Flag, 'tx_csum', '启用网口硬件发包校验和卸载 (TX CSUM)',
-			'由 RTL9617C DMA LSO 硬件引擎自动计算发出数据包的 TCP/UDP 校验和，降低路由器本机高速发包时的 CPU 占用。');
+		o = sg.taboption('offload', form.Flag, 'tx_csum', _('Enable Hardware TX Checksum Offload (TX CSUM)'),
+			_('Offloads outbound TCP/UDP checksum calculation to the RTL9617C DMA LSO engine, reducing CPU usage during high-speed router-originated transmissions.'));
 		o.default = '0';
 		o.rmempty = false;
 
-		o = sg.taboption('offload', form.Flag, 'tso', '启用 IPv4 TCP 大包硬件分段加速 (DMA LSO / TSO)',
-			'允许内核直接把超长 TCP 数据块交给网卡 DMA 引擎自动切分为标准以太网帧发送（已内置 GRO 超长包安全回退）。');
+		o = sg.taboption('offload', form.Flag, 'tso', _('Enable IPv4 TCP Segmentation Offload (DMA LSO / TSO)'),
+			_('Allows the kernel to pass large TCP segments to the NIC DMA engine for hardware segmentation into Ethernet frames (with built-in safe fallback for oversized GRO packets).'));
 		o.default = '0';
 		o.rmempty = false;
 
-		o = sg.taboption('offload', form.Flag, 'tso_v6', '同时启用 IPv6 TCP 硬件分段加速 (TSO6)',
-			'在开启 TCP 硬件分段加速时，同时对 IPv6 TCP 流量启用硬件分段。');
+		o = sg.taboption('offload', form.Flag, 'tso_v6', _('Also Enable IPv6 TCP Segmentation Offload (TSO6)'),
+			_('Enables hardware TCP segmentation offload for IPv6 TCP traffic as well when TSO is enabled.'));
 		o.depends('tso', '1');
 		o.default = '0';
 		o.rmempty = false;
 
-		o = sg.taboption('offload', form.Flag, 'rx_zerocopy', '启用网卡零拷贝收包 (page_pool + napi_build_skb)',
-			'默认开启。对大于 128 字节的数据包直接使用 page_pool 零拷贝构建 skb，消除 CPU 收包整包 memcpy（支持运行期热切换，方便 A/B 对比）。');
+		o = sg.taboption('offload', form.Flag, 'rx_zerocopy', _('Enable Zero-Copy NIC Receive (page_pool + napi_build_skb)'),
+			_('Enabled by default. Builds skbs directly from page_pool buffers for packets > 128 bytes to eliminate full-packet CPU memcpy (hot-toggleable at runtime for A/B testing).'));
 		o.default = '1';
 		o.rmempty = false;
 
-		o = sg.taboption('offload', form.Flag, 'ge_eee', '启用千兆 LAN 口 802.3az EEE 节能以太网 (LAN2 ~ LAN4)',
-			'开启后，千兆网口 LAN2 ~ LAN4 在链路空闲时自动进入低功耗空闲态 (LPI) 降低整机发热量；若个别老旧网卡唤醒偶发抖动可关闭。');
+		o = sg.taboption('offload', form.Flag, 'ge_eee', _('Enable GbE LAN 802.3az EEE Power Saving (LAN2–LAN4)'),
+			_('Allows Gigabit ports LAN2–LAN4 to enter Low-Power Idle (LPI) when idle to reduce heat; disable if an older NIC exhibits wake-up jitter.'));
 		o.default = '0';
 		o.rmempty = false;
 
-		o = sg.taboption('offload', form.Flag, 'mcast_hw', '启用 IPTV 硬件组播复制加速',
-			'当网桥收到 IGMP Snooping 组播订阅 (MDB) 时，自动将组播端口掩码写入芯片 MCE 与 ARB MC FIB 硬件表。');
+		o = sg.taboption('offload', form.Flag, 'mcast_hw', _('Enable IPTV Hardware Multicast Replication'),
+			_('Automatically programs IGMP Snooping bridge multicast subscriptions (MDB) into the ASIC MCE and ARB MC FIB hardware tables.'));
 		o.default = '0';
 		o.rmempty = false;
 
-		o = sg.taboption('experimental', form.Flag, 'napt6', '启用 IPv6 硬件 NAT66 地址转换加速',
-			'开启后会自动将芯片转发引擎热切换至 384-bit 动作表模式，对 IPv6 SNAT / MASQUERADE / DNAT 连接启用硬件地址转换卸载（免重启即时生效）。普通公网 IPv6 直通转发无需开启。');
+		o = sg.taboption('experimental', form.Flag, 'napt6', _('Enable IPv6 Hardware NAT66 Offload'),
+			_('Hot-switches the forwarding engine to 384-bit action mode to offload IPv6 SNAT / MASQUERADE / DNAT connections (takes effect without reboot). Not needed for standard public IPv6 routing.'));
 		o.default = '0';
 		o.rmempty = false;
 
-		o = sg.taboption('experimental', form.Flag, 'dual_hdr', '启用 DS-Lite / 6rd 硬件双头隧道卸载（实验性）',
-			'允许芯片 L3PE 双头隧道引擎解析 DS-Lite 与 6rd 隧道流，当前完整装流动作依赖闭源 AAL，普通用户请保持关闭。');
+		o = sg.taboption('experimental', form.Flag, 'dual_hdr', _('Enable DS-Lite / 6rd Hardware Dual-Header Tunnel Offload (Experimental)'),
+			_('Allows the L3PE dual-header ASIC to parse DS-Lite and 6rd tunnel flows; full flow installation currently depends on proprietary AAL. Keep off for normal use.'));
 		o.default = '0';
 		o.rmempty = false;
 
 		return m.render().then(function(formNode) {
 			var peMount = E('div');
-			var refreshPe = peHook.mount(peMount, [ 'mcast' ], 'PE 协处理器摘要与组播卸载', true);
+			var refreshPe = peHook.mount(peMount, [ 'mcast' ], _('PE Coprocessor Summary & Multicast Offload'), true);
 			var combinedLive = E('div', {}, [ liveMount, peMount ]);
 			return q.setupLivePage(
-				'硬件加速与芯片卸载',
-				'统一管理网卡 DMA LSO 发包加速、VPN 硬件卸载入口、IPTV 硬件组播复制及芯片底层实验性加速开关。',
+				_('Hardware Acceleration & Silicon Offload'),
+				_('Manage NIC DMA LSO TX offload, VPN hardware offload entry, IPTV hardware multicast replication, and experimental ASIC acceleration switches.'),
 				combinedLive,
 				function(next) {
 					renderLiveOffload(liveMount, next);

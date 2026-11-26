@@ -1,0 +1,2398 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: luci-app-rtl9617c-qos\n"
+"PO-Revision-Date: 2026-11-26 14:45+0800\n"
+"Last-Translator: RTL9617C Maintainers\n"
+"Language-Team: Chinese (Simplified)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "#"
+msgstr ""
+
+msgid "# Common categories: mobile_game / pc_game / voice_meeting / remote_desk / education / im_chat / video_live / finance / download_bulk / custom"
+msgstr ""
+
+msgid "# Format: CategoryID | App Name | Domain List (semicolon or space separated) | TCP Ports | UDP Ports"
+msgstr ""
+
+msgid "# One domain per line; also supports Clash DOMAIN-SUFFIX / *.wildcard / +.prefix"
+msgstr ""
+
+msgid "%d / %d connected"
+msgstr ""
+
+msgid "%d / %d devices"
+msgstr ""
+
+msgid "%d / %d enabled"
+msgstr ""
+
+msgid "%d / %d groups used"
+msgstr ""
+
+msgid "%d / %d ports enabled"
+msgstr ""
+
+msgid "%d / %d used"
+msgstr ""
+
+msgid "%d active flows (%d%%)"
+msgstr ""
+
+msgid "%d active hardware entries"
+msgstr ""
+
+msgid "%d app signatures loaded; once enabled, auto-detects via dnsmasq nftset + dedicated ports."
+msgstr ""
+
+msgid "%d apps total · %d domains"
+msgstr ""
+
+msgid "%d flow refs"
+msgstr ""
+
+msgid "%d interfaces"
+msgstr ""
+
+msgid "%d online"
+msgstr ""
+
+msgid "%d pkts"
+msgstr ""
+
+msgid "%d pkts (ports)"
+msgstr ""
+
+msgid "%d queues active · ECN %s"
+msgstr ""
+
+msgid "%d queues bound (globally off)"
+msgstr ""
+
+msgid "%d rules active"
+msgstr ""
+
+msgid "%d server IPs captured"
+msgstr ""
+
+msgid "%d signature rules"
+msgstr ""
+
+msgid "%d signature rules · Custom"
+msgstr ""
+
+msgid "%s (%d apps · recommended CoS %d)"
+msgstr ""
+
+msgid "%s Mbps · Connected"
+msgstr ""
+
+msgid "%s · ID: %s"
+msgstr ""
+
+msgid "(No match criteria specified)"
+msgstr ""
+
+msgid "(no egress qdisc info)"
+msgstr ""
+
+msgid "+ Add App Signature"
+msgstr ""
+
+msgid "+%d domains"
+msgstr ""
+
+msgid "0 (No extra marking · keep unmatched traffic in lowest queue 0)"
+msgstr ""
+
+msgid "0 (Unlimited, download stats only)"
+msgstr ""
+
+msgid "0 (Unlimited, upload stats only)"
+msgstr ""
+
+msgid "0 (all 8 priority levels share bandwidth by weight)"
+msgstr ""
+
+msgid "0 = Unlimited (stats only)"
+msgstr ""
+
+msgid "0 interfaces"
+msgstr ""
+
+msgid "1 (Gentle · intervenes past half queue, prioritizes throughput & compatibility)"
+msgstr ""
+
+msgid "1. Centrally manage low-level RTL9617C NIC and forwarding ASIC offload features, kept separate from QoS shaping and queueing."
+msgstr ""
+
+msgid "1. Click \"Add\" under \"Per-Device Rate Limiting Rules\" below and select your phone, PC, or TV from the \"Device MAC Address\" dropdown."
+msgstr ""
+
+msgid "1. Configure scheduling and rate limits on physical Ethernet ports (LAN1–LAN4) and the PON optical port (pon0) using the ASIC's 8-level hardware priority queues."
+msgstr ""
+
+msgid "1. During port scans, SYN/ICMP floods, or malformed packet attacks, software firewalls on traditional routers can max out the CPU and drop connectivity. With this master switch enabled, the RTL9617C ASIC inspects and drops all 16 attack types at the physical port front-end with 0% CPU usage."
+msgstr ""
+
+msgid "1. Easiest setup: click \"Esports Gaming & Voice Anti-Lag\" or \"Work-From-Home & Video Conferencing Priority\" under \"One-Click Scenario Presets\" below to automatically enable small-packet priority, load the app signature catalog, and configure port hardware queueing."
+msgstr ""
+
+msgid "1. Manage the RTL9617C forwarding ASIC's per-flow policer channels (0–159) and multi-flow shared policer groups (0–63) for precise hardware rate limiting and burst control."
+msgstr ""
+
+msgid "1. When hardware flowtable offload is enabled, established forwarded packets are switched directly in silicon between ports without reaching the router CPU, so running tcpdump on the router cannot see offloaded traffic."
+msgstr ""
+
+msgid "1. With \"L2TPv2 / PPTP Hardware Offload\" enabled, plaintext PPP-encapsulated L2TPv2 (UDP 1701) and PPTP (GREv1) data planes are encapsulated/decapsulated directly by the RTL9617C L3PE dual-header tunnel ASIC, sharply reducing CPU usage."
+msgstr ""
+
+msgid "10000 (~10 Mbps)"
+msgstr ""
+
+msgid "100000 (~100 Mbps)"
+msgstr ""
+
+msgid "1000000 (~1000 Mbps)"
+msgstr ""
+
+msgid "128 bytes (tiny control / voice frames only)"
+msgstr ""
+
+msgid "15 safe protection rules are enabled by default (excluding syn1024, which blocks 80/443 replies). Select any rule here to disable it individually if false positives occur."
+msgstr ""
+
+msgid "16 Attack Protection Rules Status"
+msgstr ""
+
+msgid "160 channels total"
+msgstr ""
+
+msgid "2 (Balanced · throttles earlier, balances low latency & throughput)"
+msgstr ""
+
+msgid "2. \"Host TX Offload (DMA LSO)\" accelerates heavy local router uploads (such as Samba, web server, proxy, or iperf3 server on the router) by offloading checksumming and TCP segmentation to DMA LSO hardware; the status card verifies live ethtool NIC flags."
+msgstr ""
+
+msgid "2. Choosing a mode: (a) To cap total download speed on a LAN port, select \"Port Download Shaping\"; (b) To let high-priority gaming/voice traffic always go first, select \"Strict Priority Queueing\" (VoQ 7 highest → VoQ 0 lowest); (c) Recommended: \"Hybrid Priority Queueing (ETS)\", e.g., top 3 high-priority queues (CoS 7–5) strict and CoS 4–0 sharing bandwidth by weight. (Note: pon0 hardware PUC supports sp and ets only.)"
+msgstr ""
+
+msgid "2. For per-device rate limiting, use Per-Device Rate Limiting (which has 96 dedicated reserved hardware channels); the 160 channels and 64 shared groups here are for fine-grained flow-level policing."
+msgstr ""
+
+msgid "2. If a tunnel negotiates MPPE encryption, CCP compression, VJ compression, or IPsec encapsulation, the kernel safely falls back to software processing without affecting connectivity."
+msgstr ""
+
+msgid "2. Recommended setup: check \"Enable Hardware Automatic DoS Blocking\" below and click \"Save & Apply\". Safe default flood thresholds (ICMP 1000 / SYN 2000 / FIN 2000) and zero-CPU hardware drop on physical ports (excluding CPU ports) are configured automatically."
+msgstr ""
+
+msgid "2. Smart App Signature Detection: %d app signatures loaded (%s), using dnsmasq nftset to dynamically track domain server IPs + dedicated narrow-port matching with zero ongoing CPU overhead and full ASIC hardware acceleration. Click \"Manage Catalog / Batch Import\" below to add, edit, or import rules freely (applies to direct or proxy-bypassed traffic)."
+msgstr ""
+
+msgid "2. Speed unit conversion: 1000 kbps ≈ 1 Mbps (e.g. 50000 for 50 Mbps, 100000 for 100 Mbps, 1000000 for 1000 Mbps)."
+msgstr ""
+
+msgid "2. To capture packets for troubleshooting, enable \"Hardware Flow Traffic Mirroring\" here: the ASIC mirrors matching offloaded packets in real time to a chosen physical LAN port (LAN1–LAN4), where a connected PC running Wireshark can capture them."
+msgstr ""
+
+msgid "20000 (~20 Mbps)"
+msgstr ""
+
+msgid "200000 (~200 Mbps)"
+msgstr ""
+
+msgid "256 bytes (recommended · covers most gaming & voice packets)"
+msgstr ""
+
+msgid "3 (Aggressive Low-Latency · earliest intervention to prevent ping spikes)"
+msgstr ""
+
+msgid "3. \"Zero-Copy RX (page_pool)\" eliminates full-packet CPU memcpy on receive to lower CPU usage for non-offloaded flows (proxy/VPN/Wi-Fi bridging); \"Multi-Core RX Steering\" pins NI IRQs and distributes PON & LAN receive across CPU cores with RPS+RFS."
+msgstr ""
+
+msgid "3. Advanced customization: you can also add, edit, or delete rules by LAN device IP (e.g. 192.168.2.100), MAC, or specific game ports in the \"Custom Priority Forwarding Rules\" section at the bottom."
+msgstr ""
+
+msgid "3. Enabling \"Hardware Queue Anti-Bufferbloat (WRED)\" below is recommended to reduce queueing delay under saturation. (Note: NIC TX offload and IPTV multicast offload switches are in Network → Hardware Offload.)"
+msgstr ""
+
+msgid "3. Hardware DoS Protection and Hardware Traffic Mirroring are now separate pages:"
+msgstr ""
+
+msgid "3. If false positives occur during speed tests, LAN scanning, or NAT traversal, exempt individual checks under \"Exempted (Disabled) Attack Types\" or raise the flood rate thresholds."
+msgstr ""
+
+msgid "3. The router includes l2tp_ppp and pptp kernel modules plus xl2tpd/pppd plugins; once you add and connect an L2TP or PPTP client interface under Network → Interfaces, ASIC slot allocations and flow references appear here automatically."
+msgstr ""
+
+msgid "3. To monitor real-time speed and total traffic for a device without throttling it, set both \"Upload Limit\" and \"Download Limit\" to 0 (0 = unlimited, stats only)."
+msgstr ""
+
+msgid "3. To prevent loopback storms, mirroring to router CPU ports is blocked by the driver. Disable mirroring after troubleshooting to avoid consuming extra port bandwidth."
+msgstr ""
+
+msgid "30000 (~30 Mbps)"
+msgstr ""
+
+msgid "300000 (~300 Mbps)"
+msgstr ""
+
+msgid "32 total (UL + DL)"
+msgstr ""
+
+msgid "384 bytes (covers larger game state sync packets)"
+msgstr ""
+
+msgid "4 presets available"
+msgstr ""
+
+msgid "4. \"VPN Hardware Offload (L2TP / PPTP)\" uses the L3PE dual-header ASIC to offload plaintext L2TPv2 and PPTP; \"IPTV Hardware Multicast Replication\" and \"GbE 802.3az EEE Power Saving\" can be enabled on demand."
+msgstr ""
+
+msgid "4. After editing rules, click \"Save & Apply\" (or \"Apply Rules Now\" at the top right). The ASIC takes over rate limiting and accounting immediately with zero CPU usage."
+msgstr ""
+
+msgid "4. The on-chip crypto engine 90500000.crypto (100 MHz) passes self-tests and registers at prio=150; because Cortex-A55 includes ARMv8 CE instructions (prio=300, >2.6 Gbps single-core AES-GCM), the kernel prefers the faster CPU crypto instructions by default."
+msgstr ""
+
+msgid "50000 (~50 Mbps)"
+msgstr ""
+
+msgid "500000 (~500 Mbps)"
+msgstr ""
+
+msgid "512 bytes (relaxed small-packet threshold)"
+msgstr ""
+
+msgid "64 groups ready"
+msgstr ""
+
+msgid "8 (all 8 priority levels use strict priority)"
+msgstr ""
+
+msgid "802.3az EEE Power Saving:"
+msgstr ""
+
+msgid "A configuration rule already exists for this port; please edit the existing rule"
+msgstr ""
+
+msgid "ASIC Line-Rate Forwarding"
+msgstr ""
+
+msgid "Accelerated High-Priority Flows"
+msgstr ""
+
+msgid "Action"
+msgstr ""
+
+msgid "Active"
+msgstr ""
+
+msgid "Active Device Rate Limits & Live Traffic"
+msgstr ""
+
+msgid "Active Multi-Flow Shared Policer Groups (0 ~ 63)"
+msgstr ""
+
+msgid "Active Per-Flow Hardware Policers (0 ~ 159)"
+msgstr ""
+
+msgid "Active Priority Forwarding Rules & Hit Statistics"
+msgstr ""
+
+msgid "Active on NIC"
+msgstr ""
+
+msgid "Active slots %d/16"
+msgstr ""
+
+msgid "Active · Re-apply"
+msgstr ""
+
+msgid "Add App Signature"
+msgstr ""
+
+msgid "Add LAN devices to configure independent max upload and download speeds (in kbps; 100000 = 100 Mbps). Set 0 for unlimited speed with hardware traffic statistics only."
+msgstr ""
+
+msgid "Add rules directly by app category (e.g., mobile games, PC games, video conferencing, download/cloud-drive deprioritize) or by specific app name without looking up port numbers. Per-app rules take precedence over category rules; once enabled, dnsmasq nftset tracks server IPs and syncs with ASIC hardware acceleration."
+msgstr ""
+
+msgid "Adds no complex port rules; enables only the Smart Small-Packet Priority master switch and LAN1 hardware priority queueing, letting the ASIC automatically detect and prioritize small gaming, voice, Ping, and TCP handshake packets."
+msgstr ""
+
+msgid "Algorithm"
+msgstr ""
+
+msgid "All Categories (%d apps)"
+msgstr ""
+
+msgid "All Disconnected"
+msgstr ""
+
+msgid "All Protocols"
+msgstr ""
+
+msgid "All Ready"
+msgstr ""
+
+msgid "All disabled"
+msgstr ""
+
+msgid "All domains and ports are validated and deduplicated; saved persistently to /etc/rtl9617c-qos/app_signatures.json (survives sysupgrade)."
+msgstr ""
+
+msgid "All packets entering the hardware flowtable are currently being mirrored to the target port."
+msgstr ""
+
+msgid "All protocols (TCP+UDP+ICMP)"
+msgstr ""
+
+msgid "All-Protocol Mode (prioritize all TCP + UDP + ICMP packets below threshold)"
+msgstr ""
+
+msgid "All-zero or broadcast MAC address is not allowed"
+msgstr ""
+
+msgid "Allows Gigabit ports LAN2–LAN4 to enter Low-Power Idle (LPI) when idle to reduce heat; disable if an older NIC exhibits wake-up jitter."
+msgstr ""
+
+msgid "Allows the L3PE dual-header ASIC to parse DS-Lite and 6rd tunnel flows; full flow installation currently depends on proprietary AAL. Keep off for normal use."
+msgstr ""
+
+msgid "Allows the kernel to pass large TCP segments to the NIC DMA engine for hardware segmentation into Ethernet frames (with built-in safe fallback for oversized GRO packets)."
+msgstr ""
+
+msgid "Also Enable IPv6 TCP Segmentation Offload (TSO6)"
+msgstr ""
+
+msgid "App & Game Priority"
+msgstr ""
+
+msgid "App / Category"
+msgstr ""
+
+msgid "App / Category (%d matched)"
+msgstr ""
+
+msgid "App Category"
+msgstr ""
+
+msgid "App ID (Optional)"
+msgstr ""
+
+msgid "App ID: %s"
+msgstr ""
+
+msgid "App Name *"
+msgstr ""
+
+msgid "App Signature Catalog Maintenance & Batch Import"
+msgstr ""
+
+msgid "App Signature Detection"
+msgstr ""
+
+msgid "App Signature Smart Detection (%d built-in apps · dynamic domain tracking + dedicated ports)"
+msgstr ""
+
+msgid "App name cannot be empty"
+msgstr ""
+
+msgid "App, Game & Device Priority Forwarding"
+msgstr ""
+
+msgid "Append Domain List to Existing App (Optional)"
+msgstr ""
+
+msgid "Apply Gaming Preset"
+msgstr ""
+
+msgid "Apply Office Preset"
+msgstr ""
+
+msgid "Apply Rules Now"
+msgstr ""
+
+msgid "Apply Shaping Parameters"
+msgstr ""
+
+msgid "Apply Small-Packet Preset"
+msgstr ""
+
+msgid "Apply failed: %s"
+msgstr ""
+
+msgid "Applying QoS configuration returned error code: %s"
+msgstr ""
+
+msgid "Assign higher forwarding priority levels (CoS 0-7) to critical traffic via the built-in app signature catalog (dynamic domain tracking + dedicated ports), smart small-packet priority, or custom IP/MAC/port rules, synced automatically to the RTL9617C hardware forwarding engine upon connection establishment."
+msgstr ""
+
+msgid "Attack / Malformed Packet Type"
+msgstr ""
+
+msgid "Auto-Detect (Recommended · JSON / Tabular Text / Clash Domain Rules)"
+msgstr ""
+
+msgid "Automatically enables Smart Small-Packet Priority (<=256B -> CoS 6) and default normal traffic baseline CoS 2 + enables App Signature Library priority for mobile/PC games & voice meetings while deprioritizing BT/downloads to lowest queue 0 + DNS/high-frequency port rules + enables LAN1 (2.5G) and PON0 (optical uplink) ETS hybrid queueing (CoS 7-5 strict priority, 4-0 weighted) and WRED anti-bufferbloat."
+msgstr ""
+
+msgid "Automatically enables Smart Small-Packet Priority and default normal traffic baseline CoS 2 + enables App Signature Library priority for video conferencing, remote desktop, and online education while deprioritizing BT/downloads to lowest queue 0 + DNS/SSH/web priority rules + enables LAN1 and PON0 ETS hybrid priority queueing and WRED."
+msgstr ""
+
+msgid "Automatically hot-synced to nftables and dnsmasq rules."
+msgstr ""
+
+msgid "Automatically programs IGMP Snooping bridge multicast subscriptions (MDB) into the ASIC MCE and ARB MC FIB hardware tables."
+msgstr ""
+
+msgid "Awaiting NIC Sync"
+msgstr ""
+
+msgid "Baseline Priority Level for Unmatched Normal Traffic"
+msgstr ""
+
+msgid "Batch Import"
+msgstr ""
+
+msgid "Batch Import (JSON / Text / Domains)"
+msgstr ""
+
+msgid "Batch Import Content"
+msgstr ""
+
+msgid "Batch-Imported Domain Group"
+msgstr ""
+
+msgid "Best For: %s"
+msgstr ""
+
+msgid "Bidirectional"
+msgstr ""
+
+msgid "Bidirectional (Auto-match Upload + Download)"
+msgstr ""
+
+msgid "Bidirectional (Upload + Download)"
+msgstr ""
+
+msgid "BitTorrent & Background Bulk Download Deprioritization"
+msgstr ""
+
+msgid "Blat Same-Port Spoofing (source port equals destination port)"
+msgstr ""
+
+msgid "Bridge Software Forwarding"
+msgstr ""
+
+msgid "Burst Buffer (Bytes)"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Catalog changed; closing this dialog will refresh the page to update dropdown lists."
+msgstr ""
+
+msgid "Category"
+msgstr ""
+
+msgid "Category *"
+msgstr ""
+
+msgid "Category: %s"
+msgstr ""
+
+msgid "Centrally manage RTL9617C L2TPv2 / PPTP ASIC tunnel offload, dialer stack diagnostics, and on-chip crypto engine status."
+msgstr ""
+
+msgid "Clear All Traffic"
+msgstr ""
+
+msgid "Clear Traffic"
+msgstr ""
+
+msgid "Clear failed: %s"
+msgstr ""
+
+msgid "Cleared cumulative traffic counters for all devices."
+msgstr ""
+
+msgid "Cleared cumulative traffic counters for device %s."
+msgstr ""
+
+msgid "Click \"Add\" to configure priority queueing or whole-port rate limiting for physical ports (lan1–lan4) or PON optical port (pon0, hardware supports sp/ets only)."
+msgstr ""
+
+msgid "Click to Disable Preset"
+msgstr ""
+
+msgid "Clock-gated (power save)"
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
+msgid "CoS %s"
+msgstr ""
+
+msgid "CoS %s: %d v4 / %d v6"
+msgstr ""
+
+msgid "CoS 0 · Lowest Queue (BT/Background Updates Deprioritized, or Default When No Baseline Set)"
+msgstr ""
+
+msgid "CoS 1 · Low Priority (Large Downloads / Sync)"
+msgstr ""
+
+msgid "CoS 2 · Normal Traffic (Default Baseline)"
+msgstr ""
+
+msgid "CoS 3 · Above-Normal Priority (Daily Office / Cloud Storage)"
+msgstr ""
+
+msgid "CoS 4 · Medium-High Priority (HD Video / Web Browsing)"
+msgstr ""
+
+msgid "CoS 5 · High Priority (Video Conferencing / Live Interactive)"
+msgstr ""
+
+msgid "CoS 6 · Very High Priority (Gaming / Voice Calls)"
+msgstr ""
+
+msgid "CoS 7 · Highest Priority (Network Control / Critical)"
+msgstr ""
+
+msgid "Committed Burst CBS (1~4095)"
+msgstr ""
+
+msgid "Committed Rate (CIR)"
+msgstr ""
+
+msgid "Committed Rate CIR (kbps)"
+msgstr ""
+
+msgid "Component"
+msgstr ""
+
+msgid "Configure RTL9617C ASIC-level hardware flow traffic mirroring to copy offloaded traffic to a physical LAN port for Wireshark packet capture."
+msgstr ""
+
+msgid "Configure independent upload/download rate limits and live traffic statistics by MAC address for LAN phones, PCs, NAS, or TVs. All policing and accounting runs directly in the RTL9617C ASIC with zero CPU usage."
+msgstr ""
+
+msgid "Configure the ASIC's 64 multi-flow shared bandwidth policer groups (in kbps, 100000 = 100 Mbps; burst buffer range 1 ~ 4095)."
+msgstr ""
+
+msgid "Configure whole-port download/upload caps, 8-level ASIC hardware priority queueing on LAN1–LAN4 & PON0, and hardware queue anti-bufferbloat (WRED)."
+msgstr ""
+
+msgid "Configured L2TP / PPTP Interfaces"
+msgstr ""
+
+msgid "Configured VPN Dialer Interfaces"
+msgstr ""
+
+msgid "Confirm replacing the entire current signature catalog with the imported content? You can restore the factory catalog at any time via \"Restore Factory Catalog\"."
+msgstr ""
+
+msgid "Connected"
+msgstr ""
+
+msgid "Connected (%s)"
+msgstr ""
+
+msgid "Connection Status"
+msgstr ""
+
+msgid "Core"
+msgstr ""
+
+msgid "Counted in domain tracking above"
+msgstr ""
+
+msgid "Covers %d apps (auto-merges dynamic domain tracking + dedicated narrow ports)"
+msgstr ""
+
+msgid "Create New App (enter new app name on the right)"
+msgstr ""
+
+msgid "Crypto Algorithm Priority Comparison (On-Chip HW Engine vs CPU ARMv8 CE)"
+msgstr ""
+
+msgid "Current Status: No Preset Active"
+msgstr ""
+
+msgid "Current Status: Using Custom Rules"
+msgstr ""
+
+msgid "Currently %d active hardware-offloaded flows (changing dynamically as connections open/age), of which %d are bound to per-device rate limiting/accounting channels (IPv4 & IPv6 bidirectional)."
+msgstr ""
+
+msgid "Currently %d live hardware-accelerated flows (varying dynamically as connections open/age): High-priority (CoS 5-7): %d · Normal (CoS 2-4): %d · Low-priority (CoS 0-1): %d."
+msgstr ""
+
+msgid "Currently Active: Preset 1 (Esports Gaming & Voice Anti-Lag)"
+msgstr ""
+
+msgid "Currently Active: Preset 2 (Work-From-Home & Video Conferencing Priority)"
+msgstr ""
+
+msgid "Currently Active: Preset 3 (Minimalist Smart Small-Packet Priority)"
+msgstr ""
+
+msgid "Currently Default"
+msgstr ""
+
+msgid "Custom Apps"
+msgstr ""
+
+msgid "Custom Catalog"
+msgstr ""
+
+msgid "Custom Persistent Catalog"
+msgstr ""
+
+msgid "Custom Priority Forwarding Rules (Evaluated Top-to-Bottom; Freely Editable)"
+msgstr ""
+
+msgid "DNS & SSH Remote Office Terminal"
+msgstr ""
+
+msgid "DNS Fast Resolution"
+msgstr ""
+
+msgid "Data Format"
+msgstr ""
+
+msgid "Dedicated TCP Ports / Ranges"
+msgstr ""
+
+msgid "Dedicated UDP Ports / Ranges"
+msgstr ""
+
+msgid "Dedicated ports and acceleration domains for Honor of Kings, Peacekeeper Elite, Genshin Impact, Delta Force, TFT Mobile, etc."
+msgstr ""
+
+msgid "Default (unlimited port download speed)"
+msgstr ""
+
+msgid "Default (unlimited port upload speed)"
+msgstr ""
+
+msgid "Default 1000"
+msgstr ""
+
+msgid "Default 2000"
+msgstr ""
+
+msgid "Default 65536 (64 KB)"
+msgstr ""
+
+msgid "Default Category (used when category is omitted)"
+msgstr ""
+
+msgid "Default Scheduling"
+msgstr ""
+
+msgid "Default Tail-Drop Mode"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Delete error: %s"
+msgstr ""
+
+msgid "Delete failed: %s"
+msgstr ""
+
+msgid "Delete the custom override file and restore the factory signature catalog?"
+msgstr ""
+
+msgid "Description / Path"
+msgstr ""
+
+msgid "Destination IP (Remote Server)"
+msgstr ""
+
+msgid "Destination Port (Game / App Port)"
+msgstr ""
+
+msgid "Device MAC Address"
+msgstr ""
+
+msgid "Device MAC: %s"
+msgstr ""
+
+msgid "Device Name / IP"
+msgstr ""
+
+msgid "Device Remark Name"
+msgstr ""
+
+msgid "Direction"
+msgstr ""
+
+msgid "Disable PE Offload"
+msgstr ""
+
+msgid "Disable Preset & Clear Rules"
+msgstr ""
+
+msgid "Disable Preset / Full Manual Configuration"
+msgstr ""
+
+msgid "Disabled"
+msgstr ""
+
+msgid "Disabled (can be enabled in Hardware Offload)"
+msgstr ""
+
+msgid "Disabled (software forwarding)"
+msgstr ""
+
+msgid "Disables small-packet priority and clears app classification rules on this page (without affecting device limits configured in Per-Device Rate Limiting), allowing you to add custom rules from scratch."
+msgstr ""
+
+msgid "Disconnected"
+msgstr ""
+
+msgid "Domain & Port Signatures"
+msgstr ""
+
+msgid "Domain List Sample"
+msgstr ""
+
+msgid "Domain tracking: %d · Dedicated TCP: %d · UDP: %d"
+msgstr ""
+
+msgid "Done & Refresh Page"
+msgstr ""
+
+msgid "Download Burst Buffer (Bytes)"
+msgstr ""
+
+msgid "Download Limit"
+msgstr ""
+
+msgid "Download Limit (kbps)"
+msgstr ""
+
+msgid "Download Only / Reverse Match"
+msgstr ""
+
+msgid "Download Shaping & Queueing Mode"
+msgstr ""
+
+msgid "Downloads / App Stores / Cloud Drives (Deprioritize)"
+msgstr ""
+
+msgid "Driver"
+msgstr ""
+
+msgid "Driver Not Ready"
+msgstr ""
+
+msgid "Dst IP: %s"
+msgstr ""
+
+msgid "Dst Port: %s"
+msgstr ""
+
+msgid "Dynamic domain sets: %s"
+msgstr ""
+
+msgid "Each non-zero upload or download limit consumes 1 hardware limiter; setting 0 (stats only, unlimited) does not consume a hardware limiter."
+msgstr ""
+
+msgid "Each rule must specify at least one match criterion (such as LAN device IP, MAC, game port, or DSCP mark). When \"Bidirectional (Upload + Download)\" is selected, return download traffic is automatically matched into the same priority level."
+msgstr ""
+
+msgid "Edit"
+msgstr ""
+
+msgid "Edit App Signature: %s (%s)"
+msgstr ""
+
+msgid "Empty response"
+msgstr ""
+
+msgid "Enable"
+msgstr ""
+
+msgid "Enable DS-Lite / 6rd Hardware Dual-Header Tunnel Offload (Experimental)"
+msgstr ""
+
+msgid "Enable ECN Marking (instead of packet drops)"
+msgstr ""
+
+msgid "Enable GbE LAN 802.3az EEE Power Saving (LAN2–LAN4)"
+msgstr ""
+
+msgid "Enable Hardware Anti-Bufferbloat (WRED Active Queue Management)"
+msgstr ""
+
+msgid "Enable Hardware Automatic DoS Blocking"
+msgstr ""
+
+msgid "Enable Hardware Flow Traffic Mirroring"
+msgstr ""
+
+msgid "Enable Hardware QoS & Rate Limiting Service"
+msgstr ""
+
+msgid "Enable Hardware TX Checksum Offload (TX CSUM)"
+msgstr ""
+
+msgid "Enable IPTV Hardware Multicast Replication"
+msgstr ""
+
+msgid "Enable IPv4 TCP Segmentation Offload (DMA LSO / TSO)"
+msgstr ""
+
+msgid "Enable IPv6 Hardware NAT66 Offload"
+msgstr ""
+
+msgid "Enable L2TPv2 / PPTP ASIC Tunnel Hardware Offload"
+msgstr ""
+
+msgid "Enable PE Offload"
+msgstr ""
+
+msgid "Enable Smart Small-Packet Priority"
+msgstr ""
+
+msgid "Enable Whole-Port Upload Policing"
+msgstr ""
+
+msgid "Enable Zero-Copy NIC Receive (page_pool + napi_build_skb)"
+msgstr ""
+
+msgid "Enabled"
+msgstr ""
+
+msgid "Enabled (activates when idle)"
+msgstr ""
+
+msgid "Enabled by default. Builds skbs directly from page_pool buffers for packets > 128 bytes to eliminate full-packet CPU memcpy (hot-toggleable at runtime for A/B testing)."
+msgstr ""
+
+msgid "Enabled · Engine Ready"
+msgstr ""
+
+msgid "Enabled · LPI Active"
+msgstr ""
+
+msgid "Enables 15 safe flood & malformed packet checks (hardware drop) by default, keeping syn1024 off to avoid breaking HTTP/HTTPS replies. Exempt individual rules below as needed."
+msgstr ""
+
+msgid "Enables hardware TCP segmentation offload for IPv6 TCP traffic as well when TSO is enabled."
+msgstr ""
+
+msgid "Example: Cloud Gaming / Custom Boost"
+msgstr ""
+
+msgid "Example: Custom Cloud Drive Deprioritize"
+msgstr ""
+
+msgid "Execution Unit"
+msgstr ""
+
+msgid "Exempted (Disabled) Attack Types"
+msgstr ""
+
+msgid "Experimental Low-Level Features (Dev/Test Only)"
+msgstr ""
+
+msgid "Experimental Low-Level Hardware Offload"
+msgstr ""
+
+msgid "Export JSON"
+msgstr ""
+
+msgid "Factory Catalog"
+msgstr ""
+
+msgid "Failed to apply preset: %s"
+msgstr ""
+
+msgid "Failed to load signature catalog: %s"
+msgstr ""
+
+msgid "Failed to parse JSON: please check syntax"
+msgstr ""
+
+msgid "File exceeds the 512 KB limit; please trim it before importing."
+msgstr ""
+
+msgid "Filter by app name / ID / domain / port…"
+msgstr ""
+
+msgid "Flows bound to per-flow hardware policers: %d (in addition, 96 dedicated channels are reserved for Per-Device Rate Limiting; currently %d used)."
+msgstr ""
+
+msgid "Force-Enable Low-Port SYN Block (syn1024)"
+msgstr ""
+
+msgid "Framework Placeholder"
+msgstr ""
+
+msgid "Framework reserved; the 0x90500000 crypto engine is managed by kernel rtk-taurus-crypto and encryption runs on ARMv8 AES-CE"
+msgstr ""
+
+msgid "Framework reserved; variable-length SRv6 encapsulation is handled by the kernel network stack and FE flow entries"
+msgstr ""
+
+msgid "From this port (Upload / Ingress):"
+msgstr ""
+
+msgid "GbE 802.3az EEE Power Saving"
+msgstr ""
+
+msgid "Global ctrl: %s%s. Under full download load, the ASIC proactively drops packets or marks ECN by probability as queues build up, preventing slow browsing and gaming ping spikes."
+msgstr ""
+
+msgid "Global master switch: disabling pauses and removes all per-device rate limits, app priority rules, and port shaping rules from hardware."
+msgstr ""
+
+msgid "Go to"
+msgstr ""
+
+msgid "Group"
+msgstr ""
+
+msgid "Guide"
+msgstr ""
+
+msgid "HW Active Queue Management On"
+msgstr ""
+
+msgid "HW Drop"
+msgstr ""
+
+msgid "HW stats: WRED drop %d / ECN mark %d / Tail drop %d"
+msgstr ""
+
+msgid "Hardware Acceleration & Silicon Offload"
+msgstr ""
+
+msgid "Hardware Active"
+msgstr ""
+
+msgid "Hardware Channels"
+msgstr ""
+
+msgid "Hardware DoS Engine & Active Ports"
+msgstr ""
+
+msgid "Hardware DoS Protection"
+msgstr ""
+
+msgid "Hardware DoS Protection Settings"
+msgstr ""
+
+msgid "Hardware DoS protection table is not available yet."
+msgstr ""
+
+msgid "Hardware Engine Ready"
+msgstr ""
+
+msgid "Hardware FQ-CoDel Fair Queueing"
+msgstr ""
+
+msgid "Hardware Mirroring Status"
+msgstr ""
+
+msgid "Hardware Multicast Queue Offload"
+msgstr ""
+
+msgid "Hardware Offload"
+msgstr ""
+
+msgid "Hardware Offload & Silicon Acceleration Settings"
+msgstr ""
+
+msgid "Hardware Offload Active"
+msgstr ""
+
+msgid "Hardware Policer Channels & Shared Groups"
+msgstr ""
+
+msgid "Hardware Port #%s"
+msgstr ""
+
+msgid "Hardware Priority Path"
+msgstr ""
+
+msgid "Hardware Protection Details for 16 Network Attacks & Malformed Packets"
+msgstr ""
+
+msgid "Hardware Queue Anti-Bufferbloat (Low Latency Under Load)"
+msgstr ""
+
+msgid "Hardware Queue Anti-Bufferbloat (WRED)"
+msgstr ""
+
+msgid "Hardware Queue WRED / ECN Global Status"
+msgstr ""
+
+msgid "Hardware Rate Limiters Used"
+msgstr ""
+
+msgid "Hardware Register Readback / Params"
+msgstr ""
+
+msgid "Hardware Signature ID"
+msgstr ""
+
+msgid "Hardware Slot"
+msgstr ""
+
+msgid "Hardware Slot (0 ~ 159)"
+msgstr ""
+
+msgid "Hardware Smart QoS & Rate Limiting · Full ASIC Offload with Zero CPU Overhead"
+msgstr ""
+
+msgid "Hardware Traffic Mirroring"
+msgstr ""
+
+msgid "Hardware Traffic Mirroring Settings"
+msgstr ""
+
+msgid "Hardware packet-rate threshold for Ping (ICMP) flood blocking (leave blank for default 1000 to avoid dropping normal pings)."
+msgstr ""
+
+msgid "Hardware packet-rate threshold for TCP FIN flood blocking (leave blank for default 2000 to avoid blocking normal disconnects)."
+msgstr ""
+
+msgid "Hardware packet-rate threshold for TCP SYN half-open flood blocking (leave blank for default 2000 to avoid blocking normal connections)."
+msgstr ""
+
+msgid "Hardware rate-limiting pools allowing multiple connections to share a single combined bandwidth cap."
+msgstr ""
+
+msgid "Hardware-forwarded traffic is not mirrored; zero extra port or CPU overhead."
+msgstr ""
+
+msgid "High-Frequency Gaming & Voice Ports"
+msgstr ""
+
+msgid "High-Priority Active"
+msgstr ""
+
+msgid "Hooked into NI TX and DMA LSO VP direct-transmit engine; coexists with other wired offloads on the same core"
+msgstr ""
+
+msgid "Host TX Offload (DMA LSO)"
+msgstr ""
+
+msgid "Hot-switches the forwarding engine to 384-bit action mode to offload IPv6 SNAT / MASQUERADE / DNAT connections (takes effect without reboot). Not needed for standard public IPv6 routing."
+msgstr ""
+
+msgid "How to Use (Hardware Policer Channels & Shared Groups)"
+msgstr ""
+
+msgid "How to Use (Hardware Traffic Mirroring & Capture)"
+msgstr ""
+
+msgid "How to Use (Hardware-Level Automatic DoS Protection)"
+msgstr ""
+
+msgid "How to Use (Keep Gaming, Voice & Primary Devices Lag-Free)"
+msgstr ""
+
+msgid "How to Use (Per-Device Rate Limiting & Traffic Monitoring)"
+msgstr ""
+
+msgid "How to Use (Per-Port Shaping & Anti-Lag Queueing)"
+msgstr ""
+
+msgid "Hybrid Priority Queueing (top queues strict, remaining queues share bandwidth by weight)"
+msgstr ""
+
+msgid "Hybrid priority queueing (top %s strict + remaining WRR)"
+msgstr ""
+
+msgid "ICMP (Ping)"
+msgstr ""
+
+msgid "ICMP / Ping Test"
+msgstr ""
+
+msgid "ICMP Flood (massive ping request flooding)"
+msgstr ""
+
+msgid "ICMP Flood Trigger Threshold (1 ~ 65535)"
+msgstr ""
+
+msgid "ICMP Fragment Attack (forged fragmented ICMP packet)"
+msgstr ""
+
+msgid "IP Family"
+msgstr ""
+
+msgid "IPTV Hardware Multicast Replication"
+msgstr ""
+
+msgid "IPsec ESP Offload Framework"
+msgstr ""
+
+msgid "IPv4 + IPv6 Dual Stack"
+msgstr ""
+
+msgid "IPv4 Only"
+msgstr ""
+
+msgid "IPv6 Only"
+msgstr ""
+
+msgid "Idle (no active tunnels)"
+msgstr ""
+
+msgid "Import Mode"
+msgstr ""
+
+msgid "Import failed: %s"
+msgstr ""
+
+msgid "Import from Local File (.json / .csv / .txt) or Fill Sample"
+msgstr ""
+
+msgid "Import payload is empty"
+msgstr ""
+
+msgid "Import payload is too large (512 KB limit per import)"
+msgstr ""
+
+msgid "Import succeeded: %d added · %d updated · %d skipped (total %d apps / %d domains)"
+msgstr ""
+
+msgid "Inactive"
+msgstr ""
+
+msgid "Installed"
+msgstr ""
+
+msgid "Installed (on-demand)"
+msgstr ""
+
+msgid "Installed · Standby"
+msgstr ""
+
+msgid "Instant Messaging"
+msgstr ""
+
+msgid "Instant drop"
+msgstr ""
+
+msgid "Instant messaging connections for WeChat, QQ, TIM, DingTalk, etc."
+msgstr ""
+
+msgid "Interface"
+msgstr ""
+
+msgid "Invalid app entry object"
+msgstr ""
+
+msgid "JSON Sample"
+msgstr ""
+
+msgid "JSON Signature Catalog (full export file or array of app objects)"
+msgstr ""
+
+msgid "JSON root must be an object or an array of apps"
+msgstr ""
+
+msgid "Kernel Module"
+msgstr ""
+
+msgid "Kernel Modules & Dialer Tools"
+msgstr ""
+
+msgid "L2 Bridging Protection"
+msgstr ""
+
+msgid "L2TP / PPTP ASIC Offload"
+msgstr ""
+
+msgid "L2TP Netlink control interface"
+msgstr ""
+
+msgid "L2TP core protocol stack"
+msgstr ""
+
+msgid "L2TP slots: %d · PPTP slots: %d · EIF active flow refs: %d · Clear on free: %s"
+msgstr ""
+
+msgid "L2TPv2 dialer daemon"
+msgstr ""
+
+msgid "L3 %d / %d · L2 %d / %d"
+msgstr ""
+
+msgid "L3 Routing Protection"
+msgstr ""
+
+msgid "L3 port mask: %s · L2 port mask: %s · Flood window registers: L3=%d / L2=%d."
+msgstr ""
+
+msgid "LAN RPS: 0x%s · PON RPS: 0x%s · Queue flow entries: %s"
+msgstr ""
+
+msgid "LAN1 Port (2.5G · Hardware Port 6)"
+msgstr ""
+
+msgid "LAN1 Port (2.5G · Port #6)"
+msgstr ""
+
+msgid "LAN1 Port (2.5G · Primary PC / Downstream Router / Switch)"
+msgstr ""
+
+msgid "LAN2 Port (GbE · Hardware Port 1)"
+msgstr ""
+
+msgid "LAN2 Port (GbE · PC / Downstream Router / Switch)"
+msgstr ""
+
+msgid "LAN2 Port (GbE · Port #1)"
+msgstr ""
+
+msgid "LAN3 Port (GbE · Hardware Port 2)"
+msgstr ""
+
+msgid "LAN3 Port (GbE · PC / Downstream Router / Switch)"
+msgstr ""
+
+msgid "LAN3 Port (GbE · Port #2)"
+msgstr ""
+
+msgid "LAN4 Port (GbE · Hardware Port 3)"
+msgstr ""
+
+msgid "LAN4 Port (GbE · PC / Downstream Router / Switch)"
+msgstr ""
+
+msgid "LAN4 Port (GbE · Port #3)"
+msgstr ""
+
+msgid "LAND Loopback Attack (source IP equals destination IP)"
+msgstr ""
+
+msgid "LPI Active"
+msgstr ""
+
+msgid "Lag-free connections for market quotes, trading, and online banking payments"
+msgstr ""
+
+msgid "League of Legends, Steam, WeGame, Dungeon Fighter Online, World of Warcraft, Ubisoft, etc."
+msgstr ""
+
+msgid "Leave blank = any"
+msgstr ""
+
+msgid "Leave blank = any, e.g. 192.168.2.100"
+msgstr ""
+
+msgid "Leave blank = any, or select ef / cs5 / af41"
+msgstr ""
+
+msgid "Leave blank = any, or server IP/CIDR"
+msgstr ""
+
+msgid "Leave blank = do not rewrite"
+msgstr ""
+
+msgid "Leave blank to auto-generate, e.g., custom_app1"
+msgstr ""
+
+msgid "Leave blank to match sustained upload limit"
+msgstr ""
+
+msgid "Legacy Copy Mode"
+msgstr ""
+
+msgid "Legacy or incomplete preset detected: missing app signatures or drifted rules; re-applying a preset is recommended"
+msgstr ""
+
+msgid "Live Check"
+msgstr ""
+
+msgid "Live Download Speed"
+msgstr ""
+
+msgid "Live L3PE Dual-Header Tunnel Hardware Slots"
+msgstr ""
+
+msgid "Live Status"
+msgstr ""
+
+msgid "Live Upload Speed"
+msgstr ""
+
+msgid "Loaded & Active"
+msgstr ""
+
+msgid "Loaded (ref %d)"
+msgstr ""
+
+msgid "Loading full app signature catalog…"
+msgstr ""
+
+msgid "Loading…"
+msgstr ""
+
+msgid "Low-Port SYN Block (Warning: breaks WAN 80/443 SYN+ACK replies; off by default)"
+msgstr ""
+
+msgid "Low-Power Active"
+msgstr ""
+
+msgid "Low-latency interactive traffic for Sunlogin, TeamViewer, and Microsoft Remote Desktop"
+msgstr ""
+
+msgid "MAC Address"
+msgstr ""
+
+msgid "MAC Loopback Packet (source MAC equals destination MAC)"
+msgstr ""
+
+msgid "MAC address must be in xx:xx:xx:xx:xx:xx format"
+msgstr ""
+
+msgid "MDB Auto-Synced to Hardware"
+msgstr ""
+
+msgid "MPPE encryption detection (automatic software fallback)"
+msgstr ""
+
+msgid "Manage Catalog (%d)"
+msgstr ""
+
+msgid "Manage NIC DMA LSO TX offload, VPN hardware offload entry, IPTV hardware multicast replication, and experimental ASIC acceleration switches."
+msgstr ""
+
+msgid "Manage RTL9617C chip-level automatic blocking for 16 attack & malformed packet types, flood thresholds, and per-type exemptions."
+msgstr ""
+
+msgid "Maps to kernel module parameter /sys/module/rtl9617c_ni/parameters/vpn_offload. Offloads plaintext L2TPv2 (UDP/1701) and PPTP (GREv1) flows on the RTL9617C L3PE dual-header ASIC; encrypted/compressed tunnels automatically fall back to software."
+msgstr ""
+
+msgid "Master Service Switch"
+msgstr ""
+
+msgid "Match App Mark (DSCP)"
+msgstr ""
+
+msgid "Match Criteria"
+msgstr ""
+
+msgid "Match DSCP: %s"
+msgstr ""
+
+msgid "Match Method"
+msgstr ""
+
+msgid "Match Specific App"
+msgstr ""
+
+msgid "Match by App Category"
+msgstr ""
+
+msgid "Matched Hardware-Offloaded Flows"
+msgstr ""
+
+msgid "Matched Packets"
+msgstr ""
+
+msgid "Matched Traffic"
+msgstr ""
+
+msgid "Matching Domains (auto-tracked via dnsmasq nftset)"
+msgstr ""
+
+msgid "Max Mirrored Packet Snapshot Length (Bytes)"
+msgstr ""
+
+msgid "Max Port Download Speed (kbps)"
+msgstr ""
+
+msgid "Merge & Update (keep existing signatures, add or update matches)"
+msgstr ""
+
+msgid "Mirror Copy Active"
+msgstr ""
+
+msgid "Mirror Output Target Port"
+msgstr ""
+
+msgid "Mirror Target & Snapshot Length"
+msgstr ""
+
+msgid "Mirror output inactive"
+msgstr ""
+
+msgid "Mirroring Active"
+msgstr ""
+
+msgid "Missing"
+msgstr ""
+
+msgid "Module params: CSUM %s · TSO %s · TSO6 %s"
+msgstr ""
+
+msgid "Modules %d/%d · Tools %d/%d"
+msgstr ""
+
+msgid "Monitor and pre-configure RTL9617C's 160 per-flow hardware policer channels and 64 multi-flow shared policer groups."
+msgstr ""
+
+msgid "Monitored Devices"
+msgstr ""
+
+msgid "Multi-Core + RFS"
+msgstr ""
+
+msgid "Multi-Core RX Steering (IRQ / RPS / RFS)"
+msgstr ""
+
+msgid "Multi-Flow Shared Policer Groups"
+msgstr ""
+
+msgid "Multi-Flow Shared Policer Groups (Groups 0 ~ 63)"
+msgstr ""
+
+msgid "Multi-queue priority scheduling (%s queues)"
+msgstr ""
+
+msgid "Multicast MAC address is not allowed (LSB of first byte must be 0)"
+msgstr ""
+
+msgid "NAT66 %s · Dual-Header %s"
+msgstr ""
+
+msgid "NI IRQ: CPU%s · RFS %s"
+msgstr ""
+
+msgid "NIC TX/RX & Multicast Offload"
+msgstr ""
+
+msgid "NIC live (%s): TX-CSUM %s · SG %s · TSO %s · TSO6 %s · GSO %s"
+msgstr ""
+
+msgid "Network → Hardware DoS Protection"
+msgstr ""
+
+msgid "Network → Hardware Traffic Mirroring"
+msgstr ""
+
+msgid "Network → Interfaces"
+msgstr ""
+
+msgid "Network → VPN Hardware Offload"
+msgstr ""
+
+msgid "No EEE-capable Gigabit ports (LAN2–LAN4) detected yet."
+msgstr ""
+
+msgid "No L2TP or PPTP interfaces configured in /etc/config/network yet. Go to Network → Interfaces to add one with the L2TP or PPTP protocol."
+msgstr ""
+
+msgid "No Preset Active"
+msgstr ""
+
+msgid "No active L2TP / PPTP hardware offload slots. Once a plaintext L2TPv2 or PPTP tunnel connects and forwards traffic, allocated Control / Content / EIF slots appear here in real time."
+msgstr ""
+
+msgid "No active multi-flow shared policer groups."
+msgstr ""
+
+msgid "No active per-device rate limiting or traffic monitoring rules yet. Click \"Add\" under \"Per-Device Rate Limiting Rules\" below, choose a LAN device, and click \"Save & Apply\"."
+msgstr ""
+
+msgid "No active per-flow hardware policer channels (all 160 slots free)."
+msgstr ""
+
+msgid "No app ID specified for deletion"
+msgstr ""
+
+msgid "No app or game priority rules added yet. Click \"Add\" below to set higher priority for your main PC, gaming console, or specific game ports."
+msgstr ""
+
+msgid "No app signatures match the current filter."
+msgstr ""
+
+msgid "No apps array or valid app object found in JSON"
+msgstr ""
+
+msgid "No online RTL9617C physical ports found yet."
+msgstr ""
+
+msgid "No ports detected"
+msgstr ""
+
+msgid "No valid app signatures parsed"
+msgstr ""
+
+msgid "Not configured"
+msgstr ""
+
+msgid "Not enabled"
+msgstr ""
+
+msgid "Not enabled (Recommended for Normal Use)"
+msgstr ""
+
+msgid "Not enabled (software)"
+msgstr ""
+
+msgid "Not installed"
+msgstr ""
+
+msgid "Not loaded"
+msgstr ""
+
+msgid "Not ready"
+msgstr ""
+
+msgid "Not selected"
+msgstr ""
+
+msgid "Not specified"
+msgstr ""
+
+msgid "Notes: %s"
+msgstr ""
+
+msgid "ONU → IPTV & Multicast"
+msgstr ""
+
+msgid "Off"
+msgstr ""
+
+msgid "Off by Default"
+msgstr ""
+
+msgid "Offloads outbound TCP/UDP checksum calculation to the RTL9617C DMA LSO engine, reducing CPU usage during high-speed router-originated transmissions."
+msgstr ""
+
+msgid "On"
+msgstr ""
+
+msgid "On-Chip Crypto Engine (90500000.crypto)"
+msgstr ""
+
+msgid "On-Chip HW Engine"
+msgstr ""
+
+msgid "One domain per line or comma-separated; supports *.example.com and Clash DOMAIN-SUFFIX,example.com"
+msgstr ""
+
+msgid "One-Click Scenario Presets (rules can still be customized freely below after applying)"
+msgstr ""
+
+msgid "Online Education & Courses"
+msgstr ""
+
+msgid "Only for new domain group, e.g., Company Intranet"
+msgstr ""
+
+msgid "Open PE Dashboard ↗"
+msgstr ""
+
+msgid "Or New App Name (for plain domain list)"
+msgstr ""
+
+msgid "Owner"
+msgstr ""
+
+msgid "PC Games & Platforms"
+msgstr ""
+
+msgid "PE Clock %s / AXI %s"
+msgstr ""
+
+msgid "PE Coprocessor Fair Queueing Offload (Non-Exclusive)"
+msgstr ""
+
+msgid "PE Coprocessor Hardware Offload"
+msgstr ""
+
+msgid "PE Coprocessor Offload Feature"
+msgstr ""
+
+msgid "PE Coprocessor Summary & Multicast Offload"
+msgstr ""
+
+msgid "PE Coprocessor Tunnel & Crypto Offload (Non-Exclusive)"
+msgstr ""
+
+msgid "PE FQ-CoDel Uplink Shaper (kbps, 0=unlimited):"
+msgstr ""
+
+msgid "PE is currently in Wi-Fi hardware offload mode. Enabling any wired feature below will automatically switch back to general data-plane offload mode."
+msgstr ""
+
+msgid "PE switch failed: %s"
+msgstr ""
+
+msgid "PE%d HW Offload · %s"
+msgstr ""
+
+msgid "PON Optical Port (ISP Fiber WAN Uplink)"
+msgstr ""
+
+msgid "PPP dialer daemon"
+msgstr ""
+
+msgid "PPP generic forwarding path (654 offload support)"
+msgstr ""
+
+msgid "PPPoL2TP data-plane driver"
+msgstr ""
+
+msgid "PPTP (GREv1) data-plane driver"
+msgstr ""
+
+msgid "Packet size <= %s Bytes · %s"
+msgstr ""
+
+msgid "Packets whose total length is less than or equal to this value are classified as small packets (range 64 ~ 1024; recommended default 256 bytes)."
+msgstr ""
+
+msgid "Param On · NIC Inactive"
+msgstr ""
+
+msgid "Partially Missing"
+msgstr ""
+
+msgid "Passed · Fallback"
+msgstr ""
+
+msgid "Passed · Kernel Default"
+msgstr ""
+
+msgid "Paste JSON, tabular lines (Category|Name|Domains|TCP|UDP), or Clash/plain domain list here, or choose a local file above…"
+msgstr ""
+
+msgid "Pause refresh"
+msgstr ""
+
+msgid "Peak Burst PBS (1~4095)"
+msgstr ""
+
+msgid "Peak Burst Upload Speed (kbps)"
+msgstr ""
+
+msgid "Peak Rate (PIR)"
+msgstr ""
+
+msgid "Peak Rate PIR (kbps)"
+msgstr ""
+
+msgid "Peer Server"
+msgstr ""
+
+msgid "Pending"
+msgstr ""
+
+msgid "Pending Apply"
+msgstr ""
+
+msgid "Per-Device Rate Limiting"
+msgstr ""
+
+msgid "Per-Device Rate Limiting Rules (Add, Edit, Delete)"
+msgstr ""
+
+msgid "Per-Device Upload / Download Rate Limiting & Traffic Stats"
+msgstr ""
+
+msgid "Per-Flow Hardware Policer Channels"
+msgstr ""
+
+msgid "Per-Flow Hardware Policer Presets (Slots 0 ~ 159)"
+msgstr ""
+
+msgid "Per-Port Shaping & Priority Queueing Policies"
+msgstr ""
+
+msgid "Physical Port Bandwidth Shaping & Priority Queueing"
+msgstr ""
+
+msgid "Physical Port Status"
+msgstr ""
+
+msgid "Physical Ports Armed (Drop)"
+msgstr ""
+
+msgid "Ping of Death (oversized fragmented ping > 65535 bytes)"
+msgstr ""
+
+msgid "Plain Domain List into Target App (deduplicated & merged)"
+msgstr ""
+
+msgid "Please enter a MAC address"
+msgstr ""
+
+msgid "Please enter a valid physical interface name (e.g., lan1)"
+msgstr ""
+
+msgid "Please paste import content or select a local file first."
+msgstr ""
+
+msgid "Policer %d"
+msgstr ""
+
+msgid "Policers & Shared Groups"
+msgstr ""
+
+msgid "Popular Mobile Games"
+msgstr ""
+
+msgid "Popular online classroom and live course streaming platforms"
+msgstr ""
+
+msgid "Port Download Shaping & Queueing (Router → Port)"
+msgstr ""
+
+msgid "Port Download Shaping (cap total speed from router to PC/downstream router)"
+msgstr ""
+
+msgid "Port Not Enabled"
+msgstr ""
+
+msgid "Port Shaping & Queueing"
+msgstr ""
+
+msgid "Port Upload Policing (Port → Router)"
+msgstr ""
+
+msgid "Port download shaping %s (burst %s)"
+msgstr ""
+
+msgid "Port upload policing %s (burst %s · HW offload active)"
+msgstr ""
+
+msgid "Port upload policing %s (burst %s)"
+msgstr ""
+
+msgid "Pre-configure the ASIC's 160 per-flow hardware policer channels (in kbps, 100000 = 100 Mbps; burst buffer range 1 ~ 4095)."
+msgstr ""
+
+msgid "Preset 1: Esports Gaming & Voice Anti-Lag"
+msgstr ""
+
+msgid "Preset 2: Work-From-Home & Video Conferencing Priority"
+msgstr ""
+
+msgid "Preset 3: Minimalist Smart Small-Packet Priority (Zero Rules)"
+msgstr ""
+
+msgid "Priority"
+msgstr ""
+
+msgid "Priority 150 (fallback); IPsec/TLS defaults to faster CPU ARMv8 CE (priority 300)."
+msgstr ""
+
+msgid "Priority Classification Engine"
+msgstr ""
+
+msgid "Priority Level"
+msgstr ""
+
+msgid "Priority Level %d Weight (Bytes · WRR queues only)"
+msgstr ""
+
+msgid "Priority Level (0~7)"
+msgstr ""
+
+msgid "Priority Level for Small Packets"
+msgstr ""
+
+msgid "Protection Active"
+msgstr ""
+
+msgid "Proto: %s"
+msgstr ""
+
+msgid "Protocol"
+msgstr ""
+
+msgid "Range 64 ~ 4095 bytes. Use 128 for headers only, or 2048 for full Ethernet frames."
+msgstr ""
+
+msgid "Read failed: %s"
+msgstr ""
+
+msgid "Ready · Running"
+msgstr ""
+
+msgid "Recommended · One-click anti-ping-spike for gaming & voice"
+msgstr ""
+
+msgid "Recommended: \"Smart Mode\", which boosts UDP gaming/voice small packets, Ping, DNS, and SSH control packets while preventing large TCP download ACKs from boosting an entire bulk download flow."
+msgstr ""
+
+msgid "Remaining direct traffic not matching rules above defaults to this baseline queue"
+msgstr ""
+
+msgid "Remote Desktop & Control"
+msgstr ""
+
+msgid "Remote Work · Smooth video meetings & web browsing"
+msgstr ""
+
+msgid "Remove \"%s\" (%s) from the signature catalog?"
+msgstr ""
+
+msgid "Replace All (clear current list and replace with imported content)"
+msgstr ""
+
+msgid "Replace import produced an empty result; cancelled to avoid clearing the catalog"
+msgstr ""
+
+msgid "Requires IGMP Snooping enabled in:"
+msgstr ""
+
+msgid "Restore Defaults · Clear preset rules and configure from scratch"
+msgstr ""
+
+msgid "Restore Factory Catalog"
+msgstr ""
+
+msgid "Restore failed: %s"
+msgstr ""
+
+msgid "Restored factory app signature catalog (%d apps total)."
+msgstr ""
+
+msgid "Resume refresh"
+msgstr ""
+
+msgid "Rewrite DSCP -> %s"
+msgstr ""
+
+msgid "Rewrite Outbound Mark (DSCP)"
+msgstr ""
+
+msgid "Rule Name"
+msgstr ""
+
+msgid "Running"
+msgstr ""
+
+msgid "Running · %s"
+msgstr ""
+
+msgid "Runs 64-queue FQ-CoDel in PE bypass (with 1ns PTP-timed shaping and ECN marking) to eliminate uplink/proxy bufferbloat"
+msgstr ""
+
+msgid "SRv6 / Variable Tunnel Header Framework"
+msgstr ""
+
+msgid "Save & Add to Catalog"
+msgstr ""
+
+msgid "Save Changes"
+msgstr ""
+
+msgid "Save error: %s"
+msgstr ""
+
+msgid "Save failed"
+msgstr ""
+
+msgid "Saved app signature \"%s\" (written to persistent custom catalog)."
+msgstr ""
+
+msgid "Saved app signature \"%s\" and synced running hardware QoS rules."
+msgstr ""
+
+msgid "Select or enter a hardware WRED curve profile ID (built-in: 1=Gentle, 2=Balanced, 3=Aggressive Low-Latency; advanced: 1–31)."
+msgstr ""
+
+msgid "Self-Test & Selection"
+msgstr ""
+
+msgid "Self-test passed (%d/%d)"
+msgstr ""
+
+msgid "Sets a baseline priority for normal traffic that does not match rules above or small-packet detection (recommended: 2, so BT/background downloads set to CoS 0/1 stay strictly below normal browsing)."
+msgstr ""
+
+msgid "Shared Committed Rate CIR (kbps)"
+msgstr ""
+
+msgid "Shared Group ID (0 ~ 63)"
+msgstr ""
+
+msgid "Shared Peak Rate PIR (kbps)"
+msgstr ""
+
+msgid "Show all %d entries (showing first %d)"
+msgstr ""
+
+msgid "Signature List & Maintenance (%d)"
+msgstr ""
+
+msgid "Slot"
+msgstr ""
+
+msgid "Small-Packet Detection Mode"
+msgstr ""
+
+msgid "Small-Packet Size Threshold (Bytes)"
+msgstr ""
+
+msgid "Smart Mode (Recommended · UDP gaming/voice small packets + Ping + DNS + SSH)"
+msgstr ""
+
+msgid "Smart QoS & Rate Limiting"
+msgstr ""
+
+msgid "Smart Small-Packet Priority (Zero-Config Boost for Gaming / Voice / Web Responsiveness)"
+msgstr ""
+
+msgid "Smart mode (UDP gaming/voice + Ping + DNS + SSH)"
+msgstr ""
+
+msgid "Snapshot length can be adjusted from 64 to 4095 bytes: 128 captures protocol headers only, while 2048 retains full standard Ethernet frames."
+msgstr ""
+
+msgid "Source IP (LAN Device Address)"
+msgstr ""
+
+msgid "Source Port"
+msgstr ""
+
+msgid "Specific App"
+msgstr ""
+
+msgid "Src IP: %s"
+msgstr ""
+
+msgid "Src Port: %s"
+msgstr ""
+
+msgid "Standard Mode"
+msgstr ""
+
+msgid "Standard broadband routing and PPPoE forwarding are already hardware-offloaded at line rate. Leave experimental options off unless needed."
+msgstr ""
+
+msgid "Standby"
+msgstr ""
+
+msgid "Start Batch Import & Save"
+msgstr ""
+
+msgid "Stats only"
+msgstr ""
+
+msgid "Status"
+msgstr ""
+
+msgid "Status placeholder only (crypto runs on kernel ARMv8 AES-CE, not bound to PE DMA TX path)"
+msgstr ""
+
+msgid "Status placeholder only (not currently bound to PE DMA TX path)"
+msgstr ""
+
+msgid "Stock Quotes & Online Banking"
+msgstr ""
+
+msgid "Stopped"
+msgstr ""
+
+msgid "Strict High-Priority Queues (Allocated Down From CoS 7)"
+msgstr ""
+
+msgid "Strict Priority Queueing (CoS 7 → 0 strict priority; great for gaming/voice)"
+msgstr ""
+
+msgid "Strict priority queueing (8 priority queues)"
+msgstr ""
+
+msgid "Successfully applied \"%s\" and pushed to hardware ASIC; refreshing page…"
+msgstr ""
+
+msgid "Supports up to 32 LAN devices with independent rate limits or traffic counters (each device gets dedicated hardware upload and download accounting channels)."
+msgstr ""
+
+msgid "Sustained Upload Limit (kbps)"
+msgstr ""
+
+msgid "System Netdev"
+msgstr ""
+
+msgid "TCP (Web / Office / Video)"
+msgstr ""
+
+msgid "TCP + UDP"
+msgstr ""
+
+msgid "TCP FIN Flood (forged connection teardown packets)"
+msgstr ""
+
+msgid "TCP FIN Flood Trigger Threshold (1 ~ 65535)"
+msgstr ""
+
+msgid "TCP Fragment Offset Error (malformed evasion fragment)"
+msgstr ""
+
+msgid "TCP NULL Stealth Scan (illegal probe with all flags zero)"
+msgstr ""
+
+msgid "TCP SYN Flood (half-open connection table exhaustion)"
+msgstr ""
+
+msgid "TCP SYN Flood Trigger Threshold (1 ~ 65535)"
+msgstr ""
+
+msgid "TCP SYN with Payload (non-standard handshake attack)"
+msgstr ""
+
+msgid "TCP SYN+FIN Scan (illegal packet with both SYN and FIN set)"
+msgstr ""
+
+msgid "TCP Short Header (corrupted header < 20 bytes)"
+msgstr ""
+
+msgid "TCP Xmas Scan (malicious probe with FIN+URG+PSH set)"
+msgstr ""
+
+msgid "Tabular / Text Lines (Category|Name|Domains|TCP|UDP or CSV)"
+msgstr ""
+
+msgid "Takes over host-originated multicast/broadcast packets via PE and a dedicated DMA LSO VP with optional rate pacing"
+msgstr ""
+
+msgid "Target LAN Device MAC"
+msgstr ""
+
+msgid "Target Physical Port"
+msgstr ""
+
+msgid "Tencent Meeting / Zoom / Teams Video Conferencing"
+msgstr ""
+
+msgid "Tencent Meeting, WeChat/QQ/DingTalk/WeCom voice and multimedia calls"
+msgstr ""
+
+msgid "Text Lines Sample"
+msgstr ""
+
+msgid "The router identifies app/device priority on the first packet of a connection and programs it into the hardware acceleration table immediately, so all subsequent packets are forwarded at ASIC line rate."
+msgstr ""
+
+msgid "This MAC address already exists in the list; please do not add duplicates"
+msgstr ""
+
+msgid "Threshold"
+msgstr ""
+
+msgid "Tip: supports adding/editing/deleting individual entries, batch merge/replace import, and JSON backup export."
+msgstr ""
+
+msgid "To this port (Download / Egress):"
+msgstr ""
+
+msgid "Toggle"
+msgstr ""
+
+msgid "Top %d priority queues (CoS 7 → %d) strict, CoS %d → 0 WRR"
+msgstr ""
+
+msgid "Total Upload / Download"
+msgstr ""
+
+msgid "Trap to CPU"
+msgstr ""
+
+msgid "Type / Refs"
+msgstr ""
+
+msgid "UDP (Gaming / Voice / Live)"
+msgstr ""
+
+msgid "UDP (Gaming / Voice Calls / Live)"
+msgstr ""
+
+msgid "UDP Bomb (malformed UDP length mismatching IP length)"
+msgstr ""
+
+msgid "UL #%d (%s) / DL #%d (%s)"
+msgstr ""
+
+msgid "Unable to read /proc/crypto algorithm list."
+msgstr ""
+
+msgid "Unable to read module and tool status."
+msgstr ""
+
+msgid "Unarmed"
+msgstr ""
+
+msgid "Unavailable"
+msgstr ""
+
+msgid "Unidirectional (Match Source -> Destination Only)"
+msgstr ""
+
+msgid "Unknown error"
+msgstr ""
+
+msgid "Unlimited (stats only)"
+msgstr ""
+
+msgid "Unnamed Device"
+msgstr ""
+
+msgid "Unplugged"
+msgstr ""
+
+msgid "Unsupported"
+msgstr ""
+
+msgid "Updated at %s"
+msgstr ""
+
+msgid "Upload Burst Buffer (Bytes)"
+msgstr ""
+
+msgid "Upload Limit"
+msgstr ""
+
+msgid "Upload Limit (kbps)"
+msgstr ""
+
+msgid "Upload Only / Forward Match"
+msgstr ""
+
+msgid "User Guide"
+msgstr ""
+
+msgid "User-maintained or batch-imported custom app signatures"
+msgstr ""
+
+msgid "Userspace Tool"
+msgstr ""
+
+msgid "VPN Hardware Offload"
+msgstr ""
+
+msgid "VPN Hardware Offload & Crypto Engine"
+msgstr ""
+
+msgid "VPN Hardware Offload Switch"
+msgstr ""
+
+msgid "VPN Hardware Tunnel Offload (L2TP / PPTP)"
+msgstr ""
+
+msgid "VPN Kernel Modules & Userspace Dialer Self-Check"
+msgstr ""
+
+msgid "Video & Live Streaming"
+msgstr ""
+
+msgid "Video Conferencing & Voice Calls"
+msgstr ""
+
+msgid "View low-level hardware queue details"
+msgstr ""
+
+msgid "Voice & Ultra-Low-Latency Apps (DSCP EF)"
+msgstr ""
+
+msgid "WRED Congestion Curve Profile"
+msgstr ""
+
+msgid "WRED drop: %d · ECN mark: %d"
+msgstr ""
+
+msgid "WRED: %s · ECN: %s"
+msgstr ""
+
+msgid "Waiting for NIC counters (driver uses page_pool + napi_build_skb)."
+msgstr ""
+
+msgid "Warning: This hardware rule matches all TCP packets with source port < 1024 and SYN flag set, which drops normal SYN+ACK replies from WAN HTTP/HTTPS/DNS (80/443/53) servers and breaks web browsing! Keep disabled unless in a special LAN-only environment."
+msgstr ""
+
+msgid "Web Browsing & HTTPS Office Traffic"
+msgstr ""
+
+msgid "What Is This? (Hardware Acceleration & Silicon Offload)"
+msgstr ""
+
+msgid "What Is This? (RTL9617C VPN Hardware Offload & Crypto Engine)"
+msgstr ""
+
+msgid "When enabled, the ASIC copies all hardware-offloaded flow packets to the target capture port selected below. Keep disabled during normal operation."
+msgstr ""
+
+msgid "When enabled, the ASIC marks ECN congestion bits in IP headers as queues grow so ECN-capable hosts slow down smoothly with fewer retransmissions (applies to ECN-capable traffic only)."
+msgstr ""
+
+msgid "When enabled, the L3TE WRED engine keeps high-priority queues lossless (VoQ 5–7) while probabilistically dropping or ECN-marking mid/low-priority queues early, sharply reducing queueing latency under full download load."
+msgstr ""
+
+msgid "When enabled, the RTL9617C forwarding ASIC automatically blocks the 16 attack and malformed packet types listed above (ICMP/SYN/FIN floods, Ping of Death, UDP bomb, stealth port scans, etc.) directly in hardware with zero CPU overhead."
+msgstr ""
+
+msgid "When enabled, the router automatically detects small packets and assigns higher hardware forwarding priority, avoiding manual port lookups."
+msgstr ""
+
+msgid "Xigua Video, Youku, Huya, DouYu, YY, and other video streaming platforms"
+msgstr ""
+
+msgid "Xunlei downloads, app store updates, bulk file transfers, and cloud drive sync; set to low priority to avoid saturating bandwidth"
+msgstr ""
+
+msgid "Zero-CPU HW Drop Active"
+msgstr ""
+
+msgid "Zero-Config · Pure hardware small-packet auto-detection"
+msgstr ""
+
+msgid "Zero-Copy + 128B Fast Copybreak"
+msgstr ""
+
+msgid "Zero-Copy RX (page_pool RX)"
+msgstr ""
+
+msgid "Zero-copy pkts: %s · Small-pkt copybreak: %s · Alloc fallback: %s"
+msgstr ""
+
+msgid "[%s] %s (%d domains / %d ports)"
+msgstr ""
+
+msgid "[Connected]"
+msgstr ""
+
+msgid "[Ingress Policing Policy]"
+msgstr ""
+
+msgid "[Unplugged]"
+msgstr ""
+
+msgid "af41 (34 · HD video conferencing mark)"
+msgstr ""
+
+msgid "af41 (34 · rewrite as video conferencing mark)"
+msgstr ""
+
+msgid "cs0 (0 · clear DSCP mark to default 0)"
+msgstr ""
+
+msgid "cs0 (0 · normal default mark)"
+msgstr ""
+
+msgid "cs1 (8 · low-priority background download mark)"
+msgstr ""
+
+msgid "cs1 (8 · rewrite as low-priority background mark)"
+msgstr ""
+
+msgid "cs3 (24 · call signaling mark)"
+msgstr ""
+
+msgid "cs3 (24 · rewrite as priority signaling mark)"
+msgstr ""
+
+msgid "cs5 (40 · real-time video / interactive live mark)"
+msgstr ""
+
+msgid "cs5 (40 · rewrite as real-time video/live-streaming mark)"
+msgstr ""
+
+msgid "cs6 (48 · network control protocol mark)"
+msgstr ""
+
+msgid "cs6 (48 · rewrite as highest-priority network control mark)"
+msgstr ""
+
+msgid "curated factory catalog"
+msgstr ""
+
+msgid "custom persistent catalog"
+msgstr ""
+
+msgid "dnsmasq nftset auto-captured server IPs: %d IPv4 · %d IPv6 (12h rolling cache)"
+msgstr ""
+
+msgid "download_bulk | Example Background Download | dl.example.net;cdn.example.net | |"
+msgstr ""
+
+msgid "e.g. 53, 3074, 27015-27030"
+msgstr ""
+
+msgid "e.g., 31003, 50011-50016 (optional)"
+msgstr ""
+
+msgid "e.g., 8000-8100, 17005 (optional)"
+msgstr ""
+
+msgid "e.g., Genshin Impact / Custom Office App"
+msgstr ""
+
+msgid "e.g., Living Room TV / Study PC"
+msgstr ""
+
+msgid "e.g., Main PC Gaming Priority / Video Conference Priority"
+msgstr ""
+
+msgid "ef (46 · rewrite as ultra-low-latency voice/gaming mark)"
+msgstr ""
+
+msgid "ef (46 · voice calls / ultra-low-latency gaming mark)"
+msgstr ""
+
+msgid "l3_glb_ctrl: %s · Queues bound to curves: %d%s."
+msgstr ""
+
+msgid "pppd L2TP plugin"
+msgstr ""
+
+msgid "pppd PPTP plugin"
+msgstr ""
+
+msgid "tc not installed"
+msgstr ""
+
+msgid "to add an L2TP or PPTP interface; hardware offload activates automatically."
+msgstr ""
+
+msgid "to view L2TP / PPTP hardware slots, dialer diagnostics, and crypto engine status."
+msgstr ""
+
+msgid "unknown"
+msgstr ""
+
+msgid "voice_meeting | Example Voice Meeting | meet.example.com;rtc.example.com | 8801 | 8801-8810"
+msgstr ""
+
+msgid "xl2tpd status: %s"
+msgstr ""
+
+msgid "⚡ Smart Small-Packet Priority (Built-in Zero-Config Boost)"
+msgstr ""
+
+msgid "🌐 App Domain Dynamic Tracking (CoS %d)"
+msgstr ""
+
+msgid "🎮 Catalog App: %s"
+msgstr ""
+
+msgid "📌 Unmatched Normal Traffic Baseline"
+msgstr ""
+
+msgid "📦 Catalog Category: %s"
+msgstr ""

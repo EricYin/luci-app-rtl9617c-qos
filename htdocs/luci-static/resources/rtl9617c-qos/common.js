@@ -101,7 +101,7 @@ function ensureCss() {
 	var link = E('link', {
 		id: id,
 		rel: 'stylesheet',
-		href: L.resource('rtl9617c-qos/common.css') + '?v=20261126b'
+		href: L.resource('rtl9617c-qos/common.css') + '?v=20261126c'
 	});
 	document.head.appendChild(link);
 }
@@ -136,7 +136,7 @@ function activeFlowSummary(count, total, note) {
 	var pct = t > 0 ? Math.min(100, Math.round((c / t) * 100)) : 0;
 	return [
 		E('div', { class: 'rq-kpi' }, [
-			String(c) + ' 条活跃流（占比 ' + String(pct) + '%）'
+			_('%d active flows (%d%%)').format(c, pct)
 		]),
 		meterBar(c, Math.max(1, t), true),
 		E('p', { class: 'rq-note' }, [note])
@@ -174,7 +174,7 @@ function formatBps(bps) {
 function formatKbpsLimit(kbps) {
 	var n = Number(kbps || 0);
 	if (!isFinite(n) || n <= 0)
-		return '不限速（仅统计流量）';
+		return _('Unlimited (stats only)');
 	if (n >= 1000000)
 		return (n / 1000000).toFixed(2).replace(/\.00$/, '') + ' Gbps (' + n + ' kbps)';
 	if (n >= 1000)
@@ -183,7 +183,7 @@ function formatKbpsLimit(kbps) {
 }
 
 function guideCard(title, tips) {
-	return card(title || '使用说明', badge('配置指南', 'muted'), [
+	return card(title || _('User Guide'), badge(_('Guide'), 'muted'), [
 		E('ul', { class: 'rq-note', style: 'margin:0;padding-left:18px;line-height:1.8' },
 			(tips || []).map(function(t) { return E('li', {}, [t]); }))
 	]);
@@ -191,15 +191,15 @@ function guideCard(title, tips) {
 
 function validUnicastMac(val) {
 	if (val == null || val === '')
-		return '请输入 MAC 地址';
+		return _('Please enter a MAC address');
 	var s = String(val).trim().toLowerCase();
 	if (!/^([0-9a-f]{2}:){5}[0-9a-f]{2}$/.test(s))
-		return 'MAC 格式应为 xx:xx:xx:xx:xx:xx';
+		return _('MAC address must be in xx:xx:xx:xx:xx:xx format');
 	if (s === '00:00:00:00:00:00' || s === 'ff:ff:ff:ff:ff:ff')
-		return '不能使用全零或广播 MAC';
+		return _('All-zero or broadcast MAC address is not allowed');
 	var first = parseInt(s.slice(0, 2), 16);
 	if (first & 1)
-		return '不能使用组播 MAC（首字节最低位须为 0）';
+		return _('Multicast MAC address is not allowed (LSB of first byte must be 0)');
 	return true;
 }
 
@@ -222,18 +222,18 @@ function normalizeHints(raw) {
 
 function setupLivePage(title, subtitle, liveMount, onData, formNode) {
 	ensureCss();
-	var updatedEl = E('span', { class: 'rq-updated' }, ['加载中…']);
+	var updatedEl = E('span', { class: 'rq-updated' }, [_('Loading…')]);
 	var paused = false;
 	var prevState = null;
 
 	function refresh() {
 		return callStatusRpc().then(function(next) {
 			var t = new Date();
-			updatedEl.textContent = '更新于 ' + t.toTimeString().slice(0, 8);
+			updatedEl.textContent = _('Updated at %s').format(t.toTimeString().slice(0, 8));
 			onData(next, prevState);
 			prevState = next;
 		}).catch(function(err) {
-			updatedEl.textContent = '读取失败：' + (err && err.message ? err.message : err);
+			updatedEl.textContent = _('Read failed: %s').format(err && err.message ? err.message : err);
 		});
 	}
 
@@ -242,7 +242,7 @@ function setupLivePage(title, subtitle, liveMount, onData, formNode) {
 		class: 'btn cbi-button',
 		click: function() {
 			paused = !paused;
-			toggleBtn.textContent = paused ? '恢复刷新' : '暂停刷新';
+			toggleBtn.textContent = paused ? _('Resume refresh') : _('Pause refresh');
 			if (paused)
 				poll.stop();
 			else {
@@ -250,7 +250,7 @@ function setupLivePage(title, subtitle, liveMount, onData, formNode) {
 				refresh();
 			}
 		}
-	}, ['暂停刷新']);
+	}, [_('Pause refresh')]);
 
 	var applyBtn = E('button', {
 		type: 'button',
@@ -260,14 +260,14 @@ function setupLivePage(title, subtitle, liveMount, onData, formNode) {
 			callApplyRpc().then(function(res) {
 				applyBtn.disabled = false;
 				if (!res || !res.ok)
-					ui.addNotification(null, E('p', {}, ['应用 QoS 配置返回错误码：', String(res ? res.code : 'unknown')]), 'warning');
+					ui.addNotification(null, E('p', {}, [_('Applying QoS configuration returned error code: %s').format(String(res ? res.code : 'unknown'))]), 'warning');
 				return refresh();
 			}).catch(function(err) {
 				applyBtn.disabled = false;
-				ui.addNotification(null, E('p', {}, ['下发失败：', err.message || String(err)]), 'error');
+				ui.addNotification(null, E('p', {}, [_('Apply failed: %s').format(err.message || String(err))]), 'error');
 			});
 		}
-	}, ['立即应用规则']);
+	}, [_('Apply Rules Now')]);
 
 	poll.add(refresh, 3);
 	refresh();
@@ -275,7 +275,7 @@ function setupLivePage(title, subtitle, liveMount, onData, formNode) {
 	return E('div', { class: 'rtlqos' }, [
 		E('div', { class: 'rq-header' }, [
 			E('div', {}, [
-				E('p', { class: 'rq-eyebrow' }, ['硬件级智能流控与限速 · 全程芯片加速不占 CPU']),
+				E('p', { class: 'rq-eyebrow' }, [_('Hardware Smart QoS & Rate Limiting · Full ASIC Offload with Zero CPU Overhead')]),
 				E('h2', {}, [title]),
 				E('p', { class: 'rq-note' }, [subtitle])
 			]),

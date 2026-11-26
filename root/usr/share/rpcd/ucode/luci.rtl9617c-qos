@@ -93,8 +93,10 @@ function inspect_ni_ports() {
 		if (tc == null) {
 			port.qdisc_raw = '';
 			port.ingress_raw = '';
-			port.egress_summary = '未安装 tc';
-			port.ingress_summary = '未安装 tc';
+			port.egress_summary = 'tc not installed';
+			port.ingress_summary = 'tc not installed';
+			port.egress_info = { mode: 'no_tc' };
+			port.ingress_info = { mode: 'no_tc' };
 			continue;
 		}
 		let qdisc = trim(read_cmd_output(`${tc} -s qdisc show dev ${port.device}`));
@@ -104,25 +106,37 @@ function inspect_ni_ports() {
 
 		let tbf_m = match(qdisc, /qdisc tbf [^\n]+rate ([^ \t\n]+) burst ([^ \t\n]+)/);
 		let ets_m = match(qdisc, /qdisc ets [^\n]*bands ([0-9]+)[^\n]*(strict ([0-9]+))?/);
-		if (tbf_m != null)
-			port.egress_summary = `整口下载限速 ${tbf_m[1]}（缓冲 ${tbf_m[2]}）`;
-		else if (ets_m != null)
-			port.egress_summary = ets_m[3] == '8'
-				? '按优先级严格排队（8 级优先通道）'
-				: (ets_m[3] != null
-					? `高低优先级混合排队（前 ${ets_m[3]} 级绝对优先 + 其余按比重分配）`
-					: `多级优先级排队（${ets_m[1]} 级通道）`);
-		else if (match(qdisc, /qdisc mqprio /) != null)
-			port.egress_summary = '按优先级严格排队（8 级优先通道）';
-		else
-			port.egress_summary = '默认（不限制网口下载速度）';
+		if (tbf_m != null) {
+			port.egress_summary = `Port download shaping ${tbf_m[1]} (burst ${tbf_m[2]})`;
+			port.egress_info = { mode: 'tbf', rate: tbf_m[1], burst: tbf_m[2] };
+		} else if (ets_m != null) {
+			if (ets_m[3] == '8') {
+				port.egress_summary = 'Strict priority queueing (8 priority queues)';
+				port.egress_info = { mode: 'sp' };
+			} else if (ets_m[3] != null) {
+				port.egress_summary = `Hybrid priority queueing (top ${ets_m[3]} strict + remaining WRR)`;
+				port.egress_info = { mode: 'ets', strict: ets_m[3] };
+			} else {
+				port.egress_summary = `Multi-queue priority scheduling (${ets_m[1]} queues)`;
+				port.egress_info = { mode: 'ets_bands', bands: ets_m[1] };
+			}
+		} else if (match(qdisc, /qdisc mqprio /) != null) {
+			port.egress_summary = 'Strict priority queueing (8 priority queues)';
+			port.egress_info = { mode: 'sp' };
+		} else {
+			port.egress_summary = 'Default (unlimited port download speed)';
+			port.egress_info = { mode: 'none' };
+		}
 
 		let pol_m = match(flt, /police [^\n]*rate ([^ \t\n]+)[^\n]*burst ([^ \t\n]+)/);
 		if (pol_m != null) {
-			let hw = index(flt, 'in_hw') >= 0 ? ' · 硬件加速已生效' : '';
-			port.ingress_summary = `整口上传限速 ${pol_m[1]}（缓冲 ${pol_m[2]}${hw}）`;
+			let in_hw = index(flt, 'in_hw') >= 0;
+			let hw = in_hw ? ' · HW offload active' : '';
+			port.ingress_summary = `Port upload policing ${pol_m[1]} (burst ${pol_m[2]}${hw})`;
+			port.ingress_info = { mode: 'police', rate: pol_m[1], burst: pol_m[2], in_hw };
 		} else {
-			port.ingress_summary = '默认（不限制网口上传速度）';
+			port.ingress_summary = 'Default (unlimited port upload speed)';
+			port.ingress_info = { mode: 'none' };
 		}
 	}
 
@@ -508,12 +522,12 @@ function read_vpn_status() {
 	let base = '/sys/module/rtl9617c_ni/parameters/';
 	let mods = read_loaded_modules();
 	const kmod_specs = [
-		{ name: 'l2tp_core', role: 'L2TP 核心协议栈' },
-		{ name: 'l2tp_netlink', role: 'L2TP Netlink 控制接口' },
-		{ name: 'l2tp_ppp', role: 'PPPoL2TP 数据面驱动' },
-		{ name: 'pptp', role: 'PPTP (GREv1) 数据面驱动' },
-		{ name: 'ppp_generic', role: 'PPP 通用转发路径 (654 卸载支持)' },
-		{ name: 'ppp_mppe', role: 'MPPE 加密识别（自动安全回退软件）' }
+		{ name: 'l2tp_core', role: 'L2TP core protocol stack' },
+		{ name: 'l2tp_netlink', role: 'L2TP Netlink control interface' },
+		{ name: 'l2tp_ppp', role: 'PPPoL2TP data-plane driver' },
+		{ name: 'pptp', role: 'PPTP (GREv1) data-plane driver' },
+		{ name: 'ppp_generic', role: 'PPP generic forwarding path (654 offload support)' },
+		{ name: 'ppp_mppe', role: 'MPPE encryption detection (automatic software fallback)' }
 	];
 	let kmods = [];
 	for (let spec in kmod_specs) {
@@ -531,28 +545,28 @@ function read_vpn_status() {
 	let tools = [
 		{
 			name: 'xl2tpd',
-			role: 'L2TPv2 拨号守护进程',
+			role: 'L2TPv2 dialer daemon',
 			path: '/usr/sbin/xl2tpd',
 			present: access('/usr/sbin/xl2tpd', 'x'),
 			running: is_proc_running('xl2tpd')
 		},
 		{
 			name: 'pppd',
-			role: 'PPP 拨号主程序',
+			role: 'PPP dialer daemon',
 			path: '/usr/sbin/pppd',
 			present: access('/usr/sbin/pppd', 'x'),
 			running: is_proc_running('pppd')
 		},
 		{
 			name: 'pppol2tp.so',
-			role: 'pppd L2TP 插件',
+			role: 'pppd L2TP plugin',
 			path: length(pppol2tp_list) ? pppol2tp_list[0] : '/usr/lib/pppd/*/pppol2tp.so',
 			present: length(pppol2tp_list) > 0,
 			running: null
 		},
 		{
 			name: 'pptp.so',
-			role: 'pppd PPTP 插件',
+			role: 'pppd PPTP plugin',
 			path: length(pptp_so_list) ? pptp_so_list[0] : '/usr/lib/pppd/*/pptp.so',
 			present: length(pptp_so_list) > 0,
 			running: null
@@ -581,11 +595,11 @@ function write_custom_catalog(doc) {
 	let tmp = target + '.tmp';
 	let content = sprintf('%J\n', doc);
 	if (writefile(tmp, content) == null)
-		return { ok: false, error: `写入临时文件失败: ${tmp}` };
+		return { ok: false, error: `Failed to write temporary file: ${tmp}` };
 	chmod(tmp, 0644);
 	if (!rename(tmp, target)) {
 		unlink(tmp);
-		return { ok: false, error: `保存自定义特征库失败: ${target}` };
+		return { ok: false, error: `Failed to save custom signature catalog: ${target}` };
 	}
 	return { ok: true, path: target };
 }
@@ -907,19 +921,19 @@ const methods = {
 				add_app({ enabled: '1', match_type: 'category', category: 'voice_meeting', cos: '6' });
 				add_app({ enabled: '1', match_type: 'category', category: 'download_bulk', cos: '0' });
 				add_cls({
-					enabled: '1', name: 'DNS 域名解析极速响应', cos: '7',
+					enabled: '1', name: 'DNS Fast Resolution', cos: '7',
 					family: 'any', proto: 'tcp_udp', dst_port: '53,853', direction: 'both'
 				});
 				add_cls({
-					enabled: '1', name: '网络游戏与语音通话高频端口', cos: '6',
+					enabled: '1', name: 'High-Frequency Gaming & Voice Ports', cos: '6',
 					family: 'any', proto: 'udp', dst_port: '3074,3478-3480,27015-27050', direction: 'both'
 				});
 				add_cls({
-					enabled: '1', name: '语音与极低延迟应用标记 (EF)', cos: '6',
+					enabled: '1', name: 'Voice & Ultra-Low-Latency Apps (DSCP EF)', cos: '6',
 					family: 'any', proto: 'any', dscp: 'ef', direction: 'both'
 				});
 				add_cls({
-					enabled: '1', name: 'BT 与后台大流量下载降权', cos: '0',
+					enabled: '1', name: 'BitTorrent & Background Bulk Download Deprioritization', cos: '0',
 					family: 'any', proto: 'tcp_udp', dst_port: '6881-6999,51413', direction: 'both'
 				});
 				set_port_sched('lan1', 'ets', 3, ets_quanta, true);
@@ -939,19 +953,19 @@ const methods = {
 				add_app({ enabled: '1', match_type: 'category', category: 'education', cos: '5' });
 				add_app({ enabled: '1', match_type: 'category', category: 'download_bulk', cos: '0' });
 				add_cls({
-					enabled: '1', name: 'DNS 与 SSH 远程办公终端', cos: '7',
+					enabled: '1', name: 'DNS & SSH Remote Office Terminal', cos: '7',
 					family: 'any', proto: 'tcp_udp', dst_port: '22,53,853', direction: 'both'
 				});
 				add_cls({
-					enabled: '1', name: '腾讯会议 / Zoom / Teams 视频会议', cos: '6',
+					enabled: '1', name: 'Tencent Meeting / Zoom / Teams Video Conferencing', cos: '6',
 					family: 'any', proto: 'udp', dst_port: '3478-3481,8801-8810', direction: 'both'
 				});
 				add_cls({
-					enabled: '1', name: '网页浏览与 HTTPS 办公访问', cos: '4',
+					enabled: '1', name: 'Web Browsing & HTTPS Office Traffic', cos: '4',
 					family: 'any', proto: 'tcp', dst_port: '80,443', direction: 'both'
 				});
 				add_cls({
-					enabled: '1', name: 'BT 与后台大流量下载降权', cos: '0',
+					enabled: '1', name: 'BitTorrent & Background Bulk Download Deprioritization', cos: '0',
 					family: 'any', proto: 'tcp_udp', dst_port: '6881-6999,51413', direction: 'both'
 				});
 				set_port_sched('lan1', 'ets', 3, ets_quanta, true);

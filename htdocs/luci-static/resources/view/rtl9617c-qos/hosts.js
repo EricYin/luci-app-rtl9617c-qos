@@ -50,7 +50,7 @@ function renderLiveHosts(container, data, prevData, hints) {
 	var rows = items.map(function(item) {
 		var mac = String(item.mac || '').toLowerCase();
 		var hint = hints[mac];
-		var label = nameByMac[mac] || (hint && hint.name) || '未命名设备';
+		var label = nameByMac[mac] || (hint && hint.name) || _('Unnamed Device');
 		var ipText = (hint && hint.ips && hint.ips.length) ? hint.ips[0] : '';
 		var r = rates[mac] || {};
 
@@ -61,13 +61,16 @@ function renderLiveHosts(container, data, prevData, hints) {
 				clearBtn.disabled = true;
 				q.callClearHostMib(mac).then(function() {
 					clearBtn.disabled = false;
-					ui.addNotification(null, E('p', {}, ['已清零设备 ', mac, ' 的累计流量统计。']), 'info');
+					ui.addNotification(null, E('p', {}, [_('Cleared cumulative traffic counters for device %s.').format(mac)]), 'info');
 				}).catch(function(err) {
 					clearBtn.disabled = false;
-					ui.addNotification(null, E('p', {}, ['清零失败：', err.message || String(err)]), 'error');
+					ui.addNotification(null, E('p', {}, [_('Clear failed: %s').format(err.message || String(err))]), 'error');
 				});
 			}
-		}, ['清零流量']) : '—';
+		}, [_('Clear Traffic')]) : '—';
+
+		var inMode = item.ingress_vm >= 0 ? _('Policer %d').format(item.ingress_vm) : _('Stats only');
+		var outMode = item.egress_vm >= 0 ? _('Policer %d').format(item.egress_vm) : _('Stats only');
 
 		return E('tr', {}, [
 			E('td', { class: 'rq-mono' }, [String(item.idx)]),
@@ -79,8 +82,7 @@ function renderLiveHosts(container, data, prevData, hints) {
 			E('td', {}, [q.formatKbpsLimit(item.ingress_kbps)]),
 			E('td', {}, [q.formatKbpsLimit(item.egress_kbps)]),
 			E('td', { class: 'rq-mono' }, [
-				'上传 #' + item.ingress_pol1 + (item.ingress_vm >= 0 ? ' (限速器 ' + item.ingress_vm + ')' : ' (仅统计)') +
-				' / 下载 #' + item.egress_pol1 + (item.egress_vm >= 0 ? ' (限速器 ' + item.egress_vm + ')' : ' (仅统计)')
+				_('UL #%d (%s) / DL #%d (%s)').format(item.ingress_pol1, inMode, item.egress_pol1, outMode)
 			]),
 			E('td', { class: 'rq-mono' }, [q.formatBps(r.in_bps != null ? r.in_bps : 0)]),
 			E('td', { class: 'rq-mono' }, [q.formatBps(r.out_bps != null ? r.out_bps : 0)]),
@@ -94,7 +96,7 @@ function renderLiveHosts(container, data, prevData, hints) {
 	if (!rows.length) {
 		rows.push(E('tr', {}, [
 			E('td', { colspan: 10, class: 'rq-note' }, [
-				'当前还没有正在生效的单设备限速或流量统计规则。您可以在下方“单设备限速规则列表”点击“添加”，选择局域网设备并点击页面右下角“保存并应用”。'
+				_('No active per-device rate limiting or traffic monitoring rules yet. Click "Add" under "Per-Device Rate Limiting Rules" below, choose a LAN device, and click "Save & Apply".')
 			])
 		]));
 	}
@@ -106,70 +108,70 @@ function renderLiveHosts(container, data, prevData, hints) {
 			clearAllBtn.disabled = true;
 			q.callClearHostMib('').then(function() {
 				clearAllBtn.disabled = false;
-				ui.addNotification(null, E('p', {}, ['已清零全部设备的累计流量统计。']), 'info');
+				ui.addNotification(null, E('p', {}, [_('Cleared cumulative traffic counters for all devices.')]), 'info');
 			}).catch(function(err) {
 				clearAllBtn.disabled = false;
-				ui.addNotification(null, E('p', {}, ['清零失败：', err.message || String(err)]), 'error');
+				ui.addNotification(null, E('p', {}, [_('Clear failed: %s').format(err.message || String(err))]), 'error');
 			});
 		}
-	}, ['全部流量清零']) : null;
+	}, [_('Clear All Traffic')]) : null;
 
 	dom.content(container, [
-		q.guideCard('怎么用？（单设备限速与流量监控）', [
-			'1. 在下方“单设备限速规则列表”点击“添加”，在“设备 MAC 地址”下拉框中直接选择您的手机、电脑或电视。',
-			'2. 速度单位换算：1000 kbps ≈ 1 Mbps（例如：限制 50 Mbps 填 50000，限制 100 Mbps 填 100000，限制 1000 Mbps 填 1000000）。',
-			'3. 如果您只想查看某台设备的实时网速与累计总流量、不想限制它的网速，将“上传限速”和“下载限速”都填 0 即可（0 = 不限速仅统计流量）。',
-			'4. 修改规则后点击页面右下角“保存并应用”（或右上角“立即应用规则”），芯片会立即接管该设备的限速与流量统计，全程硬件加速不占 CPU。'
+		q.guideCard(_('How to Use (Per-Device Rate Limiting & Traffic Monitoring)'), [
+			_('1. Click "Add" under "Per-Device Rate Limiting Rules" below and select your phone, PC, or TV from the "Device MAC Address" dropdown.'),
+			_('2. Speed unit conversion: 1000 kbps ≈ 1 Mbps (e.g. 50000 for 50 Mbps, 100000 for 100 Mbps, 1000000 for 1000 Mbps).'),
+			_('3. To monitor real-time speed and total traffic for a device without throttling it, set both "Upload Limit" and "Download Limit" to 0 (0 = unlimited, stats only).'),
+			_('4. After editing rules, click "Save & Apply" (or "Apply Rules Now" at the top right). The ASIC takes over rate limiting and accounting immediately with zero CPU usage.')
 		]),
 		E('div', { class: 'rq-grid' }, [
-			q.card('已监控设备数',
-				hp.available ? q.badge('硬件引擎就绪', 'good') : q.badge('驱动未就绪', 'danger'),
+			q.card(_('Monitored Devices'),
+				hp.available ? q.badge(_('Hardware Engine Ready'), 'good') : q.badge(_('Driver Not Ready'), 'danger'),
 				[
 					E('div', { class: 'rq-kpi' }, [
-						String(hp.entries_used || 0) + ' / ' + String(hp.entries_max || 32) + ' 台'
+						_('%d / %d devices').format(hp.entries_used || 0, hp.entries_max || 32)
 					]),
 					q.meterBar(hp.entries_used || 0, hp.entries_max || 32),
 					E('p', { class: 'rq-note' }, [
-						'最多同时支持 32 台局域网设备独立限速或统计流量（每台设备自动分配独立的上传与下载硬件统计通道）。'
+						_('Supports up to 32 LAN devices with independent rate limits or traffic counters (each device gets dedicated hardware upload and download accounting channels).')
 					])
 				]),
-			q.card('已用硬件限速器',
-				q.badge('双向合计 32 个', (hp.vmeters_used || 0) >= 28 ? 'warn' : 'good'),
+			q.card(_('Hardware Rate Limiters Used'),
+				q.badge(_('32 total (UL + DL)'), (hp.vmeters_used || 0) >= 28 ? 'warn' : 'good'),
 				[
 					E('div', { class: 'rq-kpi' }, [
-						String(hp.vmeters_used || 0) + ' / ' + String(hp.vmeters_max || 32) + ' 个'
+						_('%d / %d used').format(hp.vmeters_used || 0, hp.vmeters_max || 32)
 					]),
 					q.meterBar(hp.vmeters_used || 0, hp.vmeters_max || 32),
 					E('p', { class: 'rq-note' }, [
-						'上传或下载限速值大于 0 时各占用 1 个硬件限速器；填 0（仅统计流量不限速）不占用硬件限速器。'
+						_('Each non-zero upload or download limit consumes 1 hardware limiter; setting 0 (stats only, unlimited) does not consume a hardware limiter.')
 					])
 				]),
-			q.card('已命中硬件加速连接',
-				q.badge('芯片级实时转发', (fe.pol_host || 0) > 0 ? 'good' : ''),
+			q.card(_('Matched Hardware-Offloaded Flows'),
+				q.badge(_('ASIC Line-Rate Forwarding'), (fe.pol_host || 0) > 0 ? 'good' : ''),
 				q.activeFlowSummary(
 					fe.pol_host || 0,
 					fe.total || 0,
-					'当前瞬时活跃硬件加速流共 ' + String(fe.total || 0) +
-					' 条（随连接新建/老化动态变化），其中 ' +
-					String(fe.pol_host || 0) +
-					' 条已关联到单设备限速/统计通道（含 IPv4 与 IPv6 双向流）。'
+					_('Currently %d active hardware-offloaded flows (changing dynamically as connections open/age), of which %d are bound to per-device rate limiting/accounting channels (IPv4 & IPv6 bidirectional).').format(
+						fe.total || 0,
+						fe.pol_host || 0
+					)
 				))
 		]),
-		q.card('正在生效的设备限速与实时流量表', clearAllBtn, [
+		q.card(_('Active Device Rate Limits & Live Traffic'), clearAllBtn, [
 			E('div', { class: 'rq-table-wrap' }, [
 				E('table', { class: 'rq-table' }, [
 					E('thead', {}, [
 						E('tr', {}, [
-							E('th', {}, ['序号']),
-							E('th', {}, ['设备名称 / IP']),
-							E('th', {}, ['MAC 地址']),
-							E('th', {}, ['上传限速']),
-							E('th', {}, ['下载限速']),
-							E('th', {}, ['硬件通道号']),
-							E('th', {}, ['实时上传网速']),
-							E('th', {}, ['实时下载网速']),
-							E('th', {}, ['累计上传 / 下载总流量']),
-							E('th', {}, ['操作'])
+							E('th', {}, [_('#')]),
+							E('th', {}, [_('Device Name / IP')]),
+							E('th', {}, [_('MAC Address')]),
+							E('th', {}, [_('Upload Limit')]),
+							E('th', {}, [_('Download Limit')]),
+							E('th', {}, [_('Hardware Channels')]),
+							E('th', {}, [_('Live Upload Speed')]),
+							E('th', {}, [_('Live Download Speed')]),
+							E('th', {}, [_('Total Upload / Download')]),
+							E('th', {}, [_('Action')])
 						])
 					]),
 					E('tbody', {}, rows)
@@ -193,17 +195,17 @@ return view.extend({
 
 		var m = new form.Map('rtl9617c_qos', null, null);
 
-		var sg = m.section(form.NamedSection, 'global', 'global', '功能总开关');
+		var sg = m.section(form.NamedSection, 'global', 'global', _('Master Service Switch'));
 		sg.anonymous = true;
 		sg.addremove = false;
 
-		var en = sg.option(form.Flag, 'enabled', '启用硬件流控与限速服务',
-			'全局总开关：关闭后，所有单设备限速、应用优先及网口限速规则都会暂停并从硬件卸载。');
+		var en = sg.option(form.Flag, 'enabled', _('Enable Hardware QoS & Rate Limiting Service'),
+			_('Global master switch: disabling pauses and removes all per-device rate limits, app priority rules, and port shaping rules from hardware.'));
 		en.rmempty = false;
 		en.default = '1';
 
-		var s = m.section(form.GridSection, 'host', '单设备限速规则列表（支持添加、修改、删除）',
-			'添加局域网设备后，可分别设置它的最高上传速度和下载速度（单位 kbps，100000 = 100 Mbps）。填 0 表示不限制速度、仅开启硬件流量统计。');
+		var s = m.section(form.GridSection, 'host', _('Per-Device Rate Limiting Rules (Add, Edit, Delete)'),
+			_('Add LAN devices to configure independent max upload and download speeds (in kbps; 100000 = 100 Mbps). Set 0 for unlimited speed with hardware traffic statistics only.'));
 		s.addremove = true;
 		s.anonymous = true;
 		s.sortable = true;
@@ -211,16 +213,16 @@ return view.extend({
 
 		var o;
 
-		o = s.option(form.Flag, 'enabled', '启用');
+		o = s.option(form.Flag, 'enabled', _('Enable'));
 		o.default = '1';
 		o.rmempty = false;
 		o.editable = true;
 
-		o = s.option(form.Value, 'name', '设备备注名称');
-		o.placeholder = '例如：客厅电视 / 书房电脑';
+		o = s.option(form.Value, 'name', _('Device Remark Name'));
+		o.placeholder = _('e.g., Living Room TV / Study PC');
 		o.rmempty = true;
 
-		o = s.option(form.Value, 'mac', '设备 MAC 地址');
+		o = s.option(form.Value, 'mac', _('Device MAC Address'));
 		o.rmempty = false;
 		o.placeholder = 'aa:bb:cc:dd:ee:ff';
 		Object.keys(hints).sort().forEach(function(mac) {
@@ -238,41 +240,41 @@ return view.extend({
 					dup = true;
 			});
 			if (dup)
-				return '该 MAC 地址已在列表中存在，请勿重复添加';
+				return _('This MAC address already exists in the list; please do not add duplicates');
 			return true;
 		};
 
-		o = s.option(form.Value, 'ingress_kbps', '上传限速 (kbps)');
+		o = s.option(form.Value, 'ingress_kbps', _('Upload Limit (kbps)'));
 		o.datatype = 'range(0,32767999)';
 		o.default = '0';
 		o.rmempty = false;
-		o.placeholder = '0 = 不限速仅统计';
-		o.value('0', '0（不限速，仅统计上传流量）');
-		o.value('10000', '10000 (约 10 Mbps)');
-		o.value('30000', '30000 (约 30 Mbps)');
-		o.value('50000', '50000 (约 50 Mbps)');
-		o.value('100000', '100000 (约 100 Mbps)');
-		o.value('300000', '300000 (约 300 Mbps)');
-		o.value('500000', '500000 (约 500 Mbps)');
-		o.value('1000000', '1000000 (约 1000 Mbps)');
+		o.placeholder = _('0 = Unlimited (stats only)');
+		o.value('0', _('0 (Unlimited, upload stats only)'));
+		o.value('10000', _('10000 (~10 Mbps)'));
+		o.value('30000', _('30000 (~30 Mbps)'));
+		o.value('50000', _('50000 (~50 Mbps)'));
+		o.value('100000', _('100000 (~100 Mbps)'));
+		o.value('300000', _('300000 (~300 Mbps)'));
+		o.value('500000', _('500000 (~500 Mbps)'));
+		o.value('1000000', _('1000000 (~1000 Mbps)'));
 
-		o = s.option(form.Value, 'egress_kbps', '下载限速 (kbps)');
+		o = s.option(form.Value, 'egress_kbps', _('Download Limit (kbps)'));
 		o.datatype = 'range(0,32767999)';
 		o.default = '0';
 		o.rmempty = false;
-		o.placeholder = '0 = 不限速仅统计';
-		o.value('0', '0（不限速，仅统计下载流量）');
-		o.value('20000', '20000 (约 20 Mbps)');
-		o.value('50000', '50000 (约 50 Mbps)');
-		o.value('100000', '100000 (约 100 Mbps)');
-		o.value('200000', '200000 (约 200 Mbps)');
-		o.value('500000', '500000 (约 500 Mbps)');
-		o.value('1000000', '1000000 (约 1000 Mbps)');
+		o.placeholder = _('0 = Unlimited (stats only)');
+		o.value('0', _('0 (Unlimited, download stats only)'));
+		o.value('20000', _('20000 (~20 Mbps)'));
+		o.value('50000', _('50000 (~50 Mbps)'));
+		o.value('100000', _('100000 (~100 Mbps)'));
+		o.value('200000', _('200000 (~200 Mbps)'));
+		o.value('500000', _('500000 (~500 Mbps)'));
+		o.value('1000000', _('1000000 (~1000 Mbps)'));
 
 		return m.render().then(function(formNode) {
 			return q.setupLivePage(
-				'单设备上传 / 下载限速与流量统计',
-				'按设备 MAC 地址对局域网内的手机、电脑、NAS 或电视进行独立上传/下载限速与实时流量统计。所有限速与计数均由 RTL9617C 硬件芯片直接执行，不占用 CPU。',
+				_('Per-Device Upload / Download Rate Limiting & Traffic Stats'),
+				_('Configure independent upload/download rate limits and live traffic statistics by MAC address for LAN phones, PCs, NAS, or TVs. All policing and accounting runs directly in the RTL9617C ASIC with zero CPU usage.'),
 				liveMount,
 				function(next, prev) {
 					renderLiveHosts(liveMount, next, prev, hints);

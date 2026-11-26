@@ -35,16 +35,16 @@ export const APP_CATALOG_CUSTOM_PATH = '/etc/rtl9617c-qos/app_signatures.json';
 export const APP_CATALOG_MAX_APPS = 2000;
 
 export const DEFAULT_APP_CATEGORIES = [
-	{ id: 'mobile_game', name: '热门手机游戏', default_cos: 6, desc: '王者荣耀、和平精英、原神、三角洲、金铲铲等手游专用端口与加速域名', count: 0 },
-	{ id: 'pc_game', name: '电脑端游与游戏平台', default_cos: 6, desc: '英雄联盟、Steam、WeGame、地下城与勇士、魔兽世界、Ubisoft 等', count: 0 },
-	{ id: 'voice_meeting', name: '视频会议与语音通话', default_cos: 6, desc: '腾讯会议、微信/QQ/钉钉/企业微信语音与多媒体通话', count: 0 },
-	{ id: 'remote_desk', name: '远程桌面与远控', default_cos: 5, desc: '向日葵、TeamViewer、Microsoft 远程桌面低延迟交互', count: 0 },
-	{ id: 'education', name: '在线教育与网课', default_cos: 5, desc: '常见在线课堂与网课直播平台', count: 0 },
-	{ id: 'im_chat', name: '即时通讯文字消息', default_cos: 5, desc: '微信、QQ、TIM、钉钉等即时消息连接', count: 0 },
-	{ id: 'video_live', name: '影音与视频直播', default_cos: 4, desc: '西瓜、优酷、虎牙、斗鱼、YY 等视频直播平台', count: 0 },
-	{ id: 'finance', name: '证券行情与网银支付', default_cos: 5, desc: '行情交易与银行支付连接防卡顿', count: 0 },
-	{ id: 'download_bulk', name: '下载 / 应用商店 / 网盘（建议降权）', default_cos: 0, desc: '迅雷下载、应用商店更新、大文件传输与网盘同步，设为低优先级防止抢占带宽', count: 0 },
-	{ id: 'custom', name: '自定义应用', default_cos: 5, desc: '用户手动维护或批量导入的自定义应用特征', count: 0 }
+	{ id: 'mobile_game', name: 'Popular Mobile Games', default_cos: 6, desc: 'Dedicated ports and acceleration domains for Honor of Kings, Peacekeeper Elite, Genshin Impact, Delta Force, TFT Mobile, etc.', count: 0 },
+	{ id: 'pc_game', name: 'PC Games & Platforms', default_cos: 6, desc: 'League of Legends, Steam, WeGame, Dungeon Fighter Online, World of Warcraft, Ubisoft, etc.', count: 0 },
+	{ id: 'voice_meeting', name: 'Video Conferencing & Voice Calls', default_cos: 6, desc: 'Tencent Meeting, WeChat/QQ/DingTalk/WeCom voice and multimedia calls', count: 0 },
+	{ id: 'remote_desk', name: 'Remote Desktop & Control', default_cos: 5, desc: 'Low-latency interactive traffic for Sunlogin, TeamViewer, and Microsoft Remote Desktop', count: 0 },
+	{ id: 'education', name: 'Online Education & Courses', default_cos: 5, desc: 'Popular online classroom and live course streaming platforms', count: 0 },
+	{ id: 'im_chat', name: 'Instant Messaging', default_cos: 5, desc: 'Instant messaging connections for WeChat, QQ, TIM, DingTalk, etc.', count: 0 },
+	{ id: 'video_live', name: 'Video & Live Streaming', default_cos: 4, desc: 'Xigua Video, Youku, Huya, DouYu, YY, and other video streaming platforms', count: 0 },
+	{ id: 'finance', name: 'Stock Quotes & Online Banking', default_cos: 5, desc: 'Lag-free connections for market quotes, trading, and online banking payments', count: 0 },
+	{ id: 'download_bulk', name: 'Downloads / App Stores / Cloud Drives (Deprioritize)', default_cos: 0, desc: 'Xunlei downloads, app store updates, bulk file transfers, and cloud drive sync; set to low priority to avoid saturating bandwidth', count: 0 },
+	{ id: 'custom', name: 'Custom Apps', default_cos: 5, desc: 'User-maintained or batch-imported custom app signatures', count: 0 }
 ];
 
 export function app_catalog_custom_path() {
@@ -960,11 +960,11 @@ export function load_app_catalog(path) {
 
 export function normalize_app_entry(raw, valid_cats, fallback_cat, auto_id_fn) {
 	if (type(raw) != 'object')
-		return { error: '无效的应用条目对象' };
+		return { error: 'Invalid app entry object' };
 
 	let name = trim(replace('' + (raw.name ?? ''), /[[:cntrl:]]/g, ' '));
 	if (name == '')
-		return { error: '应用名称不能为空' };
+		return { error: 'App name cannot be empty' };
 	if (length(name) > 80)
 		name = substr(name, 0, 80);
 
@@ -975,7 +975,7 @@ export function normalize_app_entry(raw, valid_cats, fallback_cat, auto_id_fn) {
 	let id = sanitize_app_id(raw.id);
 	if (id == null) {
 		if (trim('' + (raw.id ?? '')) != '')
-			return { error: `非法应用 ID '${raw.id}'（仅支持字母、数字及 ._ -）` };
+			return { error: `Invalid app ID '${raw.id}' (only letters, digits, and ._- are allowed)` };
 		id = auto_id_fn ? auto_id_fn(name, cat) : ('custom_' + substr(replace(lc(name), /[^a-z0-9]+/g, '_'), 0, 24));
 		id = sanitize_app_id(id) || 'custom_app';
 	}
@@ -986,14 +986,14 @@ export function normalize_app_entry(raw, valid_cats, fallback_cat, auto_id_fn) {
 
 	let warnings = [];
 	if (length(dom_res.invalid) > 0)
-		push(warnings, `应用「${name}」忽略非法域名: ${join(', ', slice(dom_res.invalid, 0, 5))}`);
+		push(warnings, `App "${name}": ignored invalid domains: ${join(', ', slice(dom_res.invalid, 0, 5))}`);
 	if (length(tcp_res.invalid) > 0)
-		push(warnings, `应用「${name}」忽略非法 TCP 端口: ${join(', ', slice(tcp_res.invalid, 0, 5))}`);
+		push(warnings, `App "${name}": ignored invalid TCP ports: ${join(', ', slice(tcp_res.invalid, 0, 5))}`);
 	if (length(udp_res.invalid) > 0)
-		push(warnings, `应用「${name}」忽略非法 UDP 端口: ${join(', ', slice(udp_res.invalid, 0, 5))}`);
+		push(warnings, `App "${name}": ignored invalid UDP ports: ${join(', ', slice(udp_res.invalid, 0, 5))}`);
 
 	if (!length(dom_res.domains) && !length(tcp_res.ports) && !length(udp_res.ports))
-		return { error: `应用「${name}」至少需要 1 个有效域名或 1 个有效 TCP/UDP 端口` };
+		return { error: `App "${name}" requires at least 1 valid domain or 1 valid TCP/UDP port` };
 
 	let entry = {
 		id,
@@ -1052,7 +1052,7 @@ export function upsert_catalog_app(catalog, app_input, orig_id) {
 	let entry = res.entry;
 	let old_id = trim('' + (orig_id ?? ''));
 	if (old_id != '' && old_id != entry.id && exists(existing_ids, entry.id))
-		return { ok: false, error: `应用 ID '${entry.id}' 已存在，请更换其他 ID` };
+		return { ok: false, error: `App ID '${entry.id}' already exists; please choose a different ID` };
 
 	let next_apps = [];
 	let updated = false;
@@ -1069,7 +1069,7 @@ export function upsert_catalog_app(catalog, app_input, orig_id) {
 	}
 	if (!updated) {
 		if (length(next_apps) >= APP_CATALOG_MAX_APPS)
-			return { ok: false, error: `特征库应用数量已达上限 (${APP_CATALOG_MAX_APPS})` };
+			return { ok: false, error: `Catalog app limit (${APP_CATALOG_MAX_APPS}) reached` };
 		push(next_apps, entry);
 	}
 
@@ -1089,7 +1089,7 @@ export function delete_catalog_app(catalog, app_id) {
 	catalog = catalog || { categories: [], apps: [] };
 	let target = trim('' + (app_id ?? ''));
 	if (target == '')
-		return { ok: false, error: '未指定要删除的应用 ID' };
+		return { ok: false, error: 'No app ID specified for deletion' };
 	let next_apps = [];
 	let removed = false;
 	for (let a in (catalog.apps || [])) {
@@ -1100,7 +1100,7 @@ export function delete_catalog_app(catalog, app_id) {
 		push(next_apps, a);
 	}
 	if (!removed)
-		return { ok: false, error: `未找到应用 ID '${target}'` };
+		return { ok: false, error: `App ID '${target}' not found` };
 	let doc = rebuild_catalog_doc(catalog, next_apps);
 	return { ok: true, removed_id: target, catalog_doc: doc };
 };
@@ -1134,9 +1134,9 @@ export function parse_batch_import(payload, opts, existing_catalog) {
 	existing_catalog = existing_catalog || { categories: [], apps: [], by_id: {} };
 	let raw = '' + (payload ?? '');
 	if (trim(raw) == '')
-		return { ok: false, error: '导入内容为空' };
+		return { ok: false, error: 'Import payload is empty' };
 	if (length(raw) > 524288)
-		return { ok: false, error: '导入内容过大（单次上限 512 KB）' };
+		return { ok: false, error: 'Import payload is too large (512 KB limit per import)' };
 
 	let mode = (opts.mode == 'replace') ? 'replace' : 'merge';
 	let fmt = opts.format || 'auto';
@@ -1163,7 +1163,7 @@ export function parse_batch_import(payload, opts, existing_catalog) {
 	if (fmt == 'json') {
 		let parsed;
 		try { parsed = json(trimmed); }
-		catch (e) { return { ok: false, error: 'JSON 解析失败：请检查语法格式' }; }
+		catch (e) { return { ok: false, error: 'Failed to parse JSON: please check syntax' }; }
 
 		let raw_apps = [];
 		if (type(parsed) == 'array') {
@@ -1191,9 +1191,9 @@ export function parse_batch_import(payload, opts, existing_catalog) {
 			else if (parsed.name || parsed.domains || parsed.tcp || parsed.udp)
 				raw_apps = [parsed];
 			else
-				return { ok: false, error: 'JSON 中未找到 apps 数组或有效应用对象' };
+				return { ok: false, error: 'No apps array or valid app object found in JSON' };
 		} else {
-			return { ok: false, error: 'JSON 根节点须为对象或应用数组' };
+			return { ok: false, error: 'JSON root must be an object or an array of apps' };
 		}
 
 		for (let item in raw_apps)
@@ -1203,7 +1203,7 @@ export function parse_batch_import(payload, opts, existing_catalog) {
 		loose_domains = dom_res.domains;
 		skipped += length(dom_res.invalid);
 		for (let bad in slice(dom_res.invalid, 0, 8))
-			push(warnings, `跳过无效域名: ${bad}`);
+			push(warnings, `Skipped invalid domain: ${bad}`);
 	} else {
 		let lines = split(trimmed, /\r?\n/);
 		for (let i = 0; i < length(lines); i++) {
@@ -1222,7 +1222,7 @@ export function parse_batch_import(payload, opts, existing_catalog) {
 				else {
 					skipped++;
 					if (length(warnings) < 20)
-						push(warnings, `第 ${i + 1} 行跳过无效域名规则: ${line}`);
+						push(warnings, `Line ${i + 1}: skipped invalid domain rule: ${line}`);
 				}
 				continue;
 			}
@@ -1242,7 +1242,7 @@ export function parse_batch_import(payload, opts, existing_catalog) {
 				else {
 					skipped++;
 					if (length(warnings) < 20)
-						push(warnings, `第 ${i + 1} 行无法识别: ${line}`);
+						push(warnings, `Line ${i + 1}: unrecognized entry: ${line}`);
 				}
 				continue;
 			}
@@ -1317,7 +1317,7 @@ export function parse_batch_import(payload, opts, existing_catalog) {
 			by_id[target_id] = merged;
 			updated++;
 		} else {
-			let tname = trim('' + (opts.target_app_name ?? '')) || '批量导入域名组';
+			let tname = trim('' + (opts.target_app_name ?? '')) || 'Batch-Imported Domain Group';
 			push(imported_items, {
 				id: (target_id != '' && !exists(by_id, target_id)) ? target_id : null,
 				name: tname,
@@ -1361,7 +1361,7 @@ export function parse_batch_import(payload, opts, existing_catalog) {
 			if (length(base_apps) >= APP_CATALOG_MAX_APPS) {
 				skipped++;
 				if (length(warnings) < 20)
-					push(warnings, `超过特征库上限 (${APP_CATALOG_MAX_APPS})，已跳过「${entry.name}」`);
+					push(warnings, `Catalog limit (${APP_CATALOG_MAX_APPS}) exceeded; skipped "${entry.name}"`);
 				continue;
 			}
 			idx_by_id[entry.id] = length(base_apps);
@@ -1373,9 +1373,9 @@ export function parse_batch_import(payload, opts, existing_catalog) {
 	}
 
 	if (added == 0 && updated == 0)
-		return { ok: false, error: length(warnings) ? warnings[0] : '未解析到任何有效应用特征', warnings, skipped };
+		return { ok: false, error: length(warnings) ? warnings[0] : 'No valid app signatures parsed', warnings, skipped };
 	if (mode == 'replace' && length(base_apps) == 0)
-		return { ok: false, error: '覆盖导入结果为空，已取消以防止清空特征库' };
+		return { ok: false, error: 'Replace import produced an empty result; cancelled to avoid clearing the catalog' };
 
 	let doc = rebuild_catalog_doc({
 		version: meta_version || existing_catalog.version,

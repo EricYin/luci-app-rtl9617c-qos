@@ -61,19 +61,19 @@ return baseclass.extend({
 					var cores = st.cores || [];
 					var cText = cores.map(function(c) {
 						var stStr = c.state === 'running'
-							? ('运行中 · ' + fmtPct(c.util_permille))
-							: (c.clk_gated ? '已关钟省电' : '已停止');
+							? _('Running · %s').format(fmtPct(c.util_permille))
+							: (c.clk_gated ? _('Clock-gated (power save)') : _('Stopped'));
 						return 'PE' + c.core + ': ' + stStr;
 					}).join('  |  ');
 					body.push(E('div', { 'class': 'rq-note', 'style': 'margin:0 0 10px;font-size:13px;color:var(--rq-text)' }, [
-						E('strong', {}, 'PE 主频 ' + fmtMhz(st.pe_clk_hz) + ' / AXI ' + fmtMhz(st.peaxi_clk_hz) + '  ·  '),
+						E('strong', {}, _('PE Clock %s / AXI %s').format(fmtMhz(st.pe_clk_hz), fmtMhz(st.peaxi_clk_hz)) + ' · '),
 						cText
 					]));
 				}
 
 				if (st.mode === 'wifi_wfo') {
 					body.push(E('div', { 'class': 'rq-note', 'style': 'color:var(--rq-warn)' },
-						'当前 PE 处于 Wi-Fi 硬件卸载模式，启用下列有线功能将自动切回通用数据面卸载模式。'));
+						_('PE is currently in Wi-Fi hardware offload mode. Enabling any wired feature below will automatically switch back to general data-plane offload mode.')));
 				}
 
 				if (feats.length) {
@@ -96,15 +96,15 @@ return baseclass.extend({
 
 						return E('tr', {}, [
 							E('td', { 'class': 'rq-wrap' }, [
-								E('strong', {}, f.name),
-								E('div', { 'class': 'rq-note', 'style': 'margin:2px 0 0' }, f.desc)
+								E('strong', {}, f.name ? _(f.name) : ''),
+								E('div', { 'class': 'rq-note', 'style': 'margin:2px 0 0' }, f.desc ? _(f.desc) : '')
 							]),
 							E('td', {}, sel),
-							E('td', {}, f.active && f.hw_bound
-								? badge('PE' + f.pe + ' 硬件直通 · ' + fmtPct(f.util_permille), 'good')
+							E('td', { 'title': f.note ? _(f.note) : null }, f.active && f.hw_bound
+								? badge(_('PE%d HW Offload · %s').format(f.pe, fmtPct(f.util_permille)), 'good')
 								: (f.active
-									? badge('仅框架占位', 'warn')
-									: (f.enabled ? badge('待机', 'warn') : badge('未启用', '')))),
+									? badge(_('Framework Placeholder'), 'warn')
+									: (f.enabled ? badge(_('Standby'), 'warn') : badge(_('Not enabled'), '')))),
 							E('td', {}, E('button', {
 								'class': 'cbi-button rq-btn-sm ' + (f.enabled ? 'cbi-button-remove' : 'cbi-button-positive'),
 								'click': function() {
@@ -114,21 +114,21 @@ return baseclass.extend({
 									callPeSetFeature(f.id, nextEn, f.pe).then(function(res) {
 										busy = false;
 										if (res && res.ok === false)
-											ui.addNotification(null, E('p', 'PE 切换失败: ' + (res.error || '')), 'warning');
+											ui.addNotification(null, E('p', _('PE switch failed: %s').format(res.error || '')), 'warning');
 										return refresh();
 									}).catch(function() { busy = false; });
 								}
-							}, f.enabled ? '关闭 PE 卸载' : '启用 PE 卸载'))
+							}, f.enabled ? _('Disable PE Offload') : _('Enable PE Offload')))
 						]);
 					});
 
 					body.push(E('div', { 'class': 'rq-table-wrap' }, [
 						E('table', { 'class': 'rq-table' }, [
 							E('thead', {}, E('tr', {}, [
-								E('th', {}, 'PE 协处理器加速项'),
-								E('th', {}, '挂载核'),
-								E('th', {}, '实时状态'),
-								E('th', {}, '开关')
+								E('th', {}, _('PE Coprocessor Offload Feature')),
+								E('th', {}, _('Core')),
+								E('th', {}, _('Live Status')),
+								E('th', {}, _('Toggle'))
 							])),
 							E('tbody', {}, rows)
 						])
@@ -145,7 +145,7 @@ return baseclass.extend({
 							'checked': (st.params.fq_ecn === undefined || st.params.fq_ecn) ? 'checked' : null
 						});
 						body.push(E('div', { 'class': 'rq-pe-params' }, [
-							E('label', {}, [ 'PE FQ-CoDel 上行整形 (kbps, 0=不限): ', inpFq ]),
+							E('label', {}, [ _('PE FQ-CoDel Uplink Shaper (kbps, 0=unlimited):'), ' ', inpFq ]),
 							E('label', {}, [ inpEcn, ' ECN' ]),
 							E('button', {
 								'class': 'cbi-button cbi-button-apply rq-btn-sm',
@@ -159,18 +159,18 @@ return baseclass.extend({
 										.then(function() { busy = false; return refresh(); })
 										.catch(function() { busy = false; });
 								}
-							}, '应用整形参数')
+							}, _('Apply Shaping Parameters'))
 						]));
 					}
 				}
 
 				dom.content(container, E('div', { 'class': 'rq-card' }, [
 					E('div', { 'class': 'rq-card-head' }, [
-						E('h3', {}, title || 'PE 协处理器硬件卸载'),
+						E('h3', {}, title || _('PE Coprocessor Hardware Offload')),
 						E('a', {
 							'href': L.url('admin/network/rtl9617c_pe'),
 							'style': 'font-size:12px;white-space:nowrap'
-						}, '打开 PE 看板 ↗')
+						}, _('Open PE Dashboard ↗'))
 					])
 				].concat(body)));
 			}).catch(function() {
