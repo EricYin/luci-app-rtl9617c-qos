@@ -101,7 +101,7 @@ function ensureCss() {
 	var link = E('link', {
 		id: id,
 		rel: 'stylesheet',
-		href: L.resource('rtl9617c-qos/common.css') + '?v=20261128a'
+		href: L.resource('rtl9617c-qos/common.css') + '?v=20261128b'
 	});
 	document.head.appendChild(link);
 }

@@ -98,6 +98,7 @@ html[data-argon-mode="dark"] .rq-cat-modal {
 	flex-wrap: wrap; gap: 14px; margin: 6px 0 18px;
 }
 /* Argon paints a 2rem header::after primary banner behind #maincontent; elevate hero into a native card. */
+html[data-argon-mode] #view > .rtlqos { gap: 0; }
 html[data-argon-mode] .rtlqos .rq-header {
 	margin: 0 0 18px;
 	padding: 18px 22px;
@@ -105,6 +106,10 @@ html[data-argon-mode] .rtlqos .rq-header {
 	border-radius: var(--rq-radius);
 	background: var(--rq-surface);
 	box-shadow: var(--rq-shadow);
+}
+html[data-argon-mode] :is(.rtlqos, .rq-cat-modal) label > input[type="checkbox"],
+html[data-argon-mode] :is(.rtlqos, .rq-cat-modal) label > input[type="radio"] {
+	position: static; top: auto; right: auto; vertical-align: middle; flex: none; margin: 0;
 }
 html[data-argon-mode] :is(.rtlqos, .rq-cat-modal) :is(.cbi-button, .btn):not(.cbi-button-apply):not(.cbi-button-action):not(.cbi-button-positive):not(.cbi-button-add):not(.cbi-button-save):not(.cbi-button-remove):not(.cbi-button-negative):not(.cbi-button-reset):not(.cbi-button-success):not(.cbi-button-download):not(.cbi-button-edit):not(.cbi-button-reload):not(.cbi-button-link):not(.primary):not(.danger):not(.btn-danger) {
 	background-color: var(--rq-btn-bg);
@@ -342,6 +347,12 @@ html[data-argon-mode] .rtlqos .rq-form .cbi-tabmenu { display: flex; flex-wrap: 
 .rq-cat-tab.is-active {
 	background: var(--rq-accent-fill); border-color: var(--rq-accent-line);
 	color: var(--rq-accent-ink); font-weight: 600;
+}
+html[data-argon-mode] .rq-cat-tab:not(.is-active) {
+	background: var(--rq-btn-bg); border-color: var(--rq-btn-border); color: var(--rq-btn-text);
+}
+html[data-argon-mode] .rq-cat-tab:not(.is-active):hover {
+	background: var(--rq-btn-hover); border-color: var(--rq-accent-line); color: var(--rq-accent);
 }
 html[data-vt-look-theme] .rq-cat-tabs {
 	align-self: flex-start; gap: 0; padding: 0; border-bottom: 0;
